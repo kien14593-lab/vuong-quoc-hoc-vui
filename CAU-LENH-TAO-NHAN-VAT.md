@@ -95,6 +95,11 @@ Máy dùng tiếng Việt thì Meshy tự hiện **tiếng Việt**; hướng d�
   Meshy **Mô hình → biểu tượng thứ nhất (Hình ảnh thành 3D / Image to 3D)**, cũng đổi sang **Meshy 6 Lite**; Meshy hỏi
   tô màu (**Kết Cấu** / *Texture*) thì chọn **Có**. Cách này dễ kiểm soát dáng vẻ hơn và các nhân vật giống nhau về
   phong cách hơn.
+  - **Chọn ảnh nào?** Nền trơn, nhìn thẳng, tay tách khỏi người, hai chân có khe hở, không có gì che tay (ba lô to
+    lộ ra sau tay dễ bị dính vào tay) → Meshy dựng hình và gắn xương dễ hơn.
+  - **Vẽ ảnh ngay trong Meshy** (mục **Hình ảnh** bên trái): rê chuột lên ảnh sẽ hiện nút **Hình ảnh thành 3D** –
+    ⚠️ **đừng bấm ngay**: nút này tạo luôn bằng **Meshy 6** (20 điểm, gói miễn phí **không tải về được**). Bấm nút
+    **⚙** bên cạnh trước (*Cài Đặt Tạo Mô Hình*) → **Mô hình AI: Meshy 6 Lite**, rồi mới bấm **Hình ảnh thành 3D**.
 - **Tay để trống**: câu lệnh cố ý không cho nhân vật cầm đồ (bản đồ, gậy, quyền trượng…) để gắn xương không lỗi.
 - **Ít chi tiết nhỏ**: chi tiết càng to, tròn, rõ màu thì càng đẹp khi nhìn từ xa trong trò chơi.
 
