@@ -29,27 +29,30 @@ nhưng **phải ghi công "Meshy.ai"**. Trò chơi tự hiện dòng ghi công t
 ## 2. Các bước (khoảng 10 phút/nhân vật)
 
 1. Vào <https://www.meshy.ai> → đăng ký (dùng tài khoản Google cho nhanh).
-2. Chọn **3D Model → Text to 3D**. Dán câu lệnh của nhân vật (mục 5).
-   - Mô hình: **Meshy 6** (hoặc bản mặc định mà gói miễn phí cho dùng).
-   - Nếu có mục **Symmetry (đối xứng)** → bật.
-   - Nếu có mục **Pose** → chọn **A-pose** (giúp gắn xương tốt).
-   - Nếu có mục **Polycount / số đa giác** → khoảng **20.000** (để mặc định cũng được – công cụ tự giảm).
-3. Bấm **Generate** (20 điểm) → chờ 1–3 phút → xoay xem các phía.
-   Chưa ưng: sửa vài chữ trong câu lệnh rồi tạo lại.
-4. Ưng rồi → **Animate** (hoặc **Rig**): chọn kiểu người/hình người (*Humanoid*). Nếu được hỏi, kéo các điểm khớp
-   (cằm, cổ tay, khuỷu tay, đầu gối, háng) vào đúng chỗ → **Rig** (miễn phí).
-5. Chọn động tác trong thư viện (gõ tìm theo bảng dưới) → với **mỗi động tác**: **Download → GLB**,
-   rồi **đổi tên tệp** theo danh sách của nhân vật đó ở mục 5.
-6. Chép các tệp `.glb` vào thư mục **`E:\VuongQuocToanHoc\mo-hinh-ai`**.
-7. Nhắn Copilot: **"lắp mô hình AI mới"** – Copilot sẽ tối ưu, chỉnh cỡ/hướng, kiểm tra trong trò chơi,
-   đóng gói lại và đưa lên bản chơi trên web.
-   *(Hoặc tự nhấp đúp `CapNhatMoHinh.bat` – cách này chỉ cập nhật bản chơi offline trên máy.)*
+2. Ở thanh bên trái chọn **Text to 3D**. Dán câu lệnh của nhân vật (mục 5).
+   - Chọn mô hình **High Detail → Meshy 6** (Text to 3D chỉ có Meshy 6).
+   - Nếu có mục **Pose** → chọn **A-pose** (giúp gắn xương tốt). Có mục **Symmetry (đối xứng)** → bật.
+   - Trước khi bấm, bảng hiện số điểm sẽ dùng – kiểm tra là **20**.
+3. Bấm **Generate** → chờ 1–2 phút → xoay xem các phía. Chưa ưng: sửa vài chữ trong câu lệnh rồi tạo lại.
+   Mọi kết quả được lưu trong **My Models**.
+4. **Remesh** (miễn phí): đặt khoảng **20.000** mặt → chạy. Meshy khuyên làm bước này trước khi gắn xương
+   (mô hình quá 300.000 mặt sẽ không gắn được); màu sắc vẫn giữ nguyên.
+5. **Rigging** (miễn phí): Meshy tự nhận dạng nhân vật. Nếu được hỏi, kéo các điểm khớp (cằm, vai, cổ tay,
+   khuỷu tay, đầu gối, háng) vào đúng chỗ → xác nhận. Xong bước này Meshy **tặng sẵn 2 động tác Đi và Chạy**.
+6. **Animate** (miễn phí): tìm thêm động tác trong thư viện hơn 500 động tác (gõ tìm theo bảng dưới) → xem thử →
+   **Download → GLB**. Mỗi động tác tải thành **một tệp riêng** (tải cả tệp Đi và Chạy).
+7. Gửi tệp cho trò chơi – chọn một trong hai cách:
+   - **Dễ nhất – nhờ Copilot:** cứ để các tệp trong thư mục **Tải xuống (Downloads)**, **giữ nguyên tên**, rồi nhắn
+     Copilot **"xong Gấu"** (tên nhân vật vừa làm). Copilot tự tìm tệp, đặt tên, tối ưu, chỉnh cỡ/hướng, kiểm tra
+     trong trò chơi, đóng gói lại và đưa lên bản chơi trên web. **Làm xong con nào thì nhắn con đó** để tệp không lẫn.
+   - **Tự làm:** đổi tên tệp theo danh sách của nhân vật ở mục 5, chép vào **`E:\VuongQuocToanHoc\mo-hinh-ai`**,
+     rồi nhấp đúp `CapNhatMoHinh.bat` (cách này chỉ cập nhật bản chơi offline trên máy).
 
 | Động tác | Gõ tìm trong thư viện Meshy | Đuôi tên tệp | Ví dụ |
 |---|---|---|---|
 | Đứng yên (bắt buộc) | Idle | `-dung` | `gau-dung.glb` |
-| Đi | Walk, Walking | `-di` | `gau-di.glb` |
-| Chạy | Run, Running | `-chay` | `gau-chay.glb` |
+| Đi | *(có sẵn sau bước Rigging)* Walk, Walking | `-di` | `gau-di.glb` |
+| Chạy | *(có sẵn sau bước Rigging)* Run, Running | `-chay` | `gau-chay.glb` |
 | Nhảy | Jump | `-nhay` | `gau-nhay.glb` |
 | Vẫy tay | Wave, Waving, Hello | `-vay-tay` | `gau-vay-tay.glb` |
 | Nói chuyện | Talk, Talking | `-noi` | `gau-noi.glb` |
@@ -57,9 +60,10 @@ nhưng **phải ghi công "Meshy.ai"**. Trò chơi tự hiện dòng ghi công t
 
 - Tối thiểu chỉ cần tệp **đứng yên** (`-dung`). Thiếu động tác nào, trò chơi tự dùng động tác gần giống
   (vẫy tay → vui mừng → nói → đứng yên; chạy → đi nhanh hơn).
-- Tên các nút trên Meshy có thể hơi khác theo thời gian – cứ tìm chữ **Rig/Animate** và **Download → GLB**.
-- Gắn xương bị lỗi hoặc không gắn được? Vẫn dùng được: tải mô hình tĩnh (đặt tên `gau.glb`), trò chơi tự cho
-  nhân vật nhún nhảy, "thở", lắc lư.
+- Tên các nút trên Meshy có thể hơi khác theo thời gian – cứ tìm chữ **Remesh**, **Rigging**, **Animate** và
+  **Download → GLB**.
+- Gắn xương bị lỗi hoặc không gắn được? Vẫn dùng được: chỉ tải mô hình tĩnh (tự làm thì đặt tên `gau.glb`),
+  trò chơi tự cho nhân vật nhún nhảy, "thở", lắc lư.
 
 ## 3. Mẹo cho kết quả đẹp hơn (không bắt buộc)
 
@@ -82,12 +86,15 @@ nhưng **phải ghi công "Meshy.ai"**. Trò chơi tự hiện dòng ghi công t
 - **Dân làng** – một tệp `dan-lang.glb` sẽ thay **cả 6 loài** (heo, vịt, cún, chuột hamster, ếch, gà con) thành một
   nhân vật giống hệt nhau → làng mất đa dạng.
 - **Bé** (nhân vật chính) – được dựng bằng code để thay quần áo, mũ, phụ kiện trong túi đồ.
-- **Thú cưng 4 chân** – Meshy thường chỉ gắn xương cho nhân vật đứng 2 chân; thú 4 chân sẽ không bước chân
-  khi chạy theo bé (chỉ nhún nhảy). Muốn thì thử một con trước xem có ưng không.
+- **Thú cưng 4 chân** – Meshy gắn xương được thú 4 chân, nhưng thư viện động tác chủ yếu dành cho nhân vật 2 chân.
+  Không có động tác đi phù hợp thì thú cưng chỉ nhún nhảy khi chạy theo bé (không bước chân).
+  Muốn thì thử một con trước xem có ưng không.
 
 ## 5. Câu lệnh từng nhân vật
 
 Sao chép **nguyên khung** câu lệnh (bấm nút sao chép ở góc khung, hoặc bôi đen → Ctrl+C).
+Dòng **Tệp** cho biết cần tải những động tác nào (đuôi tên tệp ứng với động tác ở bảng mục 2).
+Nhờ Copilot lắp thì **không cần đổi tên** tệp.
 
 ### 5.1. Chú Gấu – bạn đồng hành (đi theo bé khắp nơi) ⭐
 
@@ -192,8 +199,9 @@ A shy baby deer (fawn) standing upright on two legs: light caramel fur with smal
 
 ## 6. Thú cưng & thú Sở Thú (không bắt buộc)
 
-Phần lớn là thú 4 chân → thường **không gắn xương được**: chỉ cần tải **một tệp mô hình** (tên ở đầu mỗi dòng).
-Con nào đứng 2 chân (chim cánh cụt, khủng long, khỉ) có thể thử Rig như mục 2.
+Phần lớn là thú 4 chân. Meshy gắn xương được thú 4 chân nhưng ít động tác phù hợp, nên **đơn giản nhất là chỉ tải
+một tệp mô hình** (tên ở đầu mỗi dòng) – trò chơi tự cho thú nhún nhảy, lắc lư. Muốn thử thêm động tác: Rigging rồi
+tải động tác đứng yên và đi (nếu thư viện có). Con nào đứng 2 chân (chim cánh cụt, khủng long, khỉ) làm như mục 2.
 
 Đoạn phong cách chung (đã ghép sẵn trong từng câu lệnh bên dưới):
 *Cute chibi 3D cartoon for a kids game … pastel matte vinyl toy look. Full body, facing front, no base, no background.*

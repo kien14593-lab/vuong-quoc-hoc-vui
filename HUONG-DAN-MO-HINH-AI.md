@@ -21,16 +21,17 @@ bằng mô hình 3D tạo bằng AI (Meshy, Tripo...) mà **không cần lập t
 2. Chọn **Text to 3D** (dán câu lệnh) hoặc **Image to 3D** (tải ảnh nhân vật, nền trơn, nhìn thẳng).
    Chọn tư thế **A-pose** nếu có, để bước gắn xương chính xác hơn.
 3. Chọn mẫu ưng ý → **Texture** (tô màu) nếu cần.
-4. **Remesh**: chọn số đa giác thấp (khoảng **10.000 – 20.000**) để game chạy mượt trên máy yếu.
-5. **Animate → Rig** (gắn khung xương – nhân vật đứng 2 chân). Sau đó chọn động tác: *Idle* (đứng),
-   *Walking* (đi), *Running* (chạy), *Wave* (vẫy tay), *Dance/Cheer* (vui mừng)...
+4. **Remesh** (miễn phí, làm **trước** khi gắn xương): chọn số đa giác thấp (khoảng **10.000 – 20.000**) để game
+   chạy mượt trên máy yếu.
+5. **Rigging** (gắn khung xương, miễn phí) – Meshy tặng sẵn động tác *Walking* (đi) và *Running* (chạy).
+   Sau đó vào **Animate** chọn thêm: *Idle* (đứng), *Wave* (vẫy tay), *Talk* (nói), *Dance/Cheer* (vui mừng)...
 6. **Download → định dạng GLB**. Mỗi động tác tải thành **một tệp riêng**:
    `gau.glb` (đứng yên), `gau-di.glb`, `gau-chay.glb`, `gau-vay-tay.glb`...
 
 Tripo3D (<https://www.tripo3d.ai>) và các trang tương tự làm tương tự: tạo → (rig/animate) → tải **GLB**.
 
-> Con vật 4 chân (hươu, khỉ, voi...) thường **không gắn xương tự động được**. Không sao: mô hình vẫn dùng được,
-> trò chơi tự cho nhân vật nhún nhảy, lắc lư, "thở" cho sinh động.
+> Con vật 4 chân (hươu, khỉ, voi...): Meshy gắn xương được nhưng ít động tác phù hợp. Không gắn xương cũng không sao:
+> mô hình vẫn dùng được, trò chơi tự cho nhân vật nhún nhảy, lắc lư, "thở" cho sinh động.
 
 ## 2. Đặt tên tệp
 
