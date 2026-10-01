@@ -12,64 +12,89 @@ tải tệp về → chép vào thư mục `mo-hinh-ai`**. Phần lắp vào tr�
 
 | Việc | Điểm (credit) |
 |---|---|
-| Mỗi tháng được tặng | **100 điểm** (không cần thẻ ngân hàng, cộng lại vào ngày 1 hằng tháng) |
-| Tạo 1 mô hình – *Text to 3D* (Meshy 6) | 20 |
-| Tạo 1 mô hình – *Image to 3D* | 20 (Meshy 6) · 25 (Meshy 7) |
-| Gắn xương (*Rig*), động tác (*Animate*), giảm đa giác (*Remesh*) | **miễn phí** |
+| Mỗi tháng được tặng | **100 điểm** (không cần thẻ ngân hàng, cộng lại hằng tháng) |
+| Tạo hình 1 nhân vật – *Văn Bản thành 3D* (Text to 3D), mô hình AI **Meshy 6 Lite** | 10 |
+| Tô màu nhân vật đó (*Tạo Kết Cấu*) | 10 |
+| Gắn xương (*Rig*) và động tác (*Animate*) | gói miễn phí có lượt miễn phí (số điểm/lượt hiện ngay trên nút) |
 | Tạo lỗi | được hoàn điểm |
 
-→ Mỗi tháng làm được **4–5 nhân vật**. Nên chừa 20 điểm để làm lại khi chưa ưng.
+→ Mỗi nhân vật có màu ≈ **20 điểm** → mỗi tháng làm được **4–5 nhân vật**. Nên chừa 20 điểm để làm lại khi chưa ưng.
+
+**Giới hạn của gói miễn phí (quan trọng):**
+
+- **Chỉ tải về được mô hình làm bằng Meshy 6 Lite**, tối đa **10 lần tải/tháng**. Mô hình làm bằng Meshy 6 hoặc
+  Meshy 7 phải mua gói mới tải được → **luôn chọn Meshy 6 Lite**.
+- Thư viện động tác chỉ có khoảng **20 động tác cơ bản**; động tác có ổ khóa là của gói trả phí.
+- **Remesh** (giảm đa giác) và chọn **Tư thế A/T** là tính năng trả phí → không cần: câu lệnh đã có sẵn chữ "A-pose",
+  công cụ của trò chơi tự giảm đa giác khi mô hình quá nặng.
 
 **Giấy phép:** mô hình tạo bằng gói miễn phí dùng giấy phép **CC BY 4.0** – được dùng cả cho mục đích thương mại
 nhưng **phải ghi công "Meshy.ai"**. Trò chơi tự hiện dòng ghi công trong mục **⚙️ Cài đặt** khi có mô hình AI
 (ghi nguồn vào mục `"nguon"` – Copilot làm giúp khi lắp mô hình).
 
-*(Điểm và giấy phép theo trang giá của Meshy, tháng 10/2026 – có thể thay đổi.)*
+*(Điểm, giới hạn và giấy phép theo trang giá của Meshy, tháng 10/2026 – có thể thay đổi. Số điểm thật luôn hiện
+trên nút trước khi bấm.)*
 
 ## 2. Các bước (khoảng 10 phút/nhân vật)
 
+Máy dùng tiếng Việt thì Meshy tự hiện **tiếng Việt**; hướng dẫn ghi cả tên tiếng Việt và *tiếng Anh*.
+
 1. Vào <https://www.meshy.ai> → đăng ký (dùng tài khoản Google cho nhanh).
-2. Ở thanh bên trái chọn **Text to 3D**. Dán câu lệnh của nhân vật (mục 5).
-   - Chọn mô hình **High Detail → Meshy 6** (Text to 3D chỉ có Meshy 6).
-   - Nếu có mục **Pose** → chọn **A-pose** (giúp gắn xương tốt). Có mục **Symmetry (đối xứng)** → bật.
-   - Trước khi bấm, bảng hiện số điểm sẽ dùng – kiểm tra là **20**.
-3. Bấm **Generate** → chờ 1–2 phút → xoay xem các phía. Chưa ưng: sửa vài chữ trong câu lệnh rồi tạo lại.
-   Mọi kết quả được lưu trong **My Models**.
-4. **Remesh** (miễn phí): đặt khoảng **20.000** mặt → chạy. Meshy khuyên làm bước này trước khi gắn xương
-   (mô hình quá 300.000 mặt sẽ không gắn được); màu sắc vẫn giữ nguyên.
-5. **Rigging** (miễn phí): Meshy tự nhận dạng nhân vật. Nếu được hỏi, kéo các điểm khớp (cằm, vai, cổ tay,
-   khuỷu tay, đầu gối, háng) vào đúng chỗ → xác nhận. Xong bước này Meshy **tặng sẵn 2 động tác Đi và Chạy**.
-6. **Animate** (miễn phí): tìm thêm động tác trong thư viện hơn 500 động tác (gõ tìm theo bảng dưới) → xem thử →
-   **Download → GLB**. Mỗi động tác tải thành **một tệp riêng** (tải cả tệp Đi và Chạy).
-7. Gửi tệp cho trò chơi – chọn một trong hai cách:
-   - **Dễ nhất – nhờ Copilot:** cứ để các tệp trong thư mục **Tải xuống (Downloads)**, **giữ nguyên tên**, rồi nhắn
+2. Cột bên trái bấm **Mô hình** (*Model*, biểu tượng khối vuông). Đầu khung bên cạnh có **3 biểu tượng không có chữ**;
+   Meshy mở sẵn biểu tượng thứ nhất (*Hình ảnh thành 3D*). Bấm **biểu tượng thứ ba** (chữ **T** + khối vuông xanh lá) –
+   rê chuột lên sẽ hiện chữ **Văn Bản thành 3D** (*Text to 3D*).
+3. Dán câu lệnh của nhân vật (mục 5) vào ô nhập chữ, rồi chọn:
+   - **Mô hình AI** (*AI Model*): Meshy để sẵn **Meshy 6** → bấm **đổi sang Meshy 6 Lite** ⚠️ – gói miễn phí không tải
+     về được mô hình Meshy 6.
+   - **Số lượng thế hệ**: để **1**.
+   - **Tư thế** (*Pose*): chọn **A** nếu chọn được mà không tốn thêm điểm; có ổ khóa thì bỏ qua.
+   - Giấy phép: **CC BY 4.0**. Các mục khác để mặc định.
+   - Nhìn số điểm trên nút **Tạo ra** (*Generate*): khoảng **10**. Thấy 20 trở lên: xem lại *Mô hình AI* và
+     *Số lượng thế hệ*.
+4. Bấm **Tạo ra** → chờ 1–2 phút → hiện **bản nháp** màu xám (chưa tô màu; rê chuột lên để xoay xem). Chưa ưng: sửa
+   vài chữ trong câu lệnh rồi tạo lại.
+5. Bấm vào bản nháp (có nhiều thì chọn bản ưng nhất) → hiện bảng **Xác nhận tạo ra** → mục **Tạo Kết Cấu**
+   (*Generate Texture*) chọn **Có** (*With Texture*) → xác nhận (thêm khoảng **10** điểm). Chọn "Không" thì nhân vật
+   **không có màu**. Mọi kết quả được lưu trong **Tài sản** (*Assets*).
+6. **Gắn xương:** bấm **Hoạt hình** (*Animate*) hoặc **Áp rig cho mô hình** (*Rig*). Meshy tự nhận dạng nhân vật; nếu
+   được hỏi, kéo các điểm khớp (cằm, vai, cổ tay, khuỷu tay, đầu gối, háng) vào đúng chỗ → xác nhận. Đừng chọn
+   *Smart Rig* (kiểu này chưa dùng được thư viện động tác). Xong bước này có sẵn 2 động tác **Walking** (đi) và
+   **Running** (chạy).
+7. **Thêm động tác** (*Thêm hoạt hình*) từ **Thư viện hoạt ảnh**: gõ tìm **Idle** (đứng yên – quan trọng nhất), thêm
+   các động tác khác ở bảng dưới nếu không có ổ khóa.
+8. **Tải xuống** (*Download*) → định dạng **GLB** → phần động tác chọn **Tất cả đã được thêm vào** (*All Added*): mọi
+   động tác nằm gọn trong **một tệp**, chỉ tốn **1 lượt tải**.
+9. Gửi tệp cho trò chơi – chọn một trong hai cách:
+   - **Dễ nhất – nhờ Copilot:** cứ để tệp trong thư mục **Tải xuống (Downloads)**, **giữ nguyên tên**, rồi nhắn
      Copilot **"xong Gấu"** (tên nhân vật vừa làm). Copilot tự tìm tệp, đặt tên, tối ưu, chỉnh cỡ/hướng, kiểm tra
      trong trò chơi, đóng gói lại và đưa lên bản chơi trên web. **Làm xong con nào thì nhắn con đó** để tệp không lẫn.
-   - **Tự làm:** đổi tên tệp theo danh sách của nhân vật ở mục 5, chép vào **`E:\VuongQuocToanHoc\mo-hinh-ai`**,
+   - **Tự làm:** đổi tên tệp thành tên nhân vật (vd. `gau.glb`), chép vào **`E:\VuongQuocToanHoc\mo-hinh-ai`**,
      rồi nhấp đúp `CapNhatMoHinh.bat` (cách này chỉ cập nhật bản chơi offline trên máy).
 
-| Động tác | Gõ tìm trong thư viện Meshy | Đuôi tên tệp | Ví dụ |
-|---|---|---|---|
-| Đứng yên (bắt buộc) | Idle | `-dung` | `gau-dung.glb` |
-| Đi | *(có sẵn sau bước Rigging)* Walk, Walking | `-di` | `gau-di.glb` |
-| Chạy | *(có sẵn sau bước Rigging)* Run, Running | `-chay` | `gau-chay.glb` |
-| Nhảy | Jump | `-nhay` | `gau-nhay.glb` |
-| Vẫy tay | Wave, Waving, Hello | `-vay-tay` | `gau-vay-tay.glb` |
-| Nói chuyện | Talk, Talking | `-noi` | `gau-noi.glb` |
-| Vui mừng | Cheer, Happy, Dance, Clap | `-vui` | `gau-vui.glb` |
+| Động tác | Gõ tìm trong thư viện Meshy | Gói miễn phí |
+|---|---|---|
+| Đứng yên (bắt buộc) | Idle (hoặc Idle 02, Idle 03) | ✅ có |
+| Đi | Walking | ✅ có sẵn sau bước gắn xương |
+| Chạy | Running | ✅ có sẵn sau bước gắn xương |
+| Vui mừng | Funny Dancing, Cheer, Clap | có thể bị khóa |
+| Vẫy tay | Wave, Hello | có thể bị khóa |
+| Nói chuyện | Talk, Talking | có thể bị khóa |
+| Nhảy | Jump | có thể bị khóa |
 
-- Tối thiểu chỉ cần tệp **đứng yên** (`-dung`). Thiếu động tác nào, trò chơi tự dùng động tác gần giống
+- Tối thiểu chỉ cần **Idle** (đứng yên). Thiếu động tác nào, trò chơi tự dùng động tác gần giống
   (vẫy tay → vui mừng → nói → đứng yên; chạy → đi nhanh hơn).
-- Tên các nút trên Meshy có thể hơi khác theo thời gian – cứ tìm chữ **Remesh**, **Rigging**, **Animate** và
-  **Download → GLB**.
-- Gắn xương bị lỗi hoặc không gắn được? Vẫn dùng được: chỉ tải mô hình tĩnh (tự làm thì đặt tên `gau.glb`),
-  trò chơi tự cho nhân vật nhún nhảy, "thở", lắc lư.
+- Tên các nút trên Meshy có thể hơi khác theo thời gian – cứ tìm chữ **Rig**, **Hoạt hình/Animate** và
+  **Tải xuống/Download → GLB**.
+- Gắn xương bị lỗi, hoặc Meshy đòi mua gói? Vẫn dùng được: tải mô hình **tĩnh** (chưa gắn xương) – trò chơi tự cho
+  nhân vật nhún nhảy, "thở", lắc lư.
 
 ## 3. Mẹo cho kết quả đẹp hơn (không bắt buộc)
 
 - **Vẽ ảnh mẫu trước**: dán câu lệnh vào một trang AI vẽ tranh miễn phí (Microsoft Copilot / Bing Image Creator,
   Google Gemini…), thêm vào cuối *"3D render, front view, plain white background"*. Chọn ảnh ưng nhất →
-  Meshy **Image to 3D** (20–25 điểm). Cách này dễ kiểm soát dáng vẻ hơn và các nhân vật giống nhau về phong cách hơn.
+  Meshy **Mô hình → biểu tượng thứ nhất (Hình ảnh thành 3D / Image to 3D)**, cũng đổi sang **Meshy 6 Lite**; Meshy hỏi
+  tô màu (**Kết Cấu** / *Texture*) thì chọn **Có**. Cách này dễ kiểm soát dáng vẻ hơn và các nhân vật giống nhau về
+  phong cách hơn.
 - **Tay để trống**: câu lệnh cố ý không cho nhân vật cầm đồ (bản đồ, gậy, quyền trượng…) để gắn xương không lỗi.
 - **Ít chi tiết nhỏ**: chi tiết càng to, tròn, rõ màu thì càng đẹp khi nhìn từ xa trong trò chơi.
 
@@ -93,12 +118,14 @@ nhưng **phải ghi công "Meshy.ai"**. Trò chơi tự hiện dòng ghi công t
 ## 5. Câu lệnh từng nhân vật
 
 Sao chép **nguyên khung** câu lệnh (bấm nút sao chép ở góc khung, hoặc bôi đen → Ctrl+C).
-Dòng **Tệp** cho biết cần tải những động tác nào (đuôi tên tệp ứng với động tác ở bảng mục 2).
-Nhờ Copilot lắp thì **không cần đổi tên** tệp.
+Dòng **Tệp** cho biết nhân vật cần những động tác nào – đuôi tên tệp: `-dung` đứng yên (Idle) · `-di` đi (Walking) ·
+`-chay` chạy (Running) · `-nhay` nhảy · `-vay-tay` vẫy tay · `-noi` nói chuyện · `-vui` vui mừng.
+Tải gộp **Tất cả đã được thêm vào** thì chỉ có **một tệp** – tự làm thì đặt tên `gau.glb`; tên riêng từng động tác
+(`gau-di.glb`…) chỉ dùng khi tải mỗi động tác một tệp. Nhờ Copilot lắp thì **không cần đổi tên** tệp.
 
 ### 5.1. Chú Gấu – bạn đồng hành (đi theo bé khắp nơi) ⭐
 
-Tệp cần tải: `gau-dung.glb` (Idle) · `gau-di.glb` (Walk) · `gau-chay.glb` (Run) · `gau-nhay.glb` (Jump) ·
+Tệp: `gau-dung.glb` (Idle) · `gau-di.glb` (Walk) · `gau-chay.glb` (Run) · `gau-nhay.glb` (Jump) ·
 `gau-vay-tay.glb` (Wave) · `gau-noi.glb` (Talk) · `gau-vui.glb` (Cheer)
 
 ```text

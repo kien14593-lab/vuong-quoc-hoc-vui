@@ -17,16 +17,22 @@ bằng mô hình 3D tạo bằng AI (Meshy, Tripo...) mà **không cần lập t
 > 📋 **Câu lệnh soạn sẵn cho từng nhân vật** (đồng bộ phong cách, chỉ việc sao chép), bảng chi phí điểm, thứ tự nên làm
 > và danh sách tệp cần tải: xem **[CAU-LENH-TAO-NHAN-VAT.md](CAU-LENH-TAO-NHAN-VAT.md)**.
 
-1. Vào <https://www.meshy.ai>, đăng nhập (gói miễn phí: 100 điểm/tháng ≈ 4–5 nhân vật).
-2. Chọn **Text to 3D** (dán câu lệnh) hoặc **Image to 3D** (tải ảnh nhân vật, nền trơn, nhìn thẳng).
-   Chọn tư thế **A-pose** nếu có, để bước gắn xương chính xác hơn.
-3. Chọn mẫu ưng ý → **Texture** (tô màu) nếu cần.
-4. **Remesh** (miễn phí, làm **trước** khi gắn xương): chọn số đa giác thấp (khoảng **10.000 – 20.000**) để game
-   chạy mượt trên máy yếu.
-5. **Rigging** (gắn khung xương, miễn phí) – Meshy tặng sẵn động tác *Walking* (đi) và *Running* (chạy).
+1. Vào <https://www.meshy.ai>, đăng nhập. Gói miễn phí: 100 điểm/tháng ≈ 4–5 nhân vật có màu; **chỉ tải về được mô hình
+   làm bằng Meshy 6 Lite**, tối đa 10 lần/tháng.
+2. Cột trái bấm **Mô hình** (*Model*) → đầu khung có 3 biểu tượng không có chữ: biểu tượng **thứ ba** là
+   **Văn Bản thành 3D** (*Text to 3D*, dán câu lệnh); biểu tượng **thứ nhất** là **Hình ảnh thành 3D** (*Image to 3D*,
+   ảnh nhân vật nền trơn, nhìn thẳng). **Mô hình AI: đổi sang Meshy 6 Lite** (Meshy để sẵn Meshy 6 – gói miễn phí không
+   tải về được). Chọn tư thế **A** (A-pose) nếu được.
+3. Chọn bản nháp ưng ý → **Tạo Kết Cấu: Có** (*With Texture*) để nhân vật có màu.
+4. **Remesh** (giảm đa giác) là tính năng trả phí – không bắt buộc: `CapNhatMoHinh.bat` tự giảm đa giác khi mô hình
+   quá nặng. (Meshy chỉ từ chối gắn xương khi mô hình quá 300.000 mặt.)
+5. **Rigging** (gắn khung xương) – Meshy tặng sẵn động tác *Walking* (đi) và *Running* (chạy).
    Sau đó vào **Animate** chọn thêm: *Idle* (đứng), *Wave* (vẫy tay), *Talk* (nói), *Dance/Cheer* (vui mừng)...
-6. **Download → định dạng GLB**. Mỗi động tác tải thành **một tệp riêng**:
-   `gau.glb` (đứng yên), `gau-di.glb`, `gau-chay.glb`, `gau-vay-tay.glb`...
+   (gói miễn phí chỉ có khoảng 20 động tác cơ bản – động tác có ổ khóa là của gói trả phí).
+6. **Download → định dạng GLB**:
+   - Chọn **Tất cả đã được thêm vào** (*All Added*): **một tệp** chứa mọi động tác, đặt tên `gau.glb` – trò chơi tự nhận
+     động tác theo tên (Idle, Walking, Running…). Cách này chỉ tốn 1 lượt tải.
+   - Hoặc tải mỗi động tác một tệp riêng: `gau.glb` (đứng yên), `gau-di.glb`, `gau-chay.glb`, `gau-vay-tay.glb`...
 
 Tripo3D (<https://www.tripo3d.ai>) và các trang tương tự làm tương tự: tạo → (rig/animate) → tải **GLB**.
 
@@ -68,7 +74,8 @@ Tên tệp = **tên nhân vật** (+ `-` + **tên động tác** nếu là tệp
 | Ăn | `-an` | `gau-an.glb` |
 
 Cách viết khác cũng được: `gau@di.glb`, `gau-walk.glb`. Nếu chỉ có tệp động tác (không có `gau.glb`),
-công cụ lấy tệp "đứng yên" làm mô hình chính.
+công cụ lấy tệp "đứng yên" làm mô hình chính. Tệp gộp nhiều động tác (tải bằng *Tất cả đã được thêm vào*) chỉ cần
+đặt tên `gau.glb`; tên động tác lạ thì khai báo trong `cau-hinh.json` (mục 4).
 
 Nhân vật chính (bé) được dựng bằng code để **thay quần áo, mũ, phụ kiện** trong túi đồ – nên không thay bằng mô hình AI.
 
@@ -110,6 +117,7 @@ Nếu nhân vật quá to/nhỏ, quay lưng lại, hay màu bị lạ: đổi t�
 | `nang-len` / `ha-xuong` | Nâng/hạ nhân vật (mét) nếu bị lơ lửng hoặc lún. |
 | `toc-do-di`, `toc-do-chay` | Tốc độ phát động tác đi/chạy (1 = bình thường; 1.3 = nhanh hơn). |
 | `an` | Ẩn bớt chi tiết theo tên lưới, vd. `["Sword"]`. |
+| `dong-tac` | Chỉ rõ động tác nào dùng vào việc gì khi trò chơi nhận nhầm (tên các động tác được in ra lúc chạy công cụ), vd. `{ "vui": "FunnyDancing_01", "dung": "Idle_02" }`. Tên việc: `dung`, `di`, `chay`, `nhay`, `vay-tay`, `noi`, `vui`, `ngoi`, `an`. |
 | `nguon` | Nguồn & giấy phép – ghi vào bảng ghi công. |
 
 Lưu ý: tệp JSON dùng dấu ngoặc kép `"`, các mục cách nhau bằng dấu phẩy, không có dấu phẩy sau mục cuối.
