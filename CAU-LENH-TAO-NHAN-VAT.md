@@ -23,10 +23,11 @@ tải tệp về → chép vào thư mục `mo-hinh-ai`**. Phần lắp vào tr�
 **Giới hạn của gói miễn phí (quan trọng):**
 
 - **Chỉ tải về được mô hình làm bằng Meshy 6 Lite**, tối đa **10 lần tải/tháng**. Mô hình làm bằng Meshy 6 hoặc
-  Meshy 7 phải mua gói mới tải được → **luôn chọn Meshy 6 Lite**.
+  Meshy 7/7.1 phải mua gói mới tải được → **luôn chọn Meshy 6 Lite**.
 - Thư viện động tác chỉ có khoảng **20 động tác cơ bản**; động tác có ổ khóa là của gói trả phí.
 - **Remesh** (giảm đa giác) và chọn **Tư thế A/T** là tính năng trả phí → không cần: câu lệnh đã có sẵn chữ "A-pose",
-  công cụ của trò chơi tự giảm đa giác khi mô hình quá nặng.
+  công cụ của trò chơi tự giảm đa giác khi mô hình quá nặng. Riêng **gắn xương** thì Meshy chỉ nhận mô hình **dưới
+  300.000 mặt**; nhiều hơn thì tải mô hình tĩnh.
 
 **Giấy phép:** mô hình tạo bằng gói miễn phí dùng giấy phép **CC BY 4.0** – được dùng cả cho mục đích thương mại
 nhưng **phải ghi công "Meshy.ai"**. Trò chơi tự hiện dòng ghi công trong mục **⚙️ Cài đặt** khi có mô hình AI
@@ -44,8 +45,9 @@ Máy dùng tiếng Việt thì Meshy tự hiện **tiếng Việt**; hướng d�
    Meshy mở sẵn biểu tượng thứ nhất (*Hình ảnh thành 3D*). Bấm **biểu tượng thứ ba** (chữ **T** + khối vuông xanh lá) –
    rê chuột lên sẽ hiện chữ **Văn Bản thành 3D** (*Text to 3D*).
 3. Dán câu lệnh của nhân vật (mục 5) vào ô nhập chữ, rồi chọn:
-   - **Mô hình AI** (*AI Model*): Meshy để sẵn **Meshy 6** → bấm **đổi sang Meshy 6 Lite** ⚠️ – gói miễn phí không tải
-     về được mô hình Meshy 6.
+   - **Mô hình AI** (*AI Model*): Meshy để sẵn **Meshy 6** hoặc **Meshy 7.1 - Flagship** → bấm vào ô đó, **đổi sang
+     Meshy 6 Lite** ⚠️ – gói miễn phí không tải về được mô hình Meshy 6/7; mô hình Meshy 7.1 lại thường quá
+     300.000 mặt nên không gắn xương được.
    - **Số lượng thế hệ**: để **1**.
    - **Tư thế** (*Pose*): chọn **A** nếu chọn được mà không tốn thêm điểm; có ổ khóa thì bỏ qua.
    - Giấy phép: **CC BY 4.0**. Các mục khác để mặc định.
@@ -56,7 +58,11 @@ Máy dùng tiếng Việt thì Meshy tự hiện **tiếng Việt**; hướng d�
 5. Bấm vào bản nháp (có nhiều thì chọn bản ưng nhất) → hiện bảng **Xác nhận tạo ra** → mục **Tạo Kết Cấu**
    (*Generate Texture*) chọn **Có** (*With Texture*) → xác nhận (thêm khoảng **10** điểm). Chọn "Không" thì nhân vật
    **không có màu**. Mọi kết quả được lưu trong **Tài sản** (*Assets*).
-6. **Gắn xương:** bấm **Hoạt hình** (*Animate*) hoặc **Áp rig cho mô hình** (*Rig*). Meshy tự nhận dạng nhân vật; nếu
+   Không thấy bảng này (mô hình hiện ngay màu xám)? Bấm nút **Texture** ở thanh công cụ dưới mô hình; ô **AI Model**
+   trong bảng Texture để **Meshy 6 Lite** cho chắc tải về được → tạo (khoảng **10** điểm).
+6. **Gắn xương:** trước hết xem số **Mặt** (*Faces*) ở góc trên bên trái khung xem mô hình: **trên 300.000** thì Meshy
+   không cho gắn xương (đòi *Remesh* – tính năng trả phí) → bỏ qua bước 6–7, tải mô hình **tĩnh** ở bước 8.
+   Dưới 300.000: bấm **Hoạt hình** (*Animate*) hoặc **Áp rig cho mô hình** (*Rig*). Meshy tự nhận dạng nhân vật; nếu
    được hỏi, kéo các điểm khớp (cằm, vai, cổ tay, khuỷu tay, đầu gối, háng) vào đúng chỗ → xác nhận. Đừng chọn
    *Smart Rig* (kiểu này chưa dùng được thư viện động tác). Xong bước này có sẵn 2 động tác **Walking** (đi) và
    **Running** (chạy).
@@ -98,7 +104,7 @@ Máy dùng tiếng Việt thì Meshy tự hiện **tiếng Việt**; hướng d�
   - **Chọn ảnh nào?** Nền trơn, nhìn thẳng, tay tách khỏi người, hai chân có khe hở, không có gì che tay (ba lô to
     lộ ra sau tay dễ bị dính vào tay) → Meshy dựng hình và gắn xương dễ hơn.
   - **Vẽ ảnh ngay trong Meshy** (mục **Hình ảnh** bên trái): rê chuột lên ảnh sẽ hiện nút **Hình ảnh thành 3D** –
-    ⚠️ **đừng bấm ngay**: nút này tạo luôn bằng **Meshy 6** (20 điểm, gói miễn phí **không tải về được**). Bấm nút
+    ⚠️ **đừng bấm ngay**: nút này tạo luôn bằng **Meshy 6/7.1** (20 điểm, gói miễn phí **không tải về được**). Bấm nút
     **⚙** bên cạnh trước (*Cài Đặt Tạo Mô Hình*) → **Mô hình AI: Meshy 6 Lite**, rồi mới bấm **Hình ảnh thành 3D**.
 - **Tay để trống**: câu lệnh cố ý không cho nhân vật cầm đồ (bản đồ, gậy, quyền trượng…) để gắn xương không lỗi.
 - **Ít chi tiết nhỏ**: chi tiết càng to, tròn, rõ màu thì càng đẹp khi nhìn từ xa trong trò chơi.

@@ -21,9 +21,10 @@ bằng mô hình 3D tạo bằng AI (Meshy, Tripo...) mà **không cần lập t
    làm bằng Meshy 6 Lite**, tối đa 10 lần/tháng.
 2. Cột trái bấm **Mô hình** (*Model*) → đầu khung có 3 biểu tượng không có chữ: biểu tượng **thứ ba** là
    **Văn Bản thành 3D** (*Text to 3D*, dán câu lệnh); biểu tượng **thứ nhất** là **Hình ảnh thành 3D** (*Image to 3D*,
-   ảnh nhân vật nền trơn, nhìn thẳng). **Mô hình AI: đổi sang Meshy 6 Lite** (Meshy để sẵn Meshy 6 – gói miễn phí không
-   tải về được). Chọn tư thế **A** (A-pose) nếu được.
-3. Chọn bản nháp ưng ý → **Tạo Kết Cấu: Có** (*With Texture*) để nhân vật có màu.
+   ảnh nhân vật nền trơn, nhìn thẳng). **Mô hình AI: đổi sang Meshy 6 Lite** (Meshy để sẵn Meshy 6 hoặc Meshy 7.1 – gói
+   miễn phí không tải về được). Chọn tư thế **A** (A-pose) nếu được.
+3. Chọn bản nháp ưng ý → **Tạo Kết Cấu: Có** (*With Texture*) để nhân vật có màu. Mô hình hiện ngay màu xám thì bấm
+   **Texture** ở thanh công cụ dưới mô hình, ô AI Model để **Meshy 6 Lite**.
 4. **Remesh** (giảm đa giác) là tính năng trả phí – không bắt buộc: `CapNhatMoHinh.bat` tự giảm đa giác khi mô hình
    quá nặng. (Meshy chỉ từ chối gắn xương khi mô hình quá 300.000 mặt.)
 5. **Rigging** (gắn khung xương) – Meshy tặng sẵn động tác *Walking* (đi) và *Running* (chạy).
