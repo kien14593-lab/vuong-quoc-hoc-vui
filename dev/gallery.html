@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thư viện mô hình 3D – Dev</title>
+    <link rel="icon" href="data:," />
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #cfe9c0; font-family: 'Nunito', system-ui, sans-serif; }
+      #labels { position: fixed; inset: 0; pointer-events: none; z-index: 2; }
+      .lbl { position: absolute; transform: translate(-50%, 0); font: 800 12px/1.1 'Nunito', sans-serif; color: #24423a;
+        background: rgba(255,255,255,0.78); padding: 2px 7px; border-radius: 8px; white-space: nowrap; }
+      .lbl.missing { background: #ff5ad1; color: #fff; }
+      #info { position: fixed; z-index: 3; left: 8px; top: 8px; font: 700 12px 'Nunito', sans-serif; background: rgba(255,255,255,0.8); padding: 4px 8px; border-radius: 8px; }
+    </style>
+  </head>
+  <body>
+    <div id="labels"></div>
+    <div id="info"></div>
+    <script type="module" src="./gallery.ts"></script>
+  </body>
+</html>

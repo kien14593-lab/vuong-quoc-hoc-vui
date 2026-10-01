@@ -1,0 +1,3 @@
+.mg-root:has(.mg-title) .clock-note {
+  font-weight: 900;
+}

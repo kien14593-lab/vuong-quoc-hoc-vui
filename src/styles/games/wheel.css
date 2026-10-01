@@ -1,0 +1,3 @@
+.mg-root:has(.mg-title) .wheel-note {
+  font-weight: 900;
+}

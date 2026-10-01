@@ -1,0 +1,813 @@
+/* =========================================================
+   HUD khi đi trong thế giới + nhãn 3D (tên NPC, biển, bong bóng)
+   Toạ độ logic 1920×1080 (xem ui/root.ts).
+   ========================================================= */
+
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hud.hidden {
+  display: none;
+}
+
+.hud-card,
+.hud-wallet,
+.hud-menu,
+.hud-cams,
+.hud-action,
+.hud-jump,
+.hud-stick {
+  pointer-events: auto;
+}
+
+/* ---------- Thẻ nhân vật (góc trên trái) ---------- */
+.hud-card {
+  position: absolute;
+  left: 22px;
+  top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+}
+
+.hud-avatar-wrap {
+  position: relative;
+  width: 132px;
+  height: 132px;
+  flex: none;
+  border-radius: 50%;
+  border: 6px solid var(--ol);
+  background: radial-gradient(circle at 50% 35%, #fff 0%, var(--pink-l) 75%);
+  box-shadow: var(--shadow-s);
+  z-index: 2;
+}
+
+.hud-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.hud-level {
+  position: absolute;
+  right: -10px;
+  bottom: -8px;
+  min-width: 50px;
+  height: 50px;
+  padding: 0 8px;
+  border-radius: 25px;
+  border: 5px solid var(--ol);
+  background: var(--yellow);
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 40px;
+  text-align: center;
+}
+
+.hud-card-info {
+  margin-left: -28px;
+  padding: 10px 26px 12px 42px;
+  min-width: 300px;
+  background: var(--paper);
+  border: 5px solid var(--ol);
+  border-radius: 0 34px 34px 0;
+  box-shadow: var(--shadow-s);
+}
+
+.hud-name {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.1;
+  max-width: 330px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hud-title {
+  font-size: 21px;
+  font-weight: 700;
+  color: #c2558c;
+  line-height: 1.2;
+}
+
+.hud-xp {
+  position: relative;
+  margin-top: 6px;
+  height: 26px;
+  border-radius: 13px;
+  border: 4px solid var(--ol);
+  background: #fff;
+  overflow: hidden;
+}
+
+.hud-xp-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: linear-gradient(180deg, #9be7a4, var(--green));
+  transition: width 0.6s cubic-bezier(0.3, 1.2, 0.5, 1);
+}
+
+.hud-xp-text {
+  position: relative;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 18px;
+  text-align: center;
+}
+
+/* ---------- Ví (góc trên phải) ---------- */
+.hud-wallet {
+  position: absolute;
+  right: 22px;
+  top: 22px;
+  display: flex;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.hud-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 112px;
+  height: 62px;
+  padding: 0 18px 0 10px;
+  background: #fff;
+  border: 5px solid var(--ol);
+  border-radius: 31px;
+  box-shadow: var(--shadow-s);
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.hud-chip.hidden {
+  display: none;
+}
+
+.hud-chip.dim {
+  opacity: 0.6;
+}
+
+.hud-chip-i {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.hud-chip-n {
+  flex: 1;
+  text-align: right;
+}
+
+.chip-coins {
+  background: var(--yellow-l);
+}
+
+.chip-stars {
+  background: #fff4c7;
+}
+
+.chip-tickets {
+  background: var(--pink-l);
+}
+
+.chip-keys {
+  background: var(--purple-l);
+}
+
+.hud-chip.bump {
+  animation: bounce-big 0.45s ease-out;
+}
+
+/* ---------- Nhiệm vụ ---------- */
+.hud-quest {
+  position: absolute;
+  right: 22px;
+  top: 104px;
+  max-width: 560px;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 22px 10px 14px;
+  background: rgba(255, 253, 247, 0.94);
+  border: 4px solid var(--ol);
+  border-radius: 24px;
+  box-shadow: var(--shadow-s);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.hud-quest.show {
+  display: flex;
+}
+
+.hud-quest.flash {
+  animation: drop-in 0.35s cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+
+.hud-quest-i {
+  font-size: 30px;
+}
+
+/* ---------- Nút menu (cột phải) ---------- */
+.hud-menu {
+  position: absolute;
+  right: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  pointer-events: none;
+}
+
+.hud-mbtn {
+  pointer-events: auto;
+  position: relative;
+  width: 104px;
+  height: 104px;
+  border-radius: 30px;
+  border: 5px solid var(--ol);
+  background: #fff;
+  box-shadow: var(--shadow-s);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: transform 0.12s;
+}
+
+.hud-mbtn:hover {
+  transform: translateY(-3px) scale(1.04);
+  background: var(--yellow-l);
+}
+
+.hud-mbtn:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 rgba(91, 74, 110, 0.22);
+}
+
+.hud-mbtn-icon {
+  font-size: 46px;
+  line-height: 1;
+}
+
+.hud-mbtn-label {
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-top: 2px;
+}
+
+/* ---------- Nút xoay camera + nhảy (góc dưới phải) ---------- */
+.hud-cams {
+  position: absolute;
+  right: 26px;
+  bottom: 196px;
+  display: flex;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.hud-cam {
+  pointer-events: auto;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  border: 5px solid var(--ol);
+  background: var(--blue-l);
+  box-shadow: var(--shadow-s);
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.hud-cam:active {
+  transform: translateY(3px);
+}
+
+.hud-jump {
+  position: absolute;
+  right: 30px;
+  bottom: 30px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 6px solid var(--ol);
+  background: radial-gradient(circle at 45% 35%, #fff 0%, var(--green-l) 70%);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  touch-action: none;
+}
+
+.hud-jump span {
+  font-size: 64px;
+  font-weight: 800;
+  line-height: 0.9;
+}
+
+.hud-jump small {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.hud-jump:active {
+  transform: translateY(4px) scale(0.96);
+}
+
+.hud:not(.touch) .hud-jump {
+  width: 112px;
+  height: 112px;
+  bottom: 40px;
+}
+
+.hud:not(.touch) .hud-jump span {
+  font-size: 46px;
+}
+
+.hud:not(.touch) .hud-jump small {
+  font-size: 18px;
+}
+
+.hud:not(.touch) .hud-cams {
+  bottom: 168px;
+}
+
+/* ---------- Nút hành động (giữa dưới) ---------- */
+.hud-action {
+  position: absolute;
+  left: 50%;
+  bottom: 44px;
+  transform: translateX(-50%);
+  display: none;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 22px 14px 18px;
+  border: 6px solid var(--ol);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fff 0%, var(--yellow-l) 100%);
+  box-shadow: var(--shadow);
+  font-size: 36px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.hud-action.show {
+  display: flex;
+  animation: act-in 0.3s cubic-bezier(0.2, 1.4, 0.4, 1), act-pulse 1.6s 0.3s ease-in-out infinite;
+}
+
+.hud-action:active {
+  transform: translateX(-50%) translateY(4px);
+}
+
+.hud-act-icon {
+  font-size: 46px;
+  line-height: 1;
+}
+
+.hud-act-key {
+  min-width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  border: 4px solid var(--ol);
+  background: #fff;
+  font-size: 28px;
+  line-height: 44px;
+  text-align: center;
+  box-shadow: 0 4px 0 rgba(91, 74, 110, 0.25);
+}
+
+.hud.touch .hud-act-key {
+  display: none;
+}
+
+@keyframes act-in {
+  from {
+    transform: translateX(-50%) translateY(60px) scale(0.7);
+    opacity: 0;
+  }
+}
+
+@keyframes act-pulse {
+  50% {
+    transform: translateX(-50%) scale(1.05);
+  }
+}
+
+/* ---------- Cần điều khiển cảm ứng ---------- */
+.hud-stick {
+  position: absolute;
+  left: 40px;
+  bottom: 40px;
+  width: 240px;
+  height: 240px;
+  display: none;
+  touch-action: none;
+}
+
+.hud.touch .hud-stick {
+  display: block;
+}
+
+.hud-stick-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 6px solid rgba(91, 74, 110, 0.5);
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.hud-stick-knob {
+  position: absolute;
+  left: 70px;
+  top: 70px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 6px solid var(--ol);
+  background: radial-gradient(circle at 40% 35%, #fff 0%, var(--pink-l) 80%);
+  box-shadow: var(--shadow-s);
+  pointer-events: none;
+}
+
+.hud-stick:not(.on) .hud-stick-knob {
+  transition: transform 0.15s ease-out;
+}
+
+/* Đang hội thoại: ẩn cần điều khiển & nút nhảy (không dùng được, tránh che hộp thoại). */
+#ui-root:has(.layer-dialog > *) .hud-stick,
+#ui-root:has(.layer-dialog > *) .hud-jump {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Có thẻ đề bài ở trên: nhường chỗ, ẩn băng rôn tên khu vực. */
+#ui-root:has(.layer-panel > .prompt-card:not(.off-zone):not(.away)) .hud-banner.show {
+  opacity: 0;
+}
+
+/* ---------- Băng rôn tên khu vực ---------- */
+.hud-banner {
+  position: absolute;
+  left: 50%;
+  top: 30px;
+  transform: translate(-50%, -160%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 70px 16px;
+  background: var(--paper);
+  border: 6px solid var(--ol);
+  border-radius: 0 0 40px 40px;
+  border-top: none;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.5s cubic-bezier(0.2, 1.3, 0.4, 1),
+    opacity 0.4s;
+}
+
+.hud-banner.show {
+  transform: translate(-50%, -30px);
+  opacity: 1;
+  padding-top: 40px;
+}
+
+.hud-banner-icon {
+  font-size: 50px;
+  line-height: 1;
+}
+
+.hud-banner-title {
+  font-size: 46px;
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.hud-banner-sub {
+  font-size: 24px;
+  font-weight: 700;
+  color: #c2558c;
+}
+
+/* ---------- Màn chúc mừng ---------- */
+.celebrate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0 6px;
+  text-align: center;
+}
+
+.cel-level {
+  width: 210px;
+  height: 210px;
+  border-radius: 50%;
+  border: 8px solid var(--ol);
+  background: radial-gradient(circle at 45% 35%, #fff6c9 0%, var(--yellow) 75%);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: bounce-big 0.8s ease-out;
+}
+
+.cel-level span {
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.cel-level b {
+  font-size: 110px;
+  line-height: 0.95;
+}
+
+.cel-badge {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  border: 8px solid var(--ol);
+  box-shadow: var(--shadow);
+  font-size: 110px;
+  line-height: 184px;
+  animation: bounce-big 0.8s ease-out;
+}
+
+.cel-title {
+  font-size: 50px;
+  font-weight: 800;
+  color: #c2558c;
+}
+
+.cel-desc {
+  font-size: 32px;
+  font-weight: 600;
+}
+
+.cel-sub {
+  font-size: 28px;
+  font-weight: 700;
+  opacity: 0.8;
+}
+
+.cel-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 30px;
+  font-weight: 700;
+}
+
+.cel-list li::before {
+  content: '✨ ';
+}
+
+/* =========================================================
+   Nhãn 3D trong thế giới (world/labels.ts)
+   Phần tử .wlabel được dịch tới điểm neo; nội dung xếp từ dưới lên.
+   ========================================================= */
+.layer > .wlabels {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.wlabel {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.wl-text {
+  display: block;
+  white-space: nowrap;
+  padding: 3px 18px 5px;
+  background: rgba(255, 255, 255, 0.93);
+  border: 4px solid var(--ol);
+  border-radius: 999px;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.15;
+  box-shadow: 0 4px 0 rgba(91, 74, 110, 0.2);
+}
+
+.wlabel.npc .wl-text {
+  background: var(--name-bg, #fff);
+  color: var(--ink);
+}
+
+.wlabel.sign .wl-text {
+  background: #fff3d6;
+  border-radius: 14px;
+  font-size: 26px;
+}
+
+.wlabel.portal .wl-text {
+  background: var(--blue-l);
+  font-size: 26px;
+}
+
+.wlabel.portal.locked .wl-text {
+  background: #ececec;
+  color: #8a8199;
+}
+
+.wlabel.item .wl-text {
+  font-size: 22px;
+  padding: 2px 14px 4px;
+}
+
+.wlabel.minigame .wl-text {
+  background: var(--yellow-l);
+  font-size: 26px;
+}
+
+.wlabel.small .wl-text {
+  font-size: 19px;
+  border-width: 3px;
+  padding: 1px 12px 3px;
+}
+
+/* Nhãn đáp án trên vật để chọn (cửa, đá, bóng...) – zone.pick({ tags }) */
+.wlabel.answer .wl-text {
+  min-width: 64px;
+  text-align: center;
+  padding: 0 20px 4px;
+  background: #fff;
+  border-width: 5px;
+  border-radius: 20px;
+  font-family: var(--font);
+  font-size: 42px;
+  line-height: 1.2;
+  color: var(--ink);
+  box-shadow: 0 6px 0 rgba(91, 74, 110, 0.25);
+  transition:
+    opacity 0.25s,
+    background-color 0.25s,
+    transform 0.25s;
+}
+
+.wlabel.answer.tried .wl-text {
+  opacity: 0.45;
+  transform: scale(0.85);
+}
+
+.wlabel.answer.right .wl-text {
+  background: var(--green-l, #c9f2cf);
+  transform: scale(1.15);
+}
+
+.wl-mark {
+  display: block;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 6px;
+  border-radius: 50%;
+  border: 5px solid var(--ol);
+  background: var(--yellow);
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 44px;
+  text-align: center;
+  box-shadow: 0 4px 0 rgba(91, 74, 110, 0.25);
+  animation: bob 1s ease-in-out infinite;
+}
+
+.wl-mark[data-m='?'] {
+  background: #e9e4f5;
+  color: #7b6aa8;
+  animation: none;
+}
+
+.wl-mark[data-m='★'] {
+  background: var(--green-l);
+  color: #e0a800;
+}
+
+/* Bong bóng lời nói */
+.wlabel.wl-bubble .wl-text {
+  position: relative;
+  width: max-content;
+  max-width: 460px;
+  white-space: normal;
+  text-align: center;
+  padding: 10px 22px 12px;
+  border-radius: 26px;
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 14px;
+  animation: pop-in 0.25s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.wlabel.wl-bubble .wl-text::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -16px;
+  width: 22px;
+  height: 22px;
+  margin-left: -11px;
+  background: inherit;
+  border-right: 4px solid var(--ol);
+  border-bottom: 4px solid var(--ol);
+  transform: rotate(45deg);
+}
+
+.wlabel.wl-bubble.out .wl-text {
+  animation: fade-out 0.25s forwards;
+}
+
+/* Chữ bay lên */
+.wlabel.wl-float .wl-text {
+  background: none;
+  border: none;
+  box-shadow: none;
+  font-size: 40px;
+  color: #fff;
+  -webkit-text-stroke: 7px var(--ol);
+  paint-order: stroke fill;
+  animation: wl-rise 1.3s ease-out forwards;
+}
+
+.wlabel.wl-float.gold .wl-text {
+  color: #ffd166;
+}
+
+.wlabel.wl-float.good .wl-text {
+  color: #7bd389;
+}
+
+@keyframes wl-rise {
+  0% {
+    transform: translateY(10px) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    transform: translateY(0) scale(1.1);
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-90px) scale(1);
+    opacity: 0;
+  }
+}
+
+/* ---------- Màn chuyển cảnh ---------- */
+.layer > .fade-veil {
+  position: absolute;
+  inset: 0;
+  background: #fff7fb;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.layer > .fade-veil.on {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.fade-veil-text {
+  font-size: 52px;
+  font-weight: 800;
+  color: var(--ink);
+  animation: bob 1s ease-in-out infinite;
+}

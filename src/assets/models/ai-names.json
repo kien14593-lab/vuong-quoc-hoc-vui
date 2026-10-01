@@ -1,0 +1,41 @@
+{
+  "keys": {
+    "npc_bear": ["gau", "chu-gau", "bac-gau", "bear"],
+    "npc_rabbit": ["tho", "tho-bong", "rabbit"],
+    "npc_robot": ["robot", "robot-bip", "bip"],
+    "npc_cat": ["meo", "co-meo", "meo-ban-hang", "cat"],
+    "npc_owl": ["cu", "bac-cu", "cu-meo", "owl"],
+    "npc_squirrel": ["soc", "co-soc", "squirrel"],
+    "npc_turtle": ["rua", "ong-rua", "turtle"],
+    "npc_deer": ["nai", "ban-nai", "deer"],
+    "npc_elephant": ["voi", "bac-voi", "elephant"],
+    "npc_king": ["vua", "nha-vua", "king"],
+    "npc_knight": ["hiep-si", "hiepsi", "hiep-si-tho", "knight"],
+    "npc_clown": ["chu-he", "he", "bibo", "clown"],
+    "npc_villager": ["dan-lang", "villager"],
+    "pet_dog": ["cho", "cun", "cun-con", "dog"],
+    "pet_cat": ["meo-con", "pet-cat"],
+    "pet_rabbit": ["tho-con", "pet-rabbit"],
+    "pet_panda": ["gau-truc", "panda"],
+    "pet_fox": ["cao", "fox"],
+    "pet_penguin": ["chim-canh-cut", "canh-cut", "penguin"],
+    "pet_dino": ["khung-long", "dino"],
+    "animal_giraffe": ["huou-cao-co", "giraffe"],
+    "animal_monkey": ["khi", "monkey"],
+    "animal_penguin": ["canh-cut-lon"],
+    "animal_zebra": ["ngua-van", "zebra"],
+    "animal_hippo": ["ha-ma", "hippo"],
+    "animal_lion": ["su-tu", "lion"]
+  },
+  "roles": {
+    "idle": ["idle", "dung", "dung-yen", "nghi"],
+    "walk": ["walk", "di", "di-bo"],
+    "run": ["run", "chay"],
+    "jump": ["jump", "nhay", "bat-nhay"],
+    "wave": ["wave", "vay", "vay-tay", "chao"],
+    "talk": ["talk", "noi", "noi-chuyen"],
+    "happy": ["happy", "vui", "vui-mung", "nhay-mua", "mua", "dance", "cheer"],
+    "sit": ["sit", "ngoi"],
+    "eat": ["eat", "an"]
+  }
+}

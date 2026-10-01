@@ -1,0 +1,20 @@
+node_modules/
+asset-src/
+dist/
+dist-single/
+*.log
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+
+# Ban phat hanh (tao bang DongGoi.bat)
+ban-phat-hanh/
+
+# Tep goc tai tu Meshy/Tripo (game chi dung ban da toi uu trong src/assets/models/ai)
+mo-hinh-ai/*.glb
+mo-hinh-ai/*.gltf
+mo-hinh-ai/*.bin
+mo-hinh-ai/*.fbx
+mo-hinh-ai/*.obj
+mo-hinh-ai/*.zip

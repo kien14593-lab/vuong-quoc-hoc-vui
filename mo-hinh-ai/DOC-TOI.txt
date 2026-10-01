@@ -1,0 +1,12 @@
+THU MUC MO HINH AI
+==================
+
+Chep cac tep .glb tai tu Meshy / Tripo vao day, dat ten theo nhan vat va dong tac, vi du:
+
+  gau.glb          Chu Gau (mo hinh chinh)
+  gau-di.glb       Chu Gau - dong tac di
+  gau-vay-tay.glb  Chu Gau - dong tac vay tay
+  tho.glb, meo.glb, cu.glb, robot.glb, vua.glb ...
+
+Sau do nhap dup CapNhatMoHinh.bat o thu muc goc cua tro choi.
+Huong dan day du: HUONG-DAN-MO-HINH-AI.md
