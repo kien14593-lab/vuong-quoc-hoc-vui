@@ -1,7 +1,7 @@
 ﻿import * as THREE from 'three';
 import { ball, box, capsule, cone, cyl, DEG, extrude, lathe, panel, pivot, rbox, sphPart, starShape, torus, tube } from '../engine/kit';
 import { tint } from '../engine/materials';
-import { defineModel } from './registry';
+import { defineModel, type ModelDef } from './registry';
 import type { Rig } from './rig';
 import { buildCharacter, type CharSpec } from './character';
 
@@ -364,9 +364,10 @@ function buildVillager(o: { v?: number } = {}): THREE.Group {
   return finishRoot(b.root, b.rig, 1.35);
 }
 
-const reg = (key: string, build: (o?: any) => THREE.Object3D, height: number, r: number, desc: string, variants?: any[]) => defineModel<any>(key, { build: (o = {}) => build(o), height, colliders: [{ kind: 'circle', r }], tags: ['npc'], desc, variants });
+const reg = (key: string, build: (o?: any) => THREE.Object3D, height: number, r: number, desc: string, variants?: any[], extra: Partial<ModelDef<any>> = {}) =>
+  defineModel<any>(key, { build: (o = {}) => build(o), height, colliders: [{ kind: 'circle', r }], tags: ['npc'], desc, variants, ...extra });
 
-reg('npc_rabbit', () => buildRabbit(false), 1.35, 0.45, 'Thỏ Bông: tai earL/earR, mắt eyeL/eyeR, miệng mouth, đuôi tail.');
+reg('npc_rabbit', () => buildRabbit(false), 1.35, 0.45, 'Thỏ Bông: tai earL/earR, mắt eyeL/eyeR, miệng mouth, đuôi tail.', undefined, { portrait: 'bust' });
 reg('npc_bear', buildBear, 2.0, 0.65, 'Chú Gấu: mũ thám hiểm, balo, mapRoll cầm tay.');
 reg('npc_robot', buildRobot, 1.45, 0.5, 'Robot Bíp: antenna và hoverJet có tick/custom, mắt phát sáng eyeL/eyeR.');
 reg('npc_cat', buildCat, 1.45, 0.45, 'Cô Mèo: earL/earR, tail, tạp dề shop.');

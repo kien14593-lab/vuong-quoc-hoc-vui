@@ -121,7 +121,7 @@ Nếu nhân vật quá to/nhỏ, quay lưng lại, hay màu bị lạ: mở **`m
 ```json
 {
   "gau": { "chieu-cao": 1.9, "xoay": 0, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
-  "tho": { "chieu-cao": 1.35 }
+  "tho": { "chieu-cao": 1.7 }
 }
 ```
 

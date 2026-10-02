@@ -68,7 +68,7 @@ Chép tệp `.glb` (tạo bằng Tencent HY 3D, Meshy, Tripo…) vào thư mục
 ## 🛠️ Dành cho lập trình viên
 
 Công nghệ: **Three.js** (3D), **TypeScript**, **Vite**, **Vitest**. Mọi mô hình đều có bản dựng bằng code
-(pastel, low-poly), có thể thay bằng tệp GLB (Chú Gấu đã dùng mô hình AI).
+(pastel, low-poly), có thể thay bằng tệp GLB (Chú Gấu và Thỏ Bông đã dùng mô hình AI).
 
 ```bash
 npm install

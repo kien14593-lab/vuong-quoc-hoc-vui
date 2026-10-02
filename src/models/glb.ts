@@ -150,6 +150,7 @@ export function defineGlbModel(key: string, spec: GlbSpec): void {
       tags: [...new Set([...(spec.tags ?? base?.tags ?? []), 'glb'])],
       desc: spec.desc ?? `${spec.source === 'ai' ? 'AI' : 'GLB'}${spec.credit ? ` (${spec.credit})` : ''}${base?.desc ? ' – ' + base.desc : ''}`,
       variants: spec.variants?.length ? spec.variants.map((_, i) => ({ v: i })) : undefined,
+      portrait: base?.portrait,
     };
     return def;
   });

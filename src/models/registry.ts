@@ -45,6 +45,8 @@ export interface ModelDef<O = Record<string, unknown>> {
   desc?: string;
   /** Các bộ tùy chọn để hiển thị trong thư viện xem thử. */
   variants?: O[];
+  /** Khung ảnh chân dung khi nói chuyện (mặc định 'head'); nhân vật tai dài (Thỏ Bông) dùng 'bust' để thấy cả khuôn mặt. */
+  portrait?: 'head' | 'bust' | 'full';
 }
 
 const defs = new Map<string, ModelDef<any>>();
