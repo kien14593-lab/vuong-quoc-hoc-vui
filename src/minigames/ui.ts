@@ -6,6 +6,7 @@ import { h } from '../ui/dom';
 import { layer, onUIResize, uiSize } from '../ui/root';
 import { renderVisual } from '../ui/visuals';
 import type { MiniInfo, MiniResult } from './base';
+import { miniName } from './registry';
 
 export type FeedbackTone = 'good' | 'retry' | 'hint' | 'steps' | 'info';
 
@@ -47,7 +48,7 @@ export class MiniUI {
     });
     this.top = h(
       'div.mg-top',
-      h('div.mg-title', h('span.mg-icon', info.icon), h('span', info.name)),
+      h('div.mg-title', h('span.mg-icon', info.icon), h('span', miniName(info))),
       this.dots,
       h('div.mg-right', h('div.mg-score', h('span', '⭐'), this.scoreEl), quit),
     );
@@ -225,7 +226,7 @@ export class MiniUI {
         h(
           'div.mg-card',
           h('div.mg-big-icon', this.info.icon),
-          h('h1', this.info.name),
+          h('h1', miniName(this.info)),
           h('div.mg-skill', `Luyện: ${this.info.skill}`),
           h('p.mg-desc', this.info.desc),
           h('div.mg-meta', `${this.info.rounds} vòng · Mỗi câu đúng ngay được ⭐⭐⭐`),
@@ -252,7 +253,7 @@ export class MiniUI {
       window.addEventListener('keydown', onKey);
       this.cleanups.add(off);
       this.root.appendChild(card);
-      speak(`${this.info.name}. ${this.info.desc}`);
+      speak(`${miniName(this.info)}. ${this.info.desc}`);
     });
   }
 

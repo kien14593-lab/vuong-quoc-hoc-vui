@@ -33,6 +33,19 @@ export function miniDef(id: string): MiniDef | undefined {
   return defs.get(id);
 }
 
+/**
+ * Tên trò chơi không kèm emoji ở đầu. Một số tên có sẵn emoji (ví dụ "🧩 Ghép số…"), một số không;
+ * nơi nào hiện tên cạnh biểu tượng `icon` thì dùng hàm này để chỉ có đúng một biểu tượng.
+ */
+export function miniName(info: Pick<MiniInfo, 'name'>): string {
+  return info.name.replace(/^[^\p{L}\p{N}]+/u, '');
+}
+
+/** "biểu tượng + tên" (đúng một biểu tượng), ví dụ "🧩 Ghép số – nhận biết số". */
+export function miniTitle(info: Pick<MiniInfo, 'icon' | 'name'>): string {
+  return `${info.icon} ${miniName(info)}`;
+}
+
 /** Danh sách trò chơi theo thứ tự sảnh. */
 export function miniList(): MiniDef[] {
   const out: MiniDef[] = [];

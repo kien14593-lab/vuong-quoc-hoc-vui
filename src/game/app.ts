@@ -1,7 +1,7 @@
 import { audio } from '../core/audio';
 import { awardBadge, hasBadge, hasProfile, profile, saveNow, setPosition, unloadProfile, type ZoneId } from '../core/state';
 import { engine } from '../engine/core';
-import { miniDef, runMini, type MiniResult } from '../minigames';
+import { miniDef, miniTitle, runMini, type MiniResult } from '../minigames';
 import { ensureGlb, glbReady } from '../models';
 import { h, nextFrame, wait } from '../ui/dom';
 import { hud } from '../ui/hud';
@@ -125,7 +125,7 @@ async function playMini(id: string): Promise<MiniResult | null> {
   if (veiled) {
     const info = miniDef(id)?.info;
     const models = waitModels(keys);
-    await fade(true, info ? `${info.icon} ${info.name.replace(/^[^\p{L}\p{N}]+/u, '')}` : '');
+    await fade(true, info ? miniTitle(info) : '');
     await models;
     if (zone !== z) {
       void fade(false);

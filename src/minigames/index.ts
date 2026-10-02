@@ -12,6 +12,6 @@ import './games/train';
 import './games/monkey';
 import './games/wheel';
 
-export { MINI_ORDER, miniDef, miniList, type MiniDef, type MiniId } from './registry';
+export { MINI_ORDER, miniDef, miniList, miniName, miniTitle, type MiniDef, type MiniId } from './registry';
 export type { MiniHost, MiniInfo, MiniResult } from './base';
 export { currentMini, runMini } from './launch';

@@ -13,7 +13,7 @@ import type { Question } from '../math/types';
 import type { MiniInfo, MiniResult } from '../minigames/base';
 import { ask, promptCard, type AskOptions, type AskResult } from '../ui/question';
 import type { Stage as AnswerStage } from '../game/challenge';
-import { miniDef } from '../minigames/registry';
+import { miniDef, miniName, miniTitle } from '../minigames/registry';
 import { buildModel, collectTicks, type Collider } from '../models/registry';
 import type { Speaker } from '../ui/dialog';
 import { say } from '../ui/dialog';
@@ -599,20 +599,20 @@ export abstract class Zone implements Stage {
     if (!def) return null;
     const info = def.info;
     const obj = o.model ? this.place(o.model, x, z, { rot: o.rot, opts: o.opts, scale: o.scale, dynamic: true }) : undefined;
-    const label = this.labels.add({ pos: new THREE.Vector3(x, 0, z), y: o.y ?? (obj ? ((obj.userData.height as number | undefined) ?? 2) * (o.scale ?? 1) + 0.6 : 1.6), text: `${info.icon} ${info.name}`, cls: 'minigame', maxDist: 34 });
+    const label = this.labels.add({ pos: new THREE.Vector3(x, 0, z), y: o.y ?? (obj ? ((obj.userData.height as number | undefined) ?? 2) * (o.scale ?? 1) + 0.6 : 1.6), text: miniTitle(info), cls: 'minigame', maxDist: 34 });
     this.miniLabels.push({ label, info });
     return this.interact({
       id: `mini:${id}`,
       x,
       z,
       r: o.r ?? 2.6,
-      label: `Chơi: ${info.name}`,
+      label: `Chơi: ${miniName(info)}`,
       icon: '🎮',
       obj,
       run: async () => {
         if (level() < info.unlock) {
           sfx('error');
-          toast(`Trò "${info.name}" mở khi bạn đạt cấp ${info.unlock}. Cố lên nhé!`, { icon: '🔒', tone: 'warn', ms: 3200 });
+          toast(`Trò "${miniName(info)}" mở khi bạn đạt cấp ${info.unlock}. Cố lên nhé!`, { icon: '🔒', tone: 'warn', ms: 3200 });
           return;
         }
         const r = await this.playMini(id);
@@ -1070,7 +1070,7 @@ export abstract class Zone implements Stage {
     }
     for (const m of this.miniLabels) {
       const locked = level() < m.info.unlock;
-      m.label.setText(locked ? `🔒 ${m.info.name} · cấp ${m.info.unlock}` : `${m.info.icon} ${m.info.name}`);
+      m.label.setText(locked ? `🔒 ${miniName(m.info)} · cấp ${m.info.unlock}` : miniTitle(m.info));
       m.label.el.classList.toggle('locked', locked);
     }
     const ob = this.objective?.() ?? storyObjective();

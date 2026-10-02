@@ -1,6 +1,6 @@
 import { sfx } from '../../core/audio';
 import { level, profile } from '../../core/state';
-import { miniList } from '../../minigames';
+import { miniList, miniName } from '../../minigames';
 import { h } from '../dom';
 import { openModal } from '../modal';
 import { toast } from '../toast';
@@ -39,7 +39,7 @@ export function openMiniHub(play: (id: string) => void): void {
           onclick: () => {
             if (locked) {
               sfx('error');
-              toast(`Trò "${info.name}" mở khi bạn đạt cấp ${info.unlock}. Cố lên nhé!`, { icon: '🔒', tone: 'warn', ms: 3200 });
+              toast(`Trò "${miniName(info)}" mở khi bạn đạt cấp ${info.unlock}. Cố lên nhé!`, { icon: '🔒', tone: 'warn', ms: 3200 });
               return;
             }
             modal.close();
@@ -47,7 +47,7 @@ export function openMiniHub(play: (id: string) => void): void {
           },
         },
         h('div.mh-icon', locked ? '🔒' : info.icon),
-        h('div.mh-name', info.name.replace(/^[^\p{L}\p{N}]+/u, '')),
+        h('div.mh-name', miniName(info)),
         h('div.mh-skill', info.skill),
         h('div.mh-foot', locked ? `Mở ở cấp ${info.unlock}` : rec?.plays ? `🏆 ${rec.best} điểm · ${rec.plays} lần` : 'Chưa chơi', h('span.mh-where', WHERE[info.id] ?? '')),
       ),
