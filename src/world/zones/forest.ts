@@ -27,7 +27,7 @@ type LockBridge = {
   chain: THREE.Object3D;
 };
 
-/** 🌳 RỪNG PHÉP TÍNH – cầu phép cộng, đá chắn đường và hành trình của Chú Gấu. */
+/** 🌳 RỪNG THÔNG THÁI – nơi Bác Cú sống: cầu phép cộng, đá chắn đường và hành trình của Chú Gấu. */
 export class ForestZone extends Zone {
   private owl!: Npc;
   private squirrel!: Npc;
@@ -44,7 +44,7 @@ export class ForestZone extends Zone {
     super(
       {
         id: 'forest',
-        title: 'Rừng Phép Tính',
+        title: 'Rừng Thông Thái',
         icon: '🌳',
         sub: 'Cộng, trừ và thử thách trực quan',
         music: 'forest',
@@ -74,12 +74,12 @@ export class ForestZone extends Zone {
     this.buildForestLife();
 
     this.portal(0, 30.6, 'village', 'from_forest', { label: 'Ngôi Làng', r: 1.6 });
-    this.portal(0, -30.6, 'maze', 'from_forest', { label: 'Mê Cung Toán Học', lock: () => zoneLock('maze'), r: 1.6 });
+    this.portal(0, -30.6, 'maze', 'from_forest', { label: 'Mê Cung Kỳ Bí', lock: () => zoneLock('maze'), r: 1.6 });
   }
 
   protected onEnter(first: boolean): void {
     if (first && !on('forest.bridge')) {
-      this.bubble(this.owl.actor.root, 'Chào mừng đến Rừng Phép Tính!', this.owl.actor.height + 0.7, 3600);
+      this.bubble(this.owl.actor.root, 'Chào mừng đến Rừng Thông Thái!', this.owl.actor.height + 0.7, 3600);
       toast('Đi theo đường tới Bác Cú để mở cầu nhé!', { icon: '🌉', tone: 'good', ms: 3600 });
     }
   }
@@ -89,7 +89,7 @@ export class ForestZone extends Zone {
     if (!on('forest.rock')) return { text: 'Dọn tảng đá chặn đường', icon: '🪨' };
     if (!on('forest.bearBridge')) return { text: 'Mở cây cầu bị khóa cho Chú Gấu', icon: '🔒' };
     if (!on('forest.stones')) return { text: 'Chọn viên đá lớn nhất để qua suối', icon: '🪨' };
-    return { text: 'Đi tiếp tới Mê Cung Toán Học', icon: '🌀' };
+    return { text: 'Đi tiếp tới Mê Cung Kỳ Bí', icon: '🌀' };
   }
 
   protected override async buddyTalk(): Promise<void> {

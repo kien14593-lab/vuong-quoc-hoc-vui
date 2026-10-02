@@ -69,7 +69,7 @@ export function openBag(start: Tab = 'wear'): void {
         ),
       );
     }
-    if (!owned.length) grid.appendChild(h('div.menu-empty', 'Chưa có món nào. Hãy ghé Cửa hàng Toán Học của Cô Mèo nhé!'));
+    if (!owned.length) grid.appendChild(h('div.menu-empty', 'Chưa có món nào. Hãy ghé Cửa hàng của Cô Mèo nhé!'));
     return grid;
   };
 

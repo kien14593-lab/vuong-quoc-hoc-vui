@@ -7,9 +7,9 @@ export interface LevelDef {
 }
 
 export const LEVELS: LevelDef[] = [
-  { level: 1, xp: 0, title: 'Người mới học toán', unlocks: ['Ngôi Làng Khởi Đầu', 'Rừng Phép Tính', 'Mê Cung Toán Học'] },
+  { level: 1, xp: 0, title: 'Người mới học toán', unlocks: ['Ngôi Làng Khởi Đầu', 'Rừng Thông Thái', 'Mê Cung Kỳ Bí'] },
   { level: 2, xp: 100, title: 'Nhà thám hiểm', unlocks: ['Ván trượt, mèo mướp, thỏ trắng', 'Áo hoodie, tai thỏ, ủng vàng', 'Mini-game: Câu cá số, Tàu hỏa, Siêu thị'] },
-  { level: 3, xp: 250, title: 'Thợ săn con số', unlocks: ['Lâu Đài Toán Học', 'Gấu trúc, cáo nhỏ', 'Mũ thám hiểm, áo choàng siêu nhân', 'Mini-game: Đồng hồ bí ẩn, Xây nhà, Chia bánh'] },
+  { level: 3, xp: 250, title: 'Thợ săn con số', unlocks: ['Lâu Đài Trí Tuệ', 'Gấu trúc, cáo nhỏ', 'Mũ thám hiểm, áo choàng siêu nhân', 'Mini-game: Đồng hồ bí ẩn, Xây nhà, Chia bánh'] },
   { level: 4, xp: 450, title: 'Phù thủy phép tính', unlocks: ['Chim cánh cụt', 'Mũ và áo phù thủy, áo cầu vồng', 'Hạt cây phép thuật, đàn piano'] },
   { level: 5, xp: 750, title: 'Bậc thầy Toán Học', unlocks: ['Khủng long tí hon', 'Giày tên lửa', 'Danh hiệu Bậc thầy Toán Học'] },
 ];
@@ -53,7 +53,7 @@ export interface BadgeDef {
 
 export const BADGES: BadgeDef[] = [
   { id: 'cong-sieu-toc', name: 'Cộng Siêu Tốc', icon: '⚡', color: '#ffb703', desc: 'Đạt 3 sao trong trò Bắn đáp án.' },
-  { id: 'vua-me-cung', name: 'Vua Mê Cung', icon: '🌀', color: '#8e7dff', desc: 'Thoát khỏi Mê Cung Toán Học.' },
+  { id: 'vua-me-cung', name: 'Vua Mê Cung', icon: '🌀', color: '#8e7dff', desc: 'Thoát khỏi Mê Cung Kỳ Bí.' },
   { id: 'bang-nhan', name: 'Bảng Nhân', icon: '✖️', color: '#ff7aa2', desc: 'Vượt qua Phòng Bảng Nhân trong Lâu Đài.' },
   { id: 'nha-toan-hoc', name: 'Nhà Toán Học', icon: '👑', color: '#ffd166', desc: 'Hoàn thành thử thách của Nhà Vua.' },
   { id: 'nha-tham-hiem', name: 'Nhà Thám Hiểm Toán Học', icon: '🧭', color: '#52b788', desc: 'Giúp chú Gấu đến sở thú.' },

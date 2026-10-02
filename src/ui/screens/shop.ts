@@ -151,7 +151,7 @@ export function openShop(startTab = 0): Promise<void> {
   refreshWallet();
   refreshPreview();
   render();
-  const m = openModal({ title: 'Cửa hàng Toán Học', icon: '🛍️', width: 1760, height: 1000, body, className: 'shop-modal' });
+  const m = openModal({ title: 'Cửa hàng Cô Mèo', icon: '🛍️', width: 1760, height: 1000, body, className: 'shop-modal' });
   return m.closed;
 }
 

@@ -53,5 +53,5 @@ export function openMiniHub(play: (id: string) => void): void {
       ),
     );
   }
-  const modal = openModal({ title: 'Trò chơi Toán Học', icon: '🎮', width: 1760, body: h('div.mh', h('div.mh-tip', 'Chọn một trò chơi để luyện tập! Mỗi trò cho bạn xu và XP.'), grid), className: 'mh-modal' });
+  const modal = openModal({ title: 'Trò chơi', icon: '🎮', width: 1760, body: h('div.mh', h('div.mh-tip', 'Chọn một trò chơi để luyện tập! Mỗi trò cho bạn xu và XP.'), grid), className: 'mh-modal' });
 }

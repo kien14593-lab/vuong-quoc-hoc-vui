@@ -25,8 +25,8 @@ const BEAR_AT: [number, number] = [3.2, -17.6];
 
 const TIPS = [
   'Chào bạn! Hôm nay trời đẹp quá!',
-  'Bạn đã ghé Cửa hàng Toán Học của Cô Mèo chưa? Ở đó có nhiều đồ đẹp lắm!',
-  'Nghe nói trong Rừng Phép Tính có cây cầu chỉ hạ xuống khi giải đúng phép cộng đấy!',
+  'Bạn đã ghé Cửa hàng của Cô Mèo chưa? Ở đó có nhiều đồ đẹp lắm!',
+  'Nghe nói trong Rừng Thông Thái có cây cầu chỉ hạ xuống khi giải đúng phép cộng đấy!',
   'Mình thích đếm hoa lắm: 1, 2, 3, 4, 5…',
   'Khu Vui Chơi ở phía đông chỉ mở khi bạn có 10 ngôi sao!',
   'Ngôi nhà mái xanh kia là nhà của bạn đó. Vào trang trí đi!',
@@ -111,9 +111,9 @@ export class VillageZone extends Zone {
     this.place('tree_apple', -18.3, 7.6);
     this.place('wheelbarrow', -12.6, 12.6, { rot: 30 });
 
-    /* ---------- Cửa hàng Toán Học (phía đông) ---------- */
+    /* ---------- Cửa hàng Cô Mèo (phía đông) ---------- */
     this.place('shop_math', 12, -3, { rot: 0 });
-    this.sign(12, -3, '🛍️ Cửa hàng Toán Học', { y: 5, maxDist: 40 });
+    this.sign(12, -3, '🛍️ Cửa hàng Cô Mèo', { y: 5, maxDist: 40 });
     const stand = this.place('crate_fruit', 13.9, 0.9, { rot: -10, opts: { fruit: 'apple' }, dynamic: true });
     this.place('crate_fruit', 14.9, 0.5, { rot: 12, opts: { fruit: 'banana' } });
     this.npc(CAST.meo.art, 11.6, 0.4, {
@@ -125,7 +125,7 @@ export class VillageZone extends Zone {
       mark: () => (on('intro.done') && !on('shop.fruit') ? '!' : ''),
       talk: async () => {
         if (!on('shop.fruit')) {
-          await say(CAST.meo, ['Chào bạn! Mình là Cô Mèo, chủ Cửa hàng Toán Học.', 'Ở đây bạn có thể dùng xu để mua áo, mũ, balo, thú cưng và đồ trang trí nhà.', 'Nhưng trước tiên, bạn giải giúp cô bài toán mua trái cây này nhé!']);
+          await say(CAST.meo, ['Chào bạn! Mình là Cô Mèo, chủ cửa hàng này.', 'Ở đây bạn có thể dùng xu để mua áo, mũ, balo, thú cưng và đồ trang trí nhà.', 'Nhưng trước tiên, bạn giải giúp cô bài toán mua trái cây này nhé!']);
           await this.quiz(storyQuestion('shopFruit'), { src: 'village:shop', speaker: CAST.meo, title: 'Mua trái cây', icon: '🍎' }, stand, 10);
           setFlag('shop.fruit');
           reward({ items: { apple: 1, banana: 1 } });
@@ -138,15 +138,15 @@ export class VillageZone extends Zone {
     this.miniSpot('market', 17.4, 2.6, { model: 'fruit_stand', rot: -35 });
 
     /* ---------- Cổng rừng (phía bắc) ---------- */
-    this.place('gate_arch', 0, -19.8, { opts: { text: 'Rừng Phép Tính', color: '#6fbf73', w: 4.6 } });
+    this.place('gate_arch', 0, -19.8, { opts: { text: 'Rừng Thông Thái', color: '#6fbf73', w: 4.6 } });
     this.place('signpost', -3.4, -16.6, { rot: 20, opts: { labels: ['Rừng', 'Làng'] } });
-    this.portal(0, -22.4, 'forest', 'from_village', { label: 'Rừng Phép Tính', lock: () => zoneLock('forest') });
+    this.portal(0, -22.4, 'forest', 'from_village', { label: 'Rừng Thông Thái', lock: () => zoneLock('forest') });
 
     /* ---------- Đường tới Khu Vui Chơi (đông) & Lâu Đài (tây) ---------- */
     this.place('signpost', 21.2, 2.8, { rot: -30, opts: { labels: ['Vui chơi', 'Làng'] } });
     this.portal(26.6, -0.6, 'park', 'from_village', { label: 'Khu Vui Chơi', lock: () => zoneLock('park') });
     this.place('signpost', -21, -7, { rot: 30, opts: { labels: ['Lâu đài', 'Làng'] } });
-    this.portal(-26.4, -11, 'castle', 'from_village', { label: 'Lâu Đài Toán Học', lock: () => zoneLock('castle') });
+    this.portal(-26.4, -11, 'castle', 'from_village', { label: 'Lâu Đài Trí Tuệ', lock: () => zoneLock('castle') });
 
     /* ---------- Nhà dân, cối xay gió, giếng ---------- */
     this.place('house_cottage', -8.4, -12.4, { rot: 12, opts: { v: 1 } });
@@ -383,7 +383,7 @@ export class VillageZone extends Zone {
     setFlag('bear.start');
     sfx('unlock');
     this.bear.actor.celebrate(1.5);
-    await say(CAST.gau, ['Tuyệt quá! Mình cùng đi qua Rừng Phép Tính nhé.', 'Cổng rừng ở ngay đây. Đi thôi!']);
+    await say(CAST.gau, ['Tuyệt quá! Mình cùng đi qua Rừng Thông Thái nhé.', 'Cổng rừng ở ngay đây. Đi thôi!']);
     this.buddyFrom = { x: this.bear.actor.pos.x, z: this.bear.actor.pos.z };
   }
 }

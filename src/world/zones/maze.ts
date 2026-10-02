@@ -35,7 +35,7 @@ const FLAGS = {
 const WALL_H = 1.68;
 const LOW_WALL_H = 1.25;
 
-/** 🌀 MÊ CUNG TOÁN HỌC – chọn cửa bằng đáp án, tìm 3 chìa khóa rồi mở cổng sang Sở Thú. */
+/** 🌀 MÊ CUNG KỲ BÍ – chọn cửa bằng đáp án, tìm 3 chìa khóa rồi mở cổng sang Sở Thú. */
 export class MazeZone extends Zone {
   private robot!: Npc;
   private junctions: Junction[] = [];
@@ -46,7 +46,7 @@ export class MazeZone extends Zone {
     super(
       {
         id: 'maze',
-        title: 'Mê Cung Toán Học',
+        title: 'Mê Cung Kỳ Bí',
         icon: '🌀',
         sub: 'Chọn đúng cánh cửa để tìm chìa khóa',
         music: 'maze',
@@ -75,7 +75,7 @@ export class MazeZone extends Zone {
     this.buildSideContent();
     this.buildDecor();
 
-    this.portal(-27.6, 22.3, 'forest', 'from_maze', { label: 'Rừng Phép Tính', r: 1.4, rot: 45 });
+    this.portal(-27.6, 22.3, 'forest', 'from_maze', { label: 'Rừng Thông Thái', r: 1.4, rot: 45 });
     this.portal(28.2, -6.2, 'zoo', 'from_maze', {
       label: 'Sở Thú Kỳ Diệu',
       r: 1.5,
@@ -473,7 +473,7 @@ export class MazeZone extends Zone {
     this.bubble(this.robot.actor.root, 'Bíp bíp! Xin chào!', this.robot.actor.height + 0.8, 1800);
     await this.wait(0.8);
     this.robot.actor.waving = false;
-    await say(CAST.robot, ['Chào mừng bạn đến Mê Cung Toán Học!', 'Ở mỗi ngã rẽ, bạn sẽ thấy nhiều cánh cửa có số.', 'Hãy giải câu hỏi rồi đi qua cánh cửa mang đáp án đúng.']);
+    await say(CAST.robot, ['Chào mừng bạn đến Mê Cung Kỳ Bí!', 'Ở mỗi ngã rẽ, bạn sẽ thấy nhiều cánh cửa có số.', 'Hãy giải câu hỏi rồi đi qua cánh cửa mang đáp án đúng.']);
     await this.showPoint(this.junctions[0].x, 1.2, this.junctions[0].z, 1.4, 13);
     await say(CAST.robot, ['Nếu chọn chưa đúng, không sao cả. Cửa đó chỉ là phòng cụt nhỏ.', 'Bạn quay lại và thử cánh cửa khác nhé. Mục tiêu là tìm đủ 3 chìa khóa!']);
   }

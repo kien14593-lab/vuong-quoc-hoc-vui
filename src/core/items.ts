@@ -59,7 +59,7 @@ export const ITEMS: ItemDef[] = [
   I({ id: 'hat_bunny', name: 'Tai thỏ', cat: 'hat', price: 35, level: 2, style: 'bunny', color: '#ffffff' }),
   I({ id: 'hat_explorer', name: 'Mũ thám hiểm', cat: 'hat', price: 40, level: 3, style: 'explorer', color: '#d9b779' }),
   I({ id: 'hat_wizard', name: 'Mũ phù thủy', cat: 'hat', price: 70, level: 4, style: 'wizard', color: '#6a5acd' }),
-  I({ id: 'hat_crown', name: 'Vương miện Toán Học', cat: 'hat', price: 0, level: 1, style: 'crown', color: '#ffd166', hidden: true, desc: 'Phần thưởng của Nhà Vua.' }),
+  I({ id: 'hat_crown', name: 'Vương miện Trí Tuệ', cat: 'hat', price: 0, level: 1, style: 'crown', color: '#ffd166', hidden: true, desc: 'Phần thưởng của Nhà Vua.' }),
   // Balo
   I({ id: 'bag_blue', name: 'Balo xanh', cat: 'backpack', price: 20, level: 1, style: 'basic', color: '#4dabf7' }),
   I({ id: 'bag_star', name: 'Balo ngôi sao', cat: 'backpack', price: 35, level: 2, style: 'star', color: '#ffd166' }),

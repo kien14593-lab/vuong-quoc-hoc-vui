@@ -559,7 +559,7 @@ defineModel<CastleStyleOpt>('castle', {
     root.add(mathBanner('+', RED, [-4.85, 4.2, 1.0], [0, -90, 0]));
     root.add(mathBanner('×', LILAC, [4.85, 4.2, 1.0], [0, 90, 0]));
     for (let i = 0; i < 4; i++) root.add(box(3.8 - i * 0.35, 0.18, 0.72, i % 2 ? '#fff8ee' : '#e2d3b0', { p: [0, 0.43 + i * 0.15, 4.85 + i * 0.35] }));
-    root.add(sign('LÂU ĐÀI\nTOÁN HỌC', 0.72, [0, 6.65, 4.16], [0, 0, 0], '#fff8ee'));
+    root.add(sign('LÂU ĐÀI\nTRÍ TUỆ', 0.72, [0, 6.65, 4.16], [0, 0, 0], '#fff8ee'));
     return root;
   },
   colliders: [
@@ -573,7 +573,7 @@ defineModel<CastleStyleOpt>('castle', {
   ],
   height: 12.8,
   tags: ['castle'],
-  desc: 'Lâu Đài Toán Học; gate là lưới nâng position.y, flag0/flag1 vẫy.',
+  desc: 'Lâu Đài Trí Tuệ; gate là lưới nâng position.y, flag0/flag1 vẫy.',
   variants: [{}],
 });
 

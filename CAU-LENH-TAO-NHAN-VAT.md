@@ -259,7 +259,7 @@ A brave bunny knight standing on two legs: cream fur, long ears sticking up out 
 > Muốn hiệp sĩ cầm khiên: thay `empty hands` bằng `holding a small round blue shield with a gold star`
 > (gắn xương có thể kém chính xác hơn).
 
-### 5.10. Cô Sóc – Rừng Phép Tính, Mê Cung
+### 5.10. Cô Sóc – Rừng Thông Thái, Mê Cung
 
 Tệp: `soc-dung.glb` · `soc-di.glb` · `soc-noi.glb` · `soc-vay-tay.glb` · `soc-vui.glb`
 
@@ -267,7 +267,7 @@ Tệp: `soc-dung.glb` · `soc-di.glb` · `soc-noi.glb` · `soc-vay-tay.glb` · `
 A cheerful squirrel girl standing on two legs: orange-brown fur, cream belly and muzzle, small round ears, very big fluffy curled tail, small green leaf hair clip, light green scarf. Cute chibi 3D cartoon for a kids game: big round head, small round body, short limbs, big shiny eyes, friendly smile, rosy cheeks, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from body, legs apart, facing front, empty hands, no base, no background.
 ```
 
-### 5.11. Ông Rùa – Rừng Phép Tính, Mê Cung
+### 5.11. Ông Rùa – Rừng Thông Thái, Mê Cung
 
 Tệp: `rua-dung.glb` · `rua-noi.glb` · `rua-vay-tay.glb` · `rua-vui.glb`
 
@@ -275,7 +275,7 @@ Tệp: `rua-dung.glb` · `rua-noi.glb` · `rua-vay-tay.glb` · `rua-vui.glb`
 A gentle grandpa turtle standing upright on two legs: green skin, pale green belly, big brown dome shell on his back, small round silver glasses, white bushy eyebrows, short white beard. Cute chibi 3D cartoon for a kids game: big round head, small round body, short limbs, big shiny eyes, friendly smile, rosy cheeks, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from body, legs apart, facing front, empty hands, no base, no background.
 ```
 
-### 5.12. Bạn Nai – Rừng Phép Tính, Sở Thú
+### 5.12. Bạn Nai – Rừng Thông Thái, Sở Thú
 
 Tệp: `nai-dung.glb` · `nai-di.glb` · `nai-noi.glb` · `nai-vay-tay.glb` · `nai-vui.glb`
 

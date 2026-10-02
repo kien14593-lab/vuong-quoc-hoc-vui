@@ -193,7 +193,7 @@ defineModel<RoofOpt>('shop_math', {
   colliders: [{ kind: 'box', w: 4.9, d: 3.35 }],
   height: 4.05,
   tags: ['building', 'village'],
-  desc: 'Cửa hàng Toán Học (door)',
+  desc: 'Cửa hàng Cô Mèo (door)',
   variants: [{ roof: '#ef8c7a' }, { roof: '#6fb7b7' }],
 });
 
@@ -394,7 +394,7 @@ defineModel<{ text?: string; color?: string; w?: number }>('gate_arch', {
       const x = -w * 0.32 + (i * w * 0.64) / 8;
       g.add(ball(0.09, i % 2 ? '#ff9ec7' : '#ffd166', { p: [x, 2.55 + Math.sin(i) * 0.12, 0.49], seg: 6, cast: false }));
     }
-    const front = signText(o.text ?? 'Rừng Phép Tính', 0.55, '#fff4d8');
+    const front = signText(o.text ?? 'Rừng Thông Thái', 0.55, '#fff4d8');
     front.position.set(0, 2.78, 0.5);
     g.add(front);
     const back = clonePlate(front);
@@ -410,7 +410,7 @@ defineModel<{ text?: string; color?: string; w?: number }>('gate_arch', {
   height: 3.75,
   tags: ['gate', 'structure'],
   desc: 'Cổng vòm thân thiện có biển và đèn',
-  variants: [{ text: 'Rừng Phép Tính', color: '#7aa7e0', w: 5 }, { text: 'Mê Cung Toán', color: '#b197fc', w: 5.5 }],
+  variants: [{ text: 'Rừng Thông Thái', color: '#7aa7e0', w: 5 }, { text: 'Mê Cung Kỳ Bí', color: '#b197fc', w: 5.5 }],
 });
 
 defineModel('windmill', {

@@ -36,7 +36,7 @@ const CHOICE_COLORS = ['#8fd3ff', '#ffd166', '#ff9ec7', '#9be09b', '#c7b3ff'];
 const CASTLE_STYLE = { stone: '#fff2dc', trim: '#e8c5ff', roof: '#b197fc', flag: '#ff7aa8', accent: '#ffd166' };
 const HALL_STYLE = { stone: '#fff2dc', trim: '#e8c5ff', floor: '#fff8ee', carpet: '#d6b5ff' };
 
-/** 🏰 LÂU ĐÀI TOÁN HỌC – ba phòng thử thách và thử thách cuối của Nhà Vua. */
+/** 🏰 LÂU ĐÀI TRÍ TUỆ – ba phòng thử thách và thử thách cuối của Nhà Vua. */
 export class CastleZone extends Zone {
   private readonly gates: Partial<Record<RoomId, THREE.Object3D>> = {};
   private readonly knights: Partial<Record<RoomId, Npc>> = {};
@@ -50,7 +50,7 @@ export class CastleZone extends Zone {
     super(
       {
         id: 'castle',
-        title: 'Lâu Đài Toán Học',
+        title: 'Lâu Đài Trí Tuệ',
         icon: '🏰',
         sub: 'Thử thách nâng cao',
         music: 'castle',
@@ -122,7 +122,7 @@ export class CastleZone extends Zone {
   private buildApproach(): void {
     this.portal(33.2, 13.5, 'village', 'from_castle', { label: 'Ngôi Làng', r: 1.6, rot: -90 });
     this.place('gate_arch', 25.4, 13.3, { rot: -90, opts: { text: 'Lâu Đài', color: '#d0c4f7', w: 4.8 } });
-    this.sign(25.4, 13.3, '🏰 Lâu Đài Toán Học', { y: 4.4, maxDist: 44 });
+    this.sign(25.4, 13.3, '🏰 Lâu Đài Trí Tuệ', { y: 4.4, maxDist: 44 });
     for (const [x, z, rot, sym, color] of [
       [28.7, 10.9, -90, '×', '#c7b3ff'],
       [22.5, 14.8, -90, '½', '#8fd3ff'],
@@ -137,7 +137,7 @@ export class CastleZone extends Zone {
 
   private buildCourtyard(): void {
     this.place('castle', 0, -26.8, { scale: 0.96, opts: CASTLE_STYLE, collide: false, reserve: 8 });
-    this.sign(0, -22.2, 'Lâu Đài Toán Học', { y: 8.2, maxDist: 58 });
+    this.sign(0, -22.2, 'Lâu Đài Trí Tuệ', { y: 8.2, maxDist: 58 });
     for (const [x, z] of [[-10.8, 2.2], [10.8, 2.2]] as [number, number][]) this.place('torch', x, z, { collide: false });
     this.place('fountain', 0, 1.8, { scale: 0.85, collide: false });
     this.place('bunting', 0, -1.6, { opts: { len: 11, colors: ['#d0c4f7', '#ffd6e7', '#fff3a6', '#b9fbc0'] }, collide: false });
@@ -294,7 +294,7 @@ export class CastleZone extends Zone {
 
   private async intro(): Promise<void> {
     await this.wait(0.4);
-    await say(CAST.hiepsi, ['Chào mừng đến Lâu Đài Toán Học!', 'Bạn đã đủ cấp để thử sức với các phòng nâng cao.']);
+    await say(CAST.hiepsi, ['Chào mừng đến Lâu Đài Trí Tuệ!', 'Bạn đã đủ cấp để thử sức với các phòng nâng cao.']);
     await this.showPoint(0, 2.0, 4.6, 1.2, 18);
     await say(CAST.hiepsi, ['Có ba phòng thử thách: Bảng Nhân, Phân Số và Hình Học.', 'Hoàn thành cả ba, cửa đại sảnh sẽ mở để gặp Nhà Vua.']);
     setFlag('castle.intro');

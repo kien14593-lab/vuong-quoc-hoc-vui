@@ -85,7 +85,7 @@ class Hud {
       e[`${k}Chip`] = h(`div.hud-chip.chip-${k}`, { title: tip }, h('span.hud-chip-i', icon), e[k]);
       return e[`${k}Chip`];
     };
-    const wallet = h('div.hud-wallet', chip('coins', '🪙', 'Xu'), chip('stars', '⭐', 'Ngôi sao Toán Học'), chip('tickets', '🎟️', 'Vé'), chip('keys', '🗝️', 'Chìa khóa'));
+    const wallet = h('div.hud-wallet', chip('coins', '🪙', 'Xu'), chip('stars', '⭐', 'Ngôi sao'), chip('tickets', '🎟️', 'Vé'), chip('keys', '🗝️', 'Chìa khóa'));
 
     e.quest = h('div.hud-quest', h('span.hud-quest-i'), h('span.hud-quest-t'));
 

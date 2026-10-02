@@ -41,7 +41,7 @@ export const GRADE_TOPICS: Record<Grade, Topic[]> = {
   5: ['fraction', 'decimal', 'ratio', 'geometry', 'area', 'perimeter', 'word', 'mul', 'div', 'time', 'length', 'money', 'compare'],
 };
 
-/** Trọng tâm của Mê Cung Toán Học theo lớp (kịch bản mục 4.3). */
+/** Trọng tâm của Mê Cung Kỳ Bí theo lớp (kịch bản mục 4.3). */
 export const MAZE_TOPICS: Record<Grade, Topic[]> = {
   1: ['count', 'add', 'sub', 'geometry'],
   2: ['add', 'sub', 'mul', 'div', 'length', 'time'],

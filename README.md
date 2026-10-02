@@ -43,11 +43,11 @@ Câu hỏi tự điều chỉnh độ khó theo lớp và theo kết quả làm 
 |---|---|---|
 | 🏡 Ngôi Làng Khởi Đầu | Hướng dẫn, đếm hộp, tìm 5 ngôi sao cho Thỏ Bông, cửa hàng | – |
 | 🏠 Ngôi Nhà Của Bạn | Trang trí nhà, trồng cây – thu hoạch, tủ huy hiệu | – |
-| 🌳 Rừng Phép Tính | Cầu phép cộng, tảng đá phép trừ, cây cầu của chú Gấu, chọn viên đá lớn nhất | Xong nhiệm vụ 5 ngôi sao |
-| 🌀 Mê Cung Toán Học | Giải toán để chọn đường, tìm 3 chìa khóa, nhận vé sở thú | Xong Rừng Phép Tính |
-| 🎡 Khu Vui Chơi Toán Học | Tàu lượn, ném bóng, vòng quay, chú hề – mỗi trò 1 vé | Có 10 ⭐ |
+| 🌳 Rừng Thông Thái | Cầu phép cộng, tảng đá phép trừ, cây cầu của chú Gấu, chọn viên đá lớn nhất | Xong nhiệm vụ 5 ngôi sao |
+| 🌀 Mê Cung Kỳ Bí | Giải toán để chọn đường, tìm 3 chìa khóa, nhận vé sở thú | Xong Rừng Thông Thái |
+| 🎡 Khu Vui Chơi | Tàu lượn, ném bóng, vòng quay, chú hề – mỗi trò 1 vé | Có 10 ⭐ |
 | 🦁 Sở Thú Kỳ Diệu | Đưa 5 vé mở cổng, giúp hươu cao cổ, khỉ, chim cánh cụt | Qua Mê Cung hoặc Khu Vui Chơi |
-| 🏰 Lâu Đài Toán Học | 3 phòng: Bảng Nhân, Phân Số, Hình Học + thử thách của Nhà Vua | Đạt cấp 3 |
+| 🏰 Lâu Đài Trí Tuệ | 3 phòng: Bảng Nhân, Phân Số, Hình Học + thử thách của Nhà Vua | Đạt cấp 3 |
 
 **12 mini-game:** Ghép số · Bắn đáp án · Chạy vượt chướng ngại · Mê cung · Câu cá số · Siêu thị · Đồng hồ bí ẩn ·
 Xây nhà (hình học) · Chia bánh (phân số) · Tàu hỏa (dãy số) · Cho khỉ ăn · Vòng quay (nhân/chia).

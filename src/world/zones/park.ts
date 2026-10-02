@@ -14,7 +14,7 @@ const COLORS = ['#ff6b6b', '#6cb8ff', '#ffd166', '#7bd389', '#b197fc', '#ff9ec7'
 
 type ParkFlag = (typeof FLAGS)[number];
 
-/** 🎡 KHU VUI CHƠI TOÁN HỌC – vé thưởng, trò chơi toán học và đường tới Sở Thú. */
+/** 🎡 KHU VUI CHƠI – vé thưởng, các trò thử thách và đường tới Sở Thú. */
 export class ParkZone extends Zone {
   private gate!: THREE.Object3D;
   private clown!: ReturnType<Zone['npc']>;
@@ -31,7 +31,7 @@ export class ParkZone extends Zone {
     super(
       {
         id: 'park',
-        title: 'Khu Vui Chơi Toán Học',
+        title: 'Khu Vui Chơi',
         icon: '🎡',
         sub: 'Mỗi thử thách đúng nhận một vé',
         music: 'park',
@@ -308,7 +308,7 @@ export class ParkZone extends Zone {
     const lock = this.gate.getObjectByName('lock');
     if (lock) lock.visible = false;
     setFlag('park.intro');
-    await say(CAST.he, ['Chào mừng đến Khu Vui Chơi Toán Học!', 'Mỗi điểm vui chơi là một thử thách toán. Giải đúng thì bạn nhận 1 vé.', `Có ${ZOO_TICKETS} vé là mở được Sở Thú. Bibo sẽ tặng huy chương khi bạn hoàn thành 4 trò ở đây!`]);
+    await say(CAST.he, ['Chào mừng đến Khu Vui Chơi!', 'Mỗi điểm vui chơi là một thử thách toán. Giải đúng thì bạn nhận 1 vé.', `Có ${ZOO_TICKETS} vé là mở được Sở Thú. Bibo sẽ tặng huy chương khi bạn hoàn thành 4 trò ở đây!`]);
     this.clown.actor.waving = false;
   }
 

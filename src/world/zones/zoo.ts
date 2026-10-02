@@ -370,8 +370,8 @@ export class ZooZone extends Zone {
     this.portal(-15.5, 26.4, 'park', 'from_zoo', { label: 'Khu Vui Chơi', lock: () => zoneLock('park'), rot: 180 });
     this.place('signpost', -24.8, -11.4, { rot: 75, opts: { labels: ['Mê Cung', 'Sở thú'] } });
     this.portal(-28.2, -14.6, 'maze', 'from_zoo', {
-      label: 'Mê Cung Toán Học',
-      lock: () => (on('maze.exit') ? null : 'Lối này là cửa ra của Mê Cung – hãy vào Mê Cung từ Rừng Phép Tính nhé!'),
+      label: 'Mê Cung Kỳ Bí',
+      lock: () => (on('maze.exit') ? null : 'Lối này là cửa ra của Mê Cung – hãy vào Mê Cung từ Rừng Thông Thái nhé!'),
       rot: 90,
     });
   }

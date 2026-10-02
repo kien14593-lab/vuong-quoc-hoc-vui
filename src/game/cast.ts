@@ -13,15 +13,15 @@ export interface CastMember extends Speaker {
 
 export const CAST = {
   tho: { name: 'Thỏ Bông', art: 'npc_rabbit', color: '#ff9ec4', role: 'Hướng dẫn viên ở Ngôi Làng Khởi Đầu' },
-  meo: { name: 'Cô Mèo', art: 'npc_cat', color: '#ffb36b', role: 'Chủ Cửa hàng Toán Học' },
+  meo: { name: 'Cô Mèo', art: 'npc_cat', color: '#ffb36b', role: 'Chủ cửa hàng trong làng' },
   cu: { name: 'Bác Cú', art: 'npc_owl', color: '#b08cff', role: 'Người canh Cầu Phép Cộng trong rừng' },
   gau: { name: 'Chú Gấu', art: 'npc_bear', color: '#c98b5a', role: 'Bạn đồng hành muốn đến Sở Thú' },
-  robot: { name: 'Robot Bíp', art: 'npc_robot', color: '#6cc6ff', role: 'Người gác Mê Cung Toán Học' },
+  robot: { name: 'Robot Bíp', art: 'npc_robot', color: '#6cc6ff', role: 'Người gác Mê Cung Kỳ Bí' },
   he: { name: 'Chú Hề Bibo', art: 'npc_clown', color: '#ff7b7b', role: 'Chủ Khu Vui Chơi' },
   voi: { name: 'Bác Voi', art: 'npc_elephant', color: '#8fb8de', role: 'Nhân viên bán vé Sở Thú' },
-  vua: { name: 'Nhà Vua', art: 'npc_king', color: '#ffcf4a', role: 'Chủ Lâu Đài Toán Học' },
+  vua: { name: 'Nhà Vua', art: 'npc_king', color: '#ffcf4a', role: 'Chủ Lâu Đài Trí Tuệ' },
   hiepsi: { name: 'Hiệp Sĩ Thỏ', art: 'npc_knight', color: '#9fb3c8', role: 'Người giữ các phòng thử thách' },
-  soc: { name: 'Cô Sóc', art: 'npc_squirrel', color: '#e59a5c', role: 'Cư dân trong Rừng Phép Tính' },
+  soc: { name: 'Cô Sóc', art: 'npc_squirrel', color: '#e59a5c', role: 'Cư dân trong Rừng Thông Thái' },
   nai: { name: 'Bạn Nai', art: 'npc_deer', color: '#d6a77a', role: 'Bạn nhỏ trong rừng' },
   rua: { name: 'Ông Rùa', art: 'npc_turtle', color: '#7cc79a', role: 'Ông cụ thông thái bên hồ' },
 } satisfies Record<string, CastMember>;

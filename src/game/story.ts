@@ -31,11 +31,11 @@ export interface ZoneMeta {
 export const ZONE_META: Record<ZoneId, ZoneMeta> = {
   village: { id: 'village', name: 'Ngôi Làng Khởi Đầu', icon: '🏡', sub: 'Khu hướng dẫn', map: { x: 0.43, y: 0.7 }, color: '#ffd6a5' },
   house: { id: 'house', name: 'Ngôi Nhà Của Bạn', icon: '🏠', sub: 'Trang trí, trồng cây, huy hiệu', map: { x: 0.19, y: 0.84 }, color: '#ffc8dd' },
-  forest: { id: 'forest', name: 'Rừng Phép Tính', icon: '🌳', sub: 'Cộng, trừ và thử thách trực quan', map: { x: 0.36, y: 0.42 }, color: '#b9fbc0' },
-  maze: { id: 'maze', name: 'Mê Cung Toán Học', icon: '🌀', sub: 'Giải toán để chọn đúng đường', map: { x: 0.56, y: 0.2 }, color: '#cdb4db' },
-  park: { id: 'park', name: 'Khu Vui Chơi Toán Học', icon: '🎡', sub: 'Mini-game và phần thưởng', map: { x: 0.7, y: 0.66 }, color: '#a0e7ff' },
+  forest: { id: 'forest', name: 'Rừng Thông Thái', icon: '🌳', sub: 'Cộng, trừ và thử thách trực quan', map: { x: 0.36, y: 0.42 }, color: '#b9fbc0' },
+  maze: { id: 'maze', name: 'Mê Cung Kỳ Bí', icon: '🌀', sub: 'Giải toán để chọn đúng đường', map: { x: 0.56, y: 0.2 }, color: '#cdb4db' },
+  park: { id: 'park', name: 'Khu Vui Chơi', icon: '🎡', sub: 'Mini-game và phần thưởng', map: { x: 0.7, y: 0.66 }, color: '#a0e7ff' },
   zoo: { id: 'zoo', name: 'Sở Thú Kỳ Diệu', icon: '🦁', sub: 'Bài toán về động vật', map: { x: 0.8, y: 0.36 }, color: '#fdffb6' },
-  castle: { id: 'castle', name: 'Lâu Đài Toán Học', icon: '🏰', sub: 'Thử thách nâng cao', map: { x: 0.14, y: 0.22 }, color: '#e2ece9' },
+  castle: { id: 'castle', name: 'Lâu Đài Trí Tuệ', icon: '🏰', sub: 'Thử thách nâng cao', map: { x: 0.14, y: 0.22 }, color: '#e2ece9' },
 };
 
 export const ZONE_ORDER: ZoneId[] = ['village', 'house', 'forest', 'maze', 'park', 'zoo', 'castle'];
@@ -120,7 +120,7 @@ export function zoneLock(z: ZoneId): string | null {
       if (!on('bear.start')) return 'Chú Gấu đang đợi ở cổng rừng – hãy nói chuyện với chú trước nhé!';
       return null;
     case 'maze':
-      return on('forest.stones') ? null : 'Hãy vượt qua các thử thách trong Rừng Phép Tính trước nhé!';
+      return on('forest.stones') ? null : 'Hãy vượt qua các thử thách trong Rừng Thông Thái trước nhé!';
     case 'park':
       return p.stars >= PARK_STARS ? null : `Cần ${PARK_STARS} ⭐ để vào Khu Vui Chơi. Bạn đang có ${p.stars} ⭐ – hãy tìm thêm sao nhé!`;
     case 'zoo':
