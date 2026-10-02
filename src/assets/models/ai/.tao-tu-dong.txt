@@ -4,6 +4,7 @@
     "npc_bear.glb",
     "npc_cat.glb",
     "npc_clown.glb",
+    "npc_elephant.glb",
     "npc_owl.glb",
     "npc_rabbit.glb",
     "npc_robot.glb"
@@ -17,6 +18,9 @@
     ],
     "npc_clown": [
       "he.glb"
+    ],
+    "npc_elephant": [
+      "voi.glb"
     ],
     "npc_owl": [
       "cu.glb"

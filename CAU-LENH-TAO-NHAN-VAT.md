@@ -153,7 +153,7 @@ xương và động tác thật** (đi, chạy, vẫy tay…).
 **Thứ tự gợi ý** (HY 3D cho khoảng 20 lượt mỗi ngày – nên làm từng con, xem trong trò chơi rồi mới làm tiếp):
 
 1. **Chú Gấu** ✅, **Thỏ Bông** ✅, **Cô Mèo** ✅, **Bác Cú** ✅ (đã xong – Tencent HY 3D).
-2. **Robot Bíp** ✅, **Chú Hề Bibo** ✅ (đã xong – Tencent HY 3D), Bác Voi, Nhà Vua, Hiệp Sĩ Thỏ.
+2. **Robot Bíp** ✅, **Chú Hề Bibo** ✅, **Bác Voi** ✅ (đã xong – Tencent HY 3D), Nhà Vua, Hiệp Sĩ Thỏ.
 3. Cô Sóc, Ông Rùa, Bạn Nai (+ thú Sở Thú nếu muốn).
 
 **Không nên thay:**
@@ -230,12 +230,14 @@ Găng tay **tròn**, cổ áo xếp nếp **dày** và **quả bông** trên đ�
 A sweet, friendly human clown, cute and NOT scary: fair skin, no face paint, small round red nose, big shiny eyes, rosy cheeks, gentle closed-mouth smile, orange hair with big round colorful fluffy puffs on both sides, small purple cone party hat with a round pompom on top, thick puffy white ruffle collar, rainbow striped shirt, blue shorts, round white cartoon gloves, chunky red sneakers. Cute chibi 3D cartoon for a kids game: big round head, small round body, short thick limbs, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from body, legs apart, facing front, empty hands, no base, no ground, no shadow. He is a human, not a bear: no fur, no animal ears, no muzzle.
 ```
 
-### 5.7. Bác Voi – giữ cổng Sở Thú
+### 5.7. Bác Voi – giữ cổng Sở Thú ✅ đã có mô hình AI (Tencent HY 3D)
 
 Tệp: `voi-dung.glb` · `voi-noi.glb` · `voi-vay-tay.glb` · `voi-vui.glb`
 
+Tai, vòi và ngà đều **dày** (chi tiết mảnh dễ bị thủng khi tạo 3D), và đội **mũ lưỡi trai** của nhân viên sở thú thay cho mũ thám hiểm để không giống mũ của Chú Gấu.
+
 ```text
-A big friendly elephant zoo keeper standing upright on two legs: soft blue-grey skin, big floppy ears, short curled trunk, tiny white tusks, khaki safari hat, khaki vest with a gold star badge. Cute chibi 3D cartoon for a kids game: big round head, small round body, short limbs, big shiny eyes, friendly smile, rosy cheeks, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from body, legs apart, facing front, empty hands, no base, no background.
+A big, gentle elephant zoo keeper standing upright on two legs: soft blue-grey skin, lighter belly, big rounded ears that are thick and soft like a plush toy (not paper-thin) with light pink inside, a short thick trunk that ends above the chest with the tip curled slightly up (not touching the body), two short thick rounded white tusks, round feet with light toenails, small khaki zoo keeper cap with a short thick front brim, khaki vest with a big gold star badge. Cute chibi 3D cartoon for a kids game: big round head, small round body, short thick limbs, big shiny eyes, friendly smile, rosy cheeks, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from body, legs apart, facing front, empty hands, no base, no ground, no shadow.
 ```
 
 ### 5.8. Nhà Vua – Lâu Đài

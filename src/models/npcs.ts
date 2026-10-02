@@ -380,7 +380,7 @@ reg('npc_squirrel', buildSquirrel, 1.55, 0.5, 'Cô Sóc: tail lớn cuộn, acor
 reg('npc_turtle', buildTurtle, 1.45, 0.52, 'Ông Rùa: shell, glasses, walkingStick; cadence chậm.');
 reg('npc_deer', buildDeer, 1.55, 0.45, 'Bạn Nai: tai earL/earR, nụ sừng, đốm trắng, tail.');
 reg('npc_clown', buildClown, 1.8, 0.48, 'Chú Hề Bibo: buildCharacter + red nose, wig tufts, ruffle, jugglingBall.', undefined, { portrait: 'bust' });
-reg('npc_elephant', buildElephant, 2.2, 0.7, 'Bác Voi: tai earL/earR, trunk custom sway, mũ/áo keeper.');
+reg('npc_elephant', buildElephant, 2.2, 0.7, 'Bác Voi: tai earL/earR, trunk custom sway, mũ/áo keeper.', undefined, { portrait: 'bust' });
 reg('npc_owl', buildOwl, 1.55, 0.5, 'Bác Cú: wings as armL/armR, glasses, mortarboard.');
 reg('npc_king', buildKing, 1.9, 0.55, 'Nhà Vua: buildCharacter crown/cape/beard, scepter.');
 reg('npc_knight', () => buildRabbit(true), 1.5, 0.48, 'Hiệp Sĩ Thỏ: earL/earR, sword, shield, cape, armor.');
