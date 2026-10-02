@@ -1,20 +1,26 @@
 #!/usr/bin/env node
 /**
- * Xử lý mô hình AI (Meshy, Tripo...) cho game Vương Quốc Toán Học.
+ * Xử lý mô hình AI (Tencent HY 3D, Meshy, Tripo...) cho game Vương Quốc Toán Học.
  *
  *   node tools/xu-ly-mo-hinh.mjs            (hoặc nhấp đúp CapNhatMoHinh.bat)
  *
  * 1. Đọc mọi tệp .glb trong thư mục mo-hinh-ai/  (vd. gau.glb, gau-di.glb, gau@vay-tay.glb)
  * 2. Nhận tên nhân vật + động tác theo bảng src/assets/models/ai-names.json (tiếng Việt không dấu cũng được)
- * 3. Tối ưu: thu nhỏ ảnh (webp 1024), nén lưới (meshopt), bỏ dữ liệu thừa; tệp động tác chỉ giữ phần chuyển động
- * 4. Ghi vào src/assets/models/ai/<khóa>.glb, <khóa>@<động tác>.glb  +  config.json (từ mo-hinh-ai/cau-hinh.json)
+ * 3. Tối ưu: thu nhỏ ảnh (webp 1024), lưới quá dày (> 60.000 tam giác, vd. 1,5 triệu của HY 3D) tự giảm còn
+ *    ~60.000 tam giác, nén lưới (meshopt), bỏ dữ liệu thừa; tệp động tác chỉ giữ phần chuyển động
+ * 4. Ghi vào src/assets/models/ai/<khóa>.glb, <khóa>@<động tác>.glb  +  config.json (từ mo-hinh-ai/cau-hinh.json),
+ *    GHI-CONG.md (bảng ghi công) và .tao-tu-dong.txt (danh sách tệp do công cụ tạo)
+ *
+ * Chỉ nhân vật CÓ tệp gốc trong mo-hinh-ai/ lần này mới được làm lại (tệp cũ của nhân vật đó không còn dùng thì xóa).
+ * Nhân vật đã lắp từ trước mà tệp gốc không còn ở đây (vd. lắp trên máy khác) được GIỮ NGUYÊN. Muốn gỡ hẳn: --go <tên>.
  *
  * Tùy chọn: --anh 2048 (cỡ ảnh tối đa), --giam 0.5 (giảm số tam giác còn 50%), --xem (chỉ xem, không ghi),
+ *           --go gau (gỡ mô hình AI của nhân vật; nhiều tên: --go gau,tho hoặc --go gau --go tho),
  *           --vao <thư mục> --ra <thư mục> (đổi thư mục vào/ra – dùng để thử nghiệm)
  */
 import { Logger, NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
-import { dedup, meshopt, prune, resample, simplify, textureCompress, weld } from '@gltf-transform/functions';
+import { compactPrimitive, dedup, dequantize, meshopt, prune, resample, textureCompress, weld } from '@gltf-transform/functions';
 import { MeshoptDecoder, MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer';
 import sharp from 'sharp';
 import fs from 'node:fs';
@@ -28,6 +34,19 @@ const arg = (name, def) => {
   if (i < 0) return def;
   const v = argv[i + 1];
   return v && !v.startsWith('--') ? v : true;
+};
+/** Mọi giá trị của một tùy chọn lặp lại được: --go gau --go tho,meo → ['gau', 'tho', 'meo'] ('' = thiếu tên). */
+const argAll = (name) => {
+  const vals = [];
+  argv.forEach((a, i) => {
+    let v = null;
+    if (a === `--${name}`) v = argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[i + 1] : '';
+    else if (a.startsWith(`--${name}=`)) v = a.slice(name.length + 3);
+    if (v === null) return;
+    const parts = v.split(/[,;]/).map((s) => s.trim()).filter(Boolean);
+    vals.push(...(parts.length ? parts : ['']));
+  });
+  return vals;
 };
 const IN_DIR = path.resolve(ROOT, String(arg('vao', 'mo-hinh-ai')));
 const OUT_DIR = path.resolve(ROOT, String(arg('ra', path.join('src', 'assets', 'models', 'ai'))));
@@ -59,7 +78,13 @@ const KEY_VI = {
 const TEX_SIZE = Number(arg('anh', 1024)) || 1024;
 const REDUCE = arg('giam', null) === null ? null : Number(arg('giam'));
 const DRY = arg('xem', false) === true;
+const GO = argAll('go');
+/** Lưới dày hơn mức này được tự giảm về đúng mức này (vd. HY 3D: 1.500.000 → 60.000 tam giác). */
 const AUTO_TRI_LIMIT = 60000;
+/** Sai lệch hình dạng tối đa khi giảm lưới (tỉ lệ theo kích thước mô hình: 0,01 = 1%). */
+const SIMPLIFY_ERROR = 0.01;
+/** Trọng số pháp tuyến khi giảm lưới – giữ mặt cong mượt, tránh vệt gãy khi tô bóng. */
+const NORMAL_WEIGHT = 1;
 
 /* ------------------------------------------------------------------ */
 /* Tên tệp → khóa + động tác                                            */
@@ -164,6 +189,17 @@ function convertConfig(raw) {
 /* Xử lý                                                                */
 /* ------------------------------------------------------------------ */
 const kb = (n) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
+const num = (n) => n.toLocaleString('vi-VN');
+const label = (key) => KEY_VI[key] ?? key;
+/** Khóa nhân vật của một tệp kết quả: npc_bear.glb, npc_bear@walk.glb → npc_bear. */
+const outKey = (file) => file.replace(/\.glb$/i, '').split('@')[0];
+const readJson = (file) => {
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, ''));
+  } catch {
+    return null;
+  }
+};
 
 function triangles(doc) {
   let t = 0;
@@ -178,6 +214,35 @@ function triangles(doc) {
   return Math.round(t);
 }
 
+/**
+ * Giảm số tam giác bằng meshoptimizer, có tính cả pháp tuyến (NORMAL) để mặt cong không bị vệt gãy khi tô bóng
+ * (chỉ dựa vào vị trí như simplify() của gltf-transform thì má, mõm... có vệt gãy). Đường nối UV được giữ nguyên;
+ * dừng sớm nếu hình dạng sai lệch quá SIMPLIFY_ERROR. Cần chạy weld() trước.
+ */
+function simplifyMesh(ratio) {
+  return (doc) => {
+    for (const mesh of doc.getRoot().listMeshes()) {
+      for (const prim of mesh.listPrimitives()) {
+        const idx = prim.getIndices();
+        const pos = prim.getAttribute('POSITION')?.getArray();
+        if (prim.getMode() !== 4 || !idx || !(pos instanceof Float32Array)) continue;
+        const nrm = prim.getAttribute('NORMAL')?.getArray();
+        const src = new Uint32Array(idx.getArray());
+        const target = Math.floor((ratio * src.length) / 3) * 3;
+        const w = NORMAL_WEIGHT;
+        const [dst] =
+          nrm instanceof Float32Array
+            ? MeshoptSimplifier.simplifyWithAttributes(src, pos, 3, nrm, 3, [w, w, w], null, target, SIMPLIFY_ERROR)
+            : MeshoptSimplifier.simplify(src, pos, 3, target, SIMPLIFY_ERROR);
+        if (!dst.length || dst.length >= src.length) continue;
+        prim.setIndices(doc.createAccessor().setType('SCALAR').setArray(dst).setBuffer(idx.getBuffer() ?? doc.getRoot().listBuffers()[0]));
+        if (idx.listParents().length === 1) idx.dispose();
+        compactPrimitive(prim); // bỏ đỉnh không dùng (và chọn chỉ số 16-bit khi đủ)
+      }
+    }
+  };
+}
+
 async function main() {
   await MeshoptDecoder.ready;
   await MeshoptEncoder.ready;
@@ -188,18 +253,32 @@ async function main() {
 
   console.log('');
   console.log('=== XỬ LÝ MÔ HÌNH AI – Vương Quốc Toán Học ===');
-  if (!fs.existsSync(IN_DIR)) fs.mkdirSync(IN_DIR, { recursive: true });
-  fs.mkdirSync(OUT_DIR, { recursive: true });
+  if (!DRY) {
+    fs.mkdirSync(IN_DIR, { recursive: true });
+    fs.mkdirSync(OUT_DIR, { recursive: true });
+  }
+  let bad = 0;
 
-  const all = fs.readdirSync(IN_DIR).filter((f) => !f.startsWith('.'));
+  // Nhân vật cần gỡ (--go)
+  const removeKeys = new Map(); // khóa -> tên đã gõ
+  for (const name of GO) {
+    const key = name ? keyOf(path.basename(name).replace(/\.(glb|gltf)$/i, '')) : null;
+    if (key) removeKeys.set(key, name);
+    else {
+      console.log(
+        name
+          ? `  ✖ --go ${name}: không nhận ra nhân vật. Viết tên như tên tệp, ví dụ: --go gau, --go tho, --go gau,tho.`
+          : '  ✖ --go: thiếu tên nhân vật cần gỡ, ví dụ: --go gau',
+      );
+      bad++;
+    }
+  }
+
+  const all = fs.existsSync(IN_DIR) ? fs.readdirSync(IN_DIR).filter((f) => !f.startsWith('.')) : [];
   const glbs = all.filter((f) => /\.glb$/i.test(f));
   const others = all.filter((f) => /\.(fbx|obj|gltf|blend|usdz|stl|zip)$/i.test(f));
   for (const f of others) {
     console.log(`  ⚠ ${f}: game chỉ dùng định dạng GLB. Hãy tải lại mô hình ở dạng .glb (hoặc giải nén tệp .zip).`);
-  }
-  if (!glbs.length) {
-    console.log(`  Chưa có tệp .glb nào trong thư mục: ${IN_DIR}`);
-    console.log('  Xem hướng dẫn: HUONG-DAN-MO-HINH-AI.md');
   }
 
   // Cấu hình
@@ -218,7 +297,6 @@ async function main() {
 
   // Gom theo nhân vật
   const plan = new Map(); // key -> { main?: file, anims: [{file, role}] }
-  let bad = 0;
   for (const f of glbs) {
     const p = parseName(f);
     if (!p.key) {
@@ -235,7 +313,7 @@ async function main() {
     const e = plan.get(p.key);
     if (p.role) e.anims.push({ file: f, role: p.role });
     else if (e.main) {
-      console.log(`  ⚠ ${f}: đã có tệp chính "${e.main}" cho ${KEY_VI[p.key] ?? p.key} – bỏ qua tệp này.`);
+      console.log(`  ⚠ ${f}: đã có tệp chính "${e.main}" cho ${label(p.key)} – bỏ qua tệp này.`);
     } else e.main = f;
   }
   // Nhân vật chỉ có tệp động tác: dùng tệp "đứng yên" (hoặc tệp đầu tiên) làm tệp chính.
@@ -247,15 +325,65 @@ async function main() {
     e.main = pick.file;
     e.mainRole = pick.role;
     e.anims.splice(pickIdx, 1);
-    console.log(`  ℹ ${KEY_VI[key] ?? key}: không có tệp chính – dùng "${pick.file}" làm mô hình chính.`);
+    console.log(`  ℹ ${label(key)}: không có tệp chính – dùng "${pick.file}" làm mô hình chính.`);
+  }
+  // Vừa có lệnh gỡ vừa có tệp gốc: gỡ, bỏ qua tệp gốc.
+  for (const key of removeKeys.keys()) {
+    const e = plan.get(key);
+    if (!e) continue;
+    plan.delete(key);
+    const files = [e.main, ...e.anims.map((a) => a.file)].join(', ');
+    console.log(
+      `  ⚠ ${label(key)}: có lệnh gỡ (--go) nhưng mo-hinh-ai vẫn còn ${files} – lần này bỏ qua tệp đó. ` +
+        `Hãy xóa hoặc chuyển tệp đó đi chỗ khác, nếu không lần chạy sau ${label(key)} sẽ được lắp lại.`,
+    );
   }
 
-  const written = [];
-  const credits = [];
+  // Kết quả các lần chạy trước: nhân vật không có tệp gốc lần này thì giữ nguyên (tệp gốc .glb không đưa vào kho mã,
+  // nên máy khác / bản sao mới không có tệp gốc của nhân vật đã lắp).
+  const outBefore = new Map(); // khóa -> các tệp .glb đang có trong thư mục kết quả
+  if (fs.existsSync(OUT_DIR)) {
+    for (const f of fs.readdirSync(OUT_DIR).filter((f) => /\.glb$/i.test(f)).sort()) {
+      const k = outKey(f);
+      if (!outBefore.has(k)) outBefore.set(k, []);
+      outBefore.get(k).push(f);
+    }
+  }
+  const prevSources = readJson(MANIFEST)?.nguon ?? {};
+  const prevCfg = readJson(path.join(OUT_DIR, 'config.json')) ?? {};
+  const hadState = ['config.json', 'GHI-CONG.md', path.basename(MANIFEST)].some((f) => fs.existsSync(path.join(OUT_DIR, f)));
+  try {
+    // Bảng ghi công cũ (khi danh sách tệp chưa ghi tệp gốc): | Tên | khóa | nguồn | tệp gốc |
+    for (const line of fs.readFileSync(path.join(OUT_DIR, 'GHI-CONG.md'), 'utf8').split(/\r?\n/)) {
+      const cells = line.split('|').map((s) => s.trim());
+      if (cells.length >= 6 && /^[a-z0-9_]+$/.test(cells[2]) && !prevSources[cells[2]] && cells[4] && cells[4] !== '–') {
+        prevSources[cells[2]] = cells[4].split(/,\s*/);
+      }
+    }
+  } catch {
+    /* chưa có bảng ghi công */
+  }
+  const kept = new Map(); // khóa -> các tệp giữ nguyên
+  for (const [key, files] of outBefore) {
+    if (plan.has(key) || removeKeys.has(key)) continue;
+    kept.set(key, files);
+    console.log(`  ℹ ${label(key)}: không có tệp gốc trong mo-hinh-ai – giữ nguyên mô hình đã lắp (${files.join(', ')}).`);
+  }
+  if (!glbs.length && !GO.length) {
+    if (kept.size) console.log('  ℹ Không có tệp .glb mới trong mo-hinh-ai – chỉ cập nhật cấu hình (cau-hinh.json) cho các nhân vật đã lắp.');
+    else {
+      console.log(`  Chưa có tệp .glb nào trong thư mục: ${IN_DIR}`);
+      console.log('  Xem hướng dẫn: HUONG-DAN-MO-HINH-AI.md');
+    }
+  }
+
+  const produced = []; // tệp kết quả của các nhân vật làm lại lần này
+  const done = new Map(); // khóa -> tệp gốc đã dùng
+  let writtenCount = 0;
   for (const [key, e] of plan) {
-    const label = KEY_VI[key] ?? key;
     console.log('');
-    console.log(`▶ ${label} (${key})`);
+    console.log(`▶ ${label(key)} (${key})`);
+    const old = outBefore.get(key) ?? [];
     // Tệp chính
     const srcPath = path.join(IN_DIR, e.main);
     let doc;
@@ -265,6 +393,10 @@ async function main() {
     } catch (err) {
       console.log(`  ✖ Không đọc được ${e.main}: ${err.message}`);
       bad++;
+      if (old.length) {
+        kept.set(key, old);
+        console.log(`  ℹ Giữ nguyên mô hình cũ (${old.join(', ')}).`);
+      }
       continue;
     }
     const before = fs.statSync(srcPath).size;
@@ -279,23 +411,35 @@ async function main() {
     }
     const steps = [dedup(), prune({ keepLeaves: true }), resample()];
     let ratio = REDUCE;
-    if (!ratio && tris > AUTO_TRI_LIMIT) ratio = Math.max(0.15, AUTO_TRI_LIMIT / tris);
-    if (ratio && ratio < 1) steps.push(weld(), simplify({ simplifier: MeshoptSimplifier, ratio, error: 0.002 }));
+    if (!ratio && tris > AUTO_TRI_LIMIT) ratio = AUTO_TRI_LIMIT / tris;
+    const reduce = Boolean(ratio && ratio < 1);
+    if (reduce) steps.push(dequantize(), weld(), simplifyMesh(ratio));
     steps.push(textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [TEX_SIZE, TEX_SIZE] }), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
     await doc.transform(...steps);
+    const trisAfter = triangles(doc);
     const outName = `${key}.glb`;
     const outPath = path.join(OUT_DIR, outName);
-    if (!DRY) await io.write(outPath, doc);
+    if (!DRY) {
+      await io.write(outPath, doc);
+      writtenCount++;
+    }
     const after = DRY ? 0 : fs.statSync(outPath).size;
-    written.push(outName);
-    console.log(`  ✔ ${e.main} → ${outName}  (${kb(before)} → ${DRY ? '?' : kb(after)}, ${tris.toLocaleString('vi-VN')} tam giác${ratio && ratio < 1 ? ` → còn ~${Math.round(tris * ratio).toLocaleString('vi-VN')}` : ''})`);
-    if (!skins) console.log('  ⚠ Mô hình CHƯA có khung xương (chưa "Rig") – nhân vật sẽ chỉ nhún nhảy đơn giản. Hãy dùng chức năng Rig/Animate rồi tải lại.');
+    produced.push(outName);
+    console.log(`  ✔ ${e.main} → ${outName}  (${kb(before)} → ${DRY ? '?' : kb(after)}, ${num(tris)} tam giác${trisAfter < tris ? ` → còn ${num(trisAfter)}` : ''})`);
+    if (reduce && trisAfter > tris * ratio * 1.5) console.log(`  ℹ Chỉ giảm được còn ${num(trisAfter)} tam giác – giảm thêm sẽ làm méo hình.`);
+    if (!skins) console.log('  ℹ Mô hình chưa có khung xương – trò chơi tự cho nhân vật nhún nhảy, "thở", lắc lư nhẹ. (Muốn cử động thật: gắn xương bằng Rig/Animate của trang AI rồi tải lại – không bắt buộc.)');
     if (clips.length) console.log(`    Động tác trong tệp: ${clips.join(', ')}`);
     else if (skins) console.log('    (Tệp chính không có động tác – cần thêm tệp động tác như gau-di.glb)');
-    if (tris > 40000 && !(ratio && ratio < 1)) console.log('  ⚠ Mô hình khá nặng – nên chọn số đa giác thấp hơn (Remesh ~10.000–20.000) để game chạy mượt trên máy yếu.');
+    if (trisAfter > 40000 && !reduce) console.log('  ⚠ Mô hình khá nặng – nên chọn số đa giác thấp hơn (Remesh ~10.000–20.000) để game chạy mượt trên máy yếu.');
 
     // Tệp động tác
     const roles = new Set();
+    const keepOld = (role) => {
+      const on = `${key}@${role}.glb`;
+      if (!old.includes(on) || produced.includes(on)) return;
+      produced.push(on);
+      console.log(`    ℹ Giữ bản cũ ${on}.`);
+    };
     for (const a of e.anims) {
       const ap = path.join(IN_DIR, a.file);
       let ad;
@@ -305,12 +449,14 @@ async function main() {
       } catch (err) {
         console.log(`  ✖ Không đọc được ${a.file}: ${err.message}`);
         bad++;
+        keepOld(a.role);
         continue;
       }
       const anims = ad.getRoot().listAnimations();
       if (!anims.length) {
         console.log(`  ✖ ${a.file}: tệp không có động tác nào (khi tải hãy chọn kèm Animation).`);
         bad++;
+        keepOld(a.role);
         continue;
       }
       if (roles.has(a.role)) console.log(`  ⚠ ${a.file}: trùng động tác "${ROLE_VI[a.role]}" – tệp sau sẽ ghi đè.`);
@@ -336,33 +482,54 @@ async function main() {
       await ad.transform(prune({ keepLeaves: true }), resample(), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
       const on = `${key}@${a.role}.glb`;
       const op = path.join(OUT_DIR, on);
-      if (!DRY) await io.write(op, ad);
-      written.push(on);
+      if (!DRY) {
+        await io.write(op, ad);
+        writtenCount++;
+      }
+      if (!produced.includes(on)) produced.push(on);
       console.log(`  ✔ ${a.file} → ${on}  (động tác "${ROLE_VI[a.role]}", ${kb(fs.statSync(ap).size)} → ${DRY ? '?' : kb(fs.statSync(op).size)})`);
     }
     const missing = ['idle', 'walk'].filter((r) => !roles.has(r) && e.mainRole !== r);
     if (skins && missing.length && !clips.length) console.log(`    Gợi ý: thêm động tác ${missing.map((r) => `"${ROLE_VI[r]}"`).join(', ')} để nhân vật sinh động hơn.`);
-    credits.push(`| ${label} | ${key} | ${config[key]?.credit ?? 'Mô hình tạo bằng AI'} | ${[e.main, ...e.anims.map((a) => a.file)].join(', ')} |`);
+    done.set(key, [e.main, ...e.anims.map((a) => a.file)]);
   }
 
-  // Xóa tệp cũ do công cụ tạo ra nhưng không còn tệp gốc
-  let old = [];
-  try {
-    old = JSON.parse(fs.readFileSync(MANIFEST, 'utf8')).files ?? [];
-  } catch {
-    old = [];
-  }
-  const removed = old.filter((f) => !written.includes(f) && fs.existsSync(path.join(OUT_DIR, f)));
-  if (!DRY) {
-    for (const f of removed) fs.unlinkSync(path.join(OUT_DIR, f));
-    const keys = new Set([...plan.keys()]);
-    const cfgOut = Object.fromEntries(Object.entries(config).filter(([k]) => keys.has(k)));
-    for (const k of keys) {
-      if (!cfgOut[k]) cfgOut[k] = {};
-      if (!cfgOut[k].credit) cfgOut[k].credit = 'Mô hình tạo bằng AI';
+  // Tệp cần xóa: của nhân vật bị gỡ (--go), và tệp cũ không còn dùng của nhân vật vừa làm lại (vd. động tác đã bỏ).
+  const toDelete = []; // [tệp, lý do]
+  const gone = [];
+  for (const [key, name] of removeKeys) {
+    const files = outBefore.get(key) ?? [];
+    if (!files.length && !prevCfg[key] && !prevSources[key]) {
+      console.log(`  ℹ --go ${name}: ${label(key)} chưa có mô hình AI nào để gỡ.`);
+      continue;
     }
+    gone.push(key);
+    for (const f of files) toDelete.push([f, `gỡ ${label(key)} theo --go`]);
+    if (config[key]) console.log(`  ℹ cau-hinh.json vẫn còn phần cài đặt của ${label(key)} – không sao, phần đó chỉ dùng khi lắp lại mô hình.`);
+  }
+  for (const key of done.keys()) {
+    for (const f of outBefore.get(key) ?? []) if (!produced.includes(f)) toDelete.push([f, 'không còn tệp gốc tương ứng trong mo-hinh-ai']);
+  }
+
+  // config.json, danh sách tệp và bảng ghi công: nhân vật vừa làm lại + nhân vật giữ nguyên.
+  const keys = [...new Set([...done.keys(), ...kept.keys()])].sort();
+  const cfgOut = {};
+  const sources = {};
+  const credits = [];
+  for (const key of keys) {
+    // Nhân vật giữ nguyên: ưu tiên cau-hinh.json, không có thì dùng cấu hình lần trước.
+    const c = { ...((done.has(key) ? config[key] : (config[key] ?? prevCfg[key])) ?? {}) };
+    if (!c.credit) c.credit = 'Mô hình tạo bằng AI';
+    cfgOut[key] = c;
+    sources[key] = done.get(key) ?? prevSources[key] ?? [];
+    credits.push(`| ${label(key)} | ${key} | ${c.credit} | ${sources[key].join(', ') || '–'} |`);
+  }
+  const files = [...produced, ...[...kept.values()].flat()].sort();
+  if (!DRY) for (const [f] of toDelete) fs.rmSync(path.join(OUT_DIR, f), { force: true });
+  if (!DRY && (keys.length || hadState)) {
     fs.writeFileSync(path.join(OUT_DIR, 'config.json'), JSON.stringify(cfgOut, null, 2) + '\n', 'utf8');
-    fs.writeFileSync(MANIFEST, JSON.stringify({ note: 'Danh sách tệp do tools/xu-ly-mo-hinh.mjs tạo – đừng sửa tay.', files: written }, null, 2) + '\n', 'utf8');
+    const manifest = { note: 'Danh sách tệp do tools/xu-ly-mo-hinh.mjs tạo – đừng sửa tay.', files, nguon: sources };
+    fs.writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
     const md = [
       '# Ghi công mô hình AI',
       '',
@@ -375,11 +542,18 @@ async function main() {
     ].join('\n');
     fs.writeFileSync(path.join(OUT_DIR, 'GHI-CONG.md'), md, 'utf8');
   }
-  for (const f of removed) console.log(`  🗑 Đã xóa ${f} (không còn tệp gốc trong mo-hinh-ai).`);
+  if (toDelete.length || gone.length) console.log('');
+  for (const [f, why] of toDelete) console.log(`  🗑 ${DRY ? 'Sẽ xóa' : 'Đã xóa'} ${f} (${why}).`);
+  for (const key of gone) console.log(`  ✔ ${DRY ? 'Sẽ gỡ' : 'Đã gỡ'} mô hình AI của ${label(key)} – trò chơi dùng lại nhân vật có sẵn.`);
 
   console.log('');
-  if (DRY) console.log('Chế độ xem thử (--xem): chưa ghi tệp nào.');
-  console.log(`Xong: ${plan.size} nhân vật, ${written.length} tệp${bad ? `, ${bad} lỗi` : ''}. Thư mục kết quả: src\\assets\\models\\ai`);
+  if (DRY) console.log('Chế độ xem thử (--xem): chưa ghi hay xóa tệp nào.');
+  const rel = path.relative(ROOT, OUT_DIR);
+  const shownOut = rel && !rel.startsWith('..') && !path.isAbsolute(rel) ? rel : OUT_DIR;
+  const summary = [`${done.size} nhân vật ${DRY ? 'sẽ được' : 'được'} cập nhật`];
+  if (kept.size) summary.push(`${kept.size} giữ nguyên`);
+  if (gone.length) summary.push(`${gone.length} được gỡ`);
+  console.log(`Xong: ${summary.join(', ')}; ${writtenCount} tệp .glb đã ghi${bad ? `, ${bad} lỗi` : ''}. Thư mục kết quả: ${shownOut}`);
   if (bad) process.exitCode = 1;
 }
 

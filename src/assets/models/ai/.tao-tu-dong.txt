@@ -1,0 +1,11 @@
+{
+  "note": "Danh sách tệp do tools/xu-ly-mo-hinh.mjs tạo – đừng sửa tay.",
+  "files": [
+    "npc_bear.glb"
+  ],
+  "nguon": {
+    "npc_bear": [
+      "gau.glb"
+    ]
+  }
+}

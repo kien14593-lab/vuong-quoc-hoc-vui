@@ -1,7 +1,7 @@
 THU MUC MO HINH AI
 ==================
 
-Chep cac tep .glb tai tu Meshy / Tripo vao day, dat ten theo nhan vat va dong tac, vi du:
+Chep cac tep .glb tai tu Tencent HY 3D / Meshy / Tripo vao day, dat ten theo nhan vat va dong tac, vi du:
 
   gau.glb          Chu Gau (mo hinh chinh)
   gau-di.glb       Chu Gau - dong tac di
@@ -9,4 +9,7 @@ Chep cac tep .glb tai tu Meshy / Tripo vao day, dat ten theo nhan vat va dong ta
   tho.glb, meo.glb, cu.glb, robot.glb, vua.glb ...
 
 Sau do nhap dup CapNhatMoHinh.bat o thu muc goc cua tro choi.
+Mo hinh qua nang (vd. 80 MB cua HY 3D) duoc tu giam cho nhe.
+Chi can de tep cua nhan vat MOI: nhan vat da lap tu truoc duoc giu nguyen.
+Go mo hinh cua mot nhan vat: CapNhatMoHinh.bat --go gau
 Huong dan day du: HUONG-DAN-MO-HINH-AI.md

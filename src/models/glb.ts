@@ -254,7 +254,8 @@ function convertMaterial(src: THREE.Material, mode: GlbLook['material'], color?:
       normalScale: s.normalScale.clone(),
     };
     if (mode === 'toon') m = new THREE.MeshToonMaterial({ ...common, gradientMap: toonGradient() });
-    else if (s.metalness > 0.5) m = new THREE.MeshPhongMaterial({ ...common, shininess: 70, specular: new THREE.Color(0x777777) });
+    // Có ảnh kim loại (mô hình AI xuất từ Blender) thì hệ số thường = 1 dù bề mặt không phải kim loại → giữ mờ.
+    else if (s.metalness > 0.5 && !s.metalnessMap) m = new THREE.MeshPhongMaterial({ ...common, shininess: 70, specular: new THREE.Color(0x777777) });
     else m = new THREE.MeshLambertMaterial(common);
   }
   m.userData.shared = true;

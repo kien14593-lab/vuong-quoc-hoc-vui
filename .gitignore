@@ -11,7 +11,7 @@ Thumbs.db
 # Ban phat hanh (tao bang DongGoi.bat)
 ban-phat-hanh/
 
-# Tep goc tai tu Meshy/Tripo (game chi dung ban da toi uu trong src/assets/models/ai)
+# Tep goc tai tu Tencent HY 3D/Meshy/Tripo (game chi dung ban da toi uu trong src/assets/models/ai)
 mo-hinh-ai/*.glb
 mo-hinh-ai/*.gltf
 mo-hinh-ai/*.bin

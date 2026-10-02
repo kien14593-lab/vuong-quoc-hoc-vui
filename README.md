@@ -60,15 +60,15 @@ tăng / giảm độ khó theo kết quả. Câu hỏi có thể được đọc
 
 ## 🧸 Thay nhân vật bằng mô hình AI
 
-Chép tệp `.glb` (tạo bằng Meshy, Tripo…) vào thư mục **`mo-hinh-ai`** rồi nhấp đúp **`CapNhatMoHinh.bat`**.
+Chép tệp `.glb` (tạo bằng Tencent HY 3D, Meshy, Tripo…) vào thư mục **`mo-hinh-ai`** rồi nhấp đúp **`CapNhatMoHinh.bat`**.
 
-- **[CAU-LENH-TAO-NHAN-VAT.md](CAU-LENH-TAO-NHAN-VAT.md)** – câu lệnh soạn sẵn cho từng nhân vật, chi phí, thứ tự nên làm.
+- **[CAU-LENH-TAO-NHAN-VAT.md](CAU-LENH-TAO-NHAN-VAT.md)** – trang tạo mô hình nên dùng (Tencent HY 3D, miễn phí), câu lệnh soạn sẵn cho từng nhân vật, thứ tự nên làm.
 - **[HUONG-DAN-MO-HINH-AI.md](HUONG-DAN-MO-HINH-AI.md)** – đặt tên tệp, tinh chỉnh, xử lý lỗi, ghi công.
 
 ## 🛠️ Dành cho lập trình viên
 
-Công nghệ: **Three.js** (3D), **TypeScript**, **Vite**, **Vitest**. Mọi mô hình đều dựng bằng code
-(pastel, low-poly), có thể thay bằng tệp GLB.
+Công nghệ: **Three.js** (3D), **TypeScript**, **Vite**, **Vitest**. Mọi mô hình đều có bản dựng bằng code
+(pastel, low-poly), có thể thay bằng tệp GLB (Chú Gấu đã dùng mô hình AI).
 
 ```bash
 npm install

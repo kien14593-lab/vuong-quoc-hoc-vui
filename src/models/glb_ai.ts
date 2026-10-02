@@ -1,5 +1,5 @@
 /**
- * Mô hình tạo bằng AI (Meshy, Tripo...) – tự nhận tệp trong src/assets/models/ai/:
+ * Mô hình tạo bằng AI (Tencent HY 3D, Meshy, Tripo...) – tự nhận tệp trong src/assets/models/ai/:
  *   <khóa>.glb            mô hình chính (có thể kèm hoạt cảnh)        vd. npc_bear.glb
  *   <khóa>@<vai>.glb      tệp hoạt cảnh thêm (walk, run, wave...)     vd. npc_bear@walk.glb
  *   config.json           tinh chỉnh: { "npc_bear": { "height": 2, "rotY": 180, "material": "toon" } }

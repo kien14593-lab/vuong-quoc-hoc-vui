@@ -1,44 +1,51 @@
 # Hướng dẫn thay nhân vật bằng mô hình AI
 
 Trò chơi đã có sẵn đầy đủ nhân vật (dựng bằng code, phong cách pastel). Thầy cô có thể **thay bất kỳ nhân vật nào**
-bằng mô hình 3D tạo bằng AI (Meshy, Tripo...) mà **không cần lập trình**:
+bằng mô hình 3D tạo bằng AI (Tencent HY 3D, Meshy, Tripo...) mà **không cần lập trình**:
 
 1. Tạo mô hình trên trang web AI → tải về dạng **.glb**.
 2. Chép tệp vào thư mục **`mo-hinh-ai`**, đặt tên theo nhân vật (vd. `gau.glb`, `gau-di.glb`).
 3. Nhấp đúp **`CapNhatMoHinh.bat`** → chọn **C** để đóng gói lại → mở `ban-phat-hanh\VuongQuocToanHoc.html`.
+
+> Dễ nhất: gửi tệp `.glb` cho **Copilot** (vd. nhắn *"xong Gấu"*) – Copilot làm hết các bước và đưa lên bản chơi trên web.
 
 > Lần đầu chạy, máy cần có **Node.js** (bản LTS tại <https://nodejs.org>) và Internet để cài thư viện (1–3 phút).
 > Những lần sau không cần Internet.
 
 ---
 
-## 1. Tạo mô hình trên Meshy.ai (gợi ý)
+## 1. Tạo mô hình trên Tencent HY 3D (khuyên dùng, miễn phí)
 
-> 📋 **Câu lệnh soạn sẵn cho từng nhân vật** (đồng bộ phong cách, chỉ việc sao chép), bảng chi phí điểm, thứ tự nên làm
+> 📋 **Câu lệnh soạn sẵn cho từng nhân vật** (đồng bộ phong cách, chỉ việc sao chép), so sánh các trang, thứ tự nên làm
 > và danh sách tệp cần tải: xem **[CAU-LENH-TAO-NHAN-VAT.md](CAU-LENH-TAO-NHAN-VAT.md)**.
 
-1. Vào <https://www.meshy.ai>, đăng nhập. Gói miễn phí: 100 điểm/tháng ≈ 4–5 nhân vật có màu; **chỉ tải về được mô hình
-   làm bằng Meshy 6 Lite**, tối đa 10 lần/tháng.
-2. Cột trái bấm **Mô hình** (*Model*) → đầu khung có 3 biểu tượng không có chữ: biểu tượng **thứ ba** là
-   **Văn Bản thành 3D** (*Text to 3D*, dán câu lệnh); biểu tượng **thứ nhất** là **Hình ảnh thành 3D** (*Image to 3D*,
-   ảnh nhân vật nền trơn, nhìn thẳng). **Mô hình AI: đổi sang Meshy 6 Lite** (Meshy để sẵn Meshy 6 hoặc Meshy 7.1 – gói
-   miễn phí không tải về được). Chọn tư thế **A** (A-pose) nếu được.
-3. Chọn bản nháp ưng ý → **Tạo Kết Cấu: Có** (*With Texture*) để nhân vật có màu. Mô hình hiện ngay màu xám thì bấm
-   **Texture** ở thanh công cụ dưới mô hình, ô AI Model để **Meshy 6 Lite**.
-4. **Remesh** (giảm đa giác) là tính năng trả phí – không bắt buộc: `CapNhatMoHinh.bat` tự giảm đa giác khi mô hình
-   quá nặng. (Meshy chỉ từ chối gắn xương khi mô hình quá 300.000 mặt.)
-5. **Rigging** (gắn khung xương) – Meshy tặng sẵn động tác *Walking* (đi) và *Running* (chạy).
-   Sau đó vào **Animate** chọn thêm: *Idle* (đứng), *Wave* (vẫy tay), *Talk* (nói), *Dance/Cheer* (vui mừng)...
-   (gói miễn phí chỉ có khoảng 20 động tác cơ bản – động tác có ổ khóa là của gói trả phí).
-6. **Download → định dạng GLB**:
-   - Chọn **Tất cả đã được thêm vào** (*All Added*): **một tệp** chứa mọi động tác, đặt tên `gau.glb` – trò chơi tự nhận
-     động tác theo tên (Idle, Walking, Running…). Cách này chỉ tốn 1 lượt tải.
-   - Hoặc tải mỗi động tác một tệp riêng: `gau.glb` (đứng yên), `gau-di.glb`, `gau-chay.glb`, `gau-vay-tay.glb`...
+1. **Vẽ ảnh mẫu**: dán câu lệnh của nhân vật vào **Microsoft Copilot** hoặc **Google Gemini**, thêm vào cuối
+   *"3D render, front view, plain white background, square image"* → tải ảnh ưng nhất về. Ảnh cần: một nhân vật,
+   nhìn thẳng, nền trơn, **PNG/JPG/WEBP** tối đa **10 MB**, mỗi cạnh **512–4096 px**, gần vuông.
+2. Mở <https://3d.hunyuanglobal.com> (tự chuyển sang **hy3d.tencent.ai**) → **Start Using** → nhập **Gmail** →
+   **Continue** → nhập **mã** được gửi qua thư (không cần đăng ký).
+3. **Image-to-3D** → **Upload Image** (chọn ảnh mẫu) → **Generate Now** → chờ vài phút.
+4. **Download** → **GLB**. Gửi tệp cho Copilot, hoặc đổi tên theo nhân vật (vd. `gau.glb`, mục 2), chép vào
+   `mo-hinh-ai` rồi chạy `CapNhatMoHinh.bat` (mục 3).
+
+- Miễn phí khoảng **20 lượt tạo mỗi ngày** (theo thông báo của Tencent; có thể thay đổi). Ghi công: `Tencent HY 3D`.
+- Tệp rất nặng (khoảng **80 MB**, **1,5 triệu mặt**) – công cụ **tự giảm** còn khoảng 60.000 tam giác (dưới 1 MB).
+- Mô hình **không có khung xương** – trò chơi tự cho nhân vật nhún nhảy, "thở", lắc lư. Nút gắn xương tự động
+  (*Auto-Rigging*) của HY 3D **tốn điểm** – không bắt buộc.
+
+**Cách khác – Meshy.ai** (<https://www.meshy.ai>): gắn xương được và có khoảng 20 động tác miễn phí (đi, chạy, vẫy
+tay…), nhưng gói miễn phí chỉ tải được mô hình **Meshy 6 Lite** (tối đa 10 lần/tháng) – và tài khoản của cô **bị chặn
+tải** cả loại này. Các bước chi tiết: mục 3 của [CAU-LENH-TAO-NHAN-VAT.md](CAU-LENH-TAO-NHAN-VAT.md). Khi tải
+(**Download → GLB**) mô hình có động tác:
+
+- Chọn **Tất cả đã được thêm vào** (*All Added*): **một tệp** chứa mọi động tác, đặt tên `gau.glb` – trò chơi tự nhận
+  động tác theo tên (Idle, Walking, Running…). Cách này chỉ tốn 1 lượt tải.
+- Hoặc tải mỗi động tác một tệp riêng: `gau.glb` (đứng yên), `gau-di.glb`, `gau-chay.glb`, `gau-vay-tay.glb`...
 
 Tripo3D (<https://www.tripo3d.ai>) và các trang tương tự làm tương tự: tạo → (rig/animate) → tải **GLB**.
 
-> Con vật 4 chân (hươu, khỉ, voi...): Meshy gắn xương được nhưng ít động tác phù hợp. Không gắn xương cũng không sao:
-> mô hình vẫn dùng được, trò chơi tự cho nhân vật nhún nhảy, lắc lư, "thở" cho sinh động.
+> Con vật 4 chân (hươu, khỉ, voi...) hay mô hình không có khung xương: vẫn dùng được – trò chơi tự cho nhân vật nhún
+> nhảy, lắc lư, "thở" cho sinh động.
 
 ## 2. Đặt tên tệp
 
@@ -85,27 +92,35 @@ Nhân vật chính (bé) được dựng bằng code để **thay quần áo, m�
 Nhấp đúp `CapNhatMoHinh.bat`. Công cụ sẽ:
 
 - nhận tên nhân vật/động tác, báo lỗi nếu tên tệp sai;
-- **tối ưu**: thu nhỏ ảnh (WebP 1024 px), nén lưới, tự giảm đa giác nếu mô hình quá nặng (> 60.000 tam giác);
+- **tối ưu**: thu nhỏ ảnh (WebP 1024 px), nén lưới; mô hình quá nặng (> 60.000 tam giác, vd. 1,5 triệu mặt của
+  HY 3D) được **tự giảm** còn khoảng 60.000 tam giác mà vẫn giữ dáng và độ mịn (tệp 80 MB → dưới 1 MB);
 - tệp động tác chỉ giữ phần chuyển động (nhẹ hơn nhiều);
 - chép kết quả vào `src\assets\models\ai\` và tạo bảng ghi công `GHI-CONG.md`;
+- **chỉ làm lại nhân vật có tệp trong `mo-hinh-ai`**: nhân vật đã lắp từ trước (kể cả lắp trên máy khác) được **giữ
+  nguyên** – trong `mo-hinh-ai` chỉ cần để tệp của nhân vật mới;
 - hỏi có **đóng gói lại** trò chơi không → chọn **C**.
 
-Đọc thông báo: dòng **✔** là thành công, **⚠** là lưu ý (vd. mô hình chưa có khung xương), **✖** là lỗi cần sửa.
+Đọc thông báo: dòng **✔** là thành công, **ℹ** là thông tin (vd. mô hình chưa có khung xương, nhân vật cũ được giữ
+nguyên), **⚠** là lưu ý, **✖** là lỗi cần sửa, **🗑** là tệp cũ đã xóa.
 
-Tùy chọn nâng cao (gõ trong cửa sổ lệnh): `CapNhatMoHinh.bat --anh 2048` (ảnh nét hơn),
-`--giam 0.5` (giảm số tam giác còn 50%), `--xem` (chỉ kiểm tra, không ghi tệp).
+Tùy chọn nâng cao (gõ trong cửa sổ lệnh – trong thư mục trò chơi, gõ `cmd` vào thanh địa chỉ rồi Enter):
+`CapNhatMoHinh.bat --anh 2048` (ảnh nét hơn), `--giam 0.5` (giảm số tam giác còn 50%), `--xem` (chỉ kiểm tra,
+không ghi tệp), `--go gau` (gỡ mô hình – xem dưới).
 
-**Gỡ một mô hình AI**: xóa tệp của nhân vật đó trong `mo-hinh-ai` rồi chạy lại `CapNhatMoHinh.bat` –
-trò chơi tự quay về nhân vật có sẵn.
+**Gỡ một mô hình AI**: gõ `CapNhatMoHinh.bat --go gau` (tên viết như tên tệp; nhiều nhân vật: `--go gau,tho`) –
+công cụ xóa mô hình, cài đặt và dòng ghi công của nhân vật đó; trò chơi tự quay về nhân vật có sẵn. Hoặc nhắn
+Copilot *"gỡ mô hình Gấu"*. Chỉ xóa tệp trong `mo-hinh-ai` thì **không** gỡ được (mô hình đã lắp được giữ nguyên);
+ngược lại, nếu `mo-hinh-ai` còn tệp của nhân vật vừa gỡ thì xóa luôn, kẻo lần chạy sau lắp lại.
 
 ## 4. Tinh chỉnh (không bắt buộc)
 
-Nếu nhân vật quá to/nhỏ, quay lưng lại, hay màu bị lạ: đổi tên `mo-hinh-ai\cau-hinh.mau.json` thành
-**`cau-hinh.json`** rồi sửa (mở bằng Notepad), chỉ ghi những nhân vật cần chỉnh:
+Nếu nhân vật quá to/nhỏ, quay lưng lại, hay màu bị lạ: mở **`mo-hinh-ai\cau-hinh.json`** bằng Notepad (chưa có thì
+đổi tên `cau-hinh.mau.json` thành `cau-hinh.json`) rồi sửa, chỉ ghi những nhân vật cần chỉnh, rồi chạy lại
+`CapNhatMoHinh.bat` (không cần tệp gốc – nhân vật đã lắp vẫn nhận cài đặt mới):
 
 ```json
 {
-  "gau": { "chieu-cao": 2.0, "xoay": 180, "vat-lieu": "mem", "nguon": "Meshy.ai – CC BY 4.0" },
+  "gau": { "chieu-cao": 1.9, "xoay": 0, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
   "tho": { "chieu-cao": 1.35 }
 }
 ```
@@ -114,7 +129,7 @@ Nếu nhân vật quá to/nhỏ, quay lưng lại, hay màu bị lạ: đổi t�
 |---|---|
 | `chieu-cao` | Chiều cao trong game (mét). Bỏ trống = bằng nhân vật có sẵn. |
 | `xoay` | Xoay thêm (độ) nếu nhân vật quay lưng/quay ngang: thử `180`, `90`, `-90`. |
-| `vat-lieu` | `mem` (mặc định, hợp phong cách pastel), `hoat-hinh` (tô bóng kiểu hoạt hình), `goc` (giữ nguyên). |
+| `vat-lieu` | `mem` (mặc định – mịn, không bóng, hợp phong cách pastel), `hoat-hinh` (tô bóng kiểu hoạt hình), `goc` (giữ nguyên vật liệu gốc). |
 | `nang-len` / `ha-xuong` | Nâng/hạ nhân vật (mét) nếu bị lơ lửng hoặc lún. |
 | `toc-do-di`, `toc-do-chay` | Tốc độ phát động tác đi/chạy (1 = bình thường; 1.3 = nhanh hơn). |
 | `an` | Ẩn bớt chi tiết theo tên lưới, vd. `["Sword"]`. |
@@ -129,7 +144,8 @@ Lưu ý: tệp JSON dùng dấu ngoặc kép `"`, các mục cách nhau bằng d
 |---|---|
 | *không nhận ra nhân vật* | Đổi tên tệp theo bảng ở mục 2 (vd. `gau.glb`). |
 | *game chỉ dùng định dạng GLB* | Tải lại ở dạng `.glb` (không dùng `.fbx`, `.obj`); nếu là `.zip` thì giải nén. |
-| *CHƯA có khung xương* | Vào Meshy → Animate/Rig rồi tải lại; hoặc để nguyên (nhân vật chỉ nhún nhảy). |
+| *chưa có khung xương* | Bình thường (HY 3D không có khung xương) – trò chơi tự cho nhân vật nhún nhảy. Muốn cử động thật: gắn xương (Meshy Rig/Animate, HY 3D Auto-Rigging – tốn điểm) rồi tải lại. Không bắt buộc. |
+| *không có tệp gốc trong mo-hinh-ai – giữ nguyên mô hình đã lắp* | Bình thường – nhân vật đã lắp được giữ. Muốn gỡ: `--go <tên>` (mục 3). |
 | *tệp không có động tác nào* | Khi tải tệp động tác, chọn kèm Animation. |
 | Nhân vật quay lưng | `"xoay": 180` trong `cau-hinh.json`. |
 | Nhân vật quá to/nhỏ | `"chieu-cao": ...` trong `cau-hinh.json`. |
@@ -137,9 +153,10 @@ Lưu ý: tệp JSON dùng dấu ngoặc kép `"`, các mục cách nhau bằng d
 
 ## 6. Bản quyền & ghi công
 
-- Mô hình tạo bằng **gói miễn phí** của các trang AI thường kèm giấy phép yêu cầu **ghi công**
-  (ví dụ CC BY 4.0) – hãy đọc điều khoản của trang và ghi nguồn vào mục `"nguon"`.
+- Mô hình tạo bằng **gói miễn phí** của các trang AI thường kèm điều kiện **ghi công** (vd. Meshy: CC BY 4.0) – hãy
+  đọc điều khoản của trang và ghi nguồn vào mục `"nguon"` (vd. `"Tencent HY 3D (hy3d.tencent.ai)"`,
+  `"Meshy.ai – CC BY 4.0"`).
 - Bảng ghi công tự động: `src\assets\models\ai\GHI-CONG.md`.
-- Trong trò chơi, mục **⚙️ Cài đặt** tự hiện dòng ghi công (vd. *🧸 Mô hình nhân vật 3D: Meshy.ai – CC BY 4.0*)
-  khi có mô hình AI – đủ điều kiện ghi công của CC BY.
+- Trong trò chơi, mục **⚙️ Cài đặt** tự hiện dòng ghi công (vd. *🧸 Mô hình nhân vật 3D: Tencent HY 3D
+  (hy3d.tencent.ai)*) khi có mô hình AI – đủ điều kiện ghi công kiểu CC BY.
 - Tệp gốc tải về để trong `mo-hinh-ai` (không đưa vào kho mã); trò chơi chỉ dùng bản đã tối ưu.
