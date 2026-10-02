@@ -392,7 +392,7 @@ function downloadProfile(p: Profile): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `vuong-quoc-toan-hoc-${slug(p.name)}.json`;
+  a.download = `vuong-quoc-hoc-vui-${slug(p.name)}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }

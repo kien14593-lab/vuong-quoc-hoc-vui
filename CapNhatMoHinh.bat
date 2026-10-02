@@ -3,7 +3,7 @@ rem Cap nhat mo hinh AI: doc cac tep .glb trong thu muc mo-hinh-ai, toi uu, dua 
 rem Huong dan: HUONG-DAN-MO-HINH-AI.md
 chcp 65001 >nul
 cd /d "%~dp0"
-title Cap nhat mo hinh AI - Vuong Quoc Toan Hoc
+title Cap nhat mo hinh AI - Vuong Quoc Hoc Vui
 
 call "%~dp0tools\tim-node.bat"
 if errorlevel 1 goto :loi

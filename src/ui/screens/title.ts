@@ -14,7 +14,7 @@ let el: HTMLElement | null = null;
 function logo(): HTMLElement {
   const colors = ['#ff6f91', '#ff9f43', '#ffc93c', '#5fcf80', '#4bb4de', '#9b7bff', '#ff7eb6'];
   const big = h('div.tl-big');
-  [...'Toán Học'].forEach((ch, i) => {
+  [...'Học Vui'].forEach((ch, i) => {
     big.appendChild(ch === ' ' ? h('span.sp', ' ') : h('span', { style: { color: colors[i % colors.length], animationDelay: `${i * 0.12}s` } }, ch));
   });
   return h('div.title-logo', h('div.tl-small', '✨ Vương Quốc ✨'), big, h('div.tl-sub', 'Phiêu lưu · Khám phá · Học toán'));

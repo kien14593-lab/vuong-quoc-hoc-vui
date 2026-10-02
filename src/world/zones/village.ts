@@ -286,7 +286,7 @@ export class VillageZone extends Zone {
     await this.wait(1.1);
     tho.waving = false;
     const touch = window.matchMedia?.('(pointer: coarse)').matches ?? false;
-    await say(CAST.tho, [`Chào mừng ${profile().name} đến Vương quốc Toán Học!`, 'Mình là Thỏ Bông. Hãy giúp mình tìm 5 ngôi sao nhé!']);
+    await say(CAST.tho, [`Chào mừng ${profile().name} đến Vương Quốc Học Vui!`, 'Mình là Thỏ Bông. Hãy giúp mình tìm 5 ngôi sao nhé!']);
     await say(
       CAST.tho,
       touch

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Xử lý mô hình AI (Tencent HY 3D, Meshy, Tripo...) cho game Vương Quốc Toán Học.
+ * Xử lý mô hình AI (Tencent HY 3D, Meshy, Tripo...) cho game Vương Quốc Học Vui.
  *
  *   node tools/xu-ly-mo-hinh.mjs            (hoặc nhấp đúp CapNhatMoHinh.bat)
  *
@@ -252,7 +252,7 @@ async function main() {
   io.setLogger(quiet);
 
   console.log('');
-  console.log('=== XỬ LÝ MÔ HÌNH AI – Vương Quốc Toán Học ===');
+  console.log('=== XỬ LÝ MÔ HÌNH AI – Vương Quốc Học Vui ===');
   if (!DRY) {
     fs.mkdirSync(IN_DIR, { recursive: true });
     fs.mkdirSync(OUT_DIR, { recursive: true });

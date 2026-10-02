@@ -49,7 +49,7 @@ export class TitleStage implements Stage {
     put('house_player', -11, 4.5, 75, {}, 1, 3.6);
     put('windmill', 3, -15, -10, {}, 1, 3);
     put('house_cottage', 13, 1.5, -95, { v: 3 }, 1, 3.2);
-    put('gate_arch', 0, 17, 180, { text: 'Vương Quốc Toán Học', color: '#ff9ec4', w: 5 }, 1, 2.4);
+    put('gate_arch', 0, 17, 180, { text: 'Vương Quốc Học Vui', color: '#ff9ec4', w: 5 }, 1, 2.4);
     put('lamp_post', 3.6, 4.6);
     put('lamp_post', -3.8, -4.4);
     put('bench', -4.4, 3.4, 140, {}, 1, 1.2);

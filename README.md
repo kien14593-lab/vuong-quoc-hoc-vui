@@ -1,6 +1,7 @@
-# 🏰 Vương Quốc Toán Học
+# 🏰 Vương Quốc Học Vui
 
-Game phiêu lưu 3D học toán cho học sinh tiểu học (lớp 1–5), xây dựng theo kịch bản *"Vương Quốc Toán Học"*.
+Game phiêu lưu 3D giúp học sinh tiểu học (lớp 1–5) vừa chơi vừa học. Tên cũ: *"Vương Quốc Toán Học"* (xây dựng theo
+kịch bản cùng tên).
 Bé đi khám phá 7 khu vực, giúp các bạn thú giải toán, chơi 12 mini-game, sưu tầm sao, vé, xu và huy hiệu.
 Câu hỏi tự điều chỉnh độ khó theo lớp và theo kết quả làm bài của từng bé.
 
@@ -8,7 +9,7 @@ Câu hỏi tự điều chỉnh độ khó theo lớp và theo kết quả làm 
 
 - **Chơi trên web:** <https://kien14593-lab.github.io/vuong-quoc-toan-hoc/> – mở bằng Chrome / Edge / Safari trên
   máy tính, máy tính bảng hoặc điện thoại, không cần cài đặt. Bản web tự cập nhật mỗi khi mã nguồn mới được đưa lên GitHub.
-- **Chơi offline:** mở tệp **`ban-phat-hanh\VuongQuocToanHoc.html`** bằng Chrome / Edge (nhấp đúp).
+- **Chơi offline:** mở tệp **`ban-phat-hanh\VuongQuocHocVui.html`** bằng Chrome / Edge (nhấp đúp).
 - Chưa có tệp này (hoặc vừa sửa code)? Nhấp đúp **`DongGoi.bat`** để đóng gói lại (khoảng 30 giây).
   Lần đầu máy cần có **Node.js LTS** (<https://nodejs.org>) và Internet để cài thư viện.
 - Có thể chép riêng tệp HTML sang máy khác / USB – mọi thứ (đồ họa, âm thanh, phông chữ) nằm trong một tệp.

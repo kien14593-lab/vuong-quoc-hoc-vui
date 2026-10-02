@@ -2,7 +2,7 @@
 rem Dong goi tro choi thanh 1 tep HTML duy nhat trong thu muc ban-phat-hanh (choi offline, khong can cai dat).
 chcp 65001 >nul
 cd /d "%~dp0"
-title Dong goi - Vuong Quoc Toan Hoc
+title Dong goi - Vuong Quoc Hoc Vui
 
 call "%~dp0tools\tim-node.bat"
 if errorlevel 1 goto :loi

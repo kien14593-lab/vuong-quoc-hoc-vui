@@ -5,7 +5,7 @@ bằng mô hình 3D tạo bằng AI (Tencent HY 3D, Meshy, Tripo...) mà **khôn
 
 1. Tạo mô hình trên trang web AI → tải về dạng **.glb**.
 2. Chép tệp vào thư mục **`mo-hinh-ai`**, đặt tên theo nhân vật (vd. `gau.glb`, `gau-di.glb`).
-3. Nhấp đúp **`CapNhatMoHinh.bat`** → chọn **C** để đóng gói lại → mở `ban-phat-hanh\VuongQuocToanHoc.html`.
+3. Nhấp đúp **`CapNhatMoHinh.bat`** → chọn **C** để đóng gói lại → mở `ban-phat-hanh\VuongQuocHocVui.html`.
 
 > Dễ nhất: gửi tệp `.glb` cho **Copilot** (vd. nhắn *"xong Gấu"*) – Copilot làm hết các bước và đưa lên bản chơi trên web.
 
