@@ -520,6 +520,24 @@ function findHead(obj: THREE.Object3D): string | undefined {
 
 const approach = (cur: number, target: number, rate: number, dt: number) => cur + (target - cur) * (1 - Math.exp(-rate * dt));
 
+/**
+ * Lời chào thay cho động tác vẫy tay (mô hình không có clip 'wave'): một cú nhún nhảy nhỏ lúc bắt đầu
+ * + lắc người qua lại rồi tắt dần. Thời gian tính bằng giây, độ cao theo chiều cao nhân vật, góc bằng rad.
+ */
+const GREET = {
+  crouch: 0.14,
+  air: 0.34,
+  land: 0.16,
+  hop: 0.075,
+  floatLen: 0.7,
+  floatHop: 0.1,
+  burst: (3 * Math.PI) / 7,
+  speed: 7,
+  yaw: 0.21,
+  roll: 0.06,
+  rest: 0.25,
+};
+
 class GlbAnimator {
   readonly mixer: THREE.AnimationMixer | null;
   readonly head?: THREE.Object3D;
@@ -529,11 +547,17 @@ class GlbAnimator {
   private readonly headRest?: THREE.Quaternion;
   private readonly baseY: number;
   private readonly baseScale: THREE.Vector3;
+  private readonly baseRotY: number;
   private readonly seed = Math.random() * 100;
   private hop = 0;
   private phase = 0;
   private talkW = 0;
   private lastDriven = -1e9;
+  private waveOn = false;
+  private greetT = -1;
+  private greetAmp = 0;
+  private greetPh = 0;
+  private waveW = 0;
 
   constructor(
     model: THREE.Object3D,
@@ -553,6 +577,7 @@ class GlbAnimator {
     this.headRest = this.head?.quaternion.clone();
     this.baseY = inner.position.y;
     this.baseScale = inner.scale.clone();
+    this.baseRotY = inner.rotation.y;
     this.play('idle', 0, true);
     this.mixer?.update(0);
   }
@@ -585,6 +610,13 @@ class GlbAnimator {
   /** Gọi từ animateRig (mỗi khung hình). */
   update(s: AnimState): void {
     this.lastDriven = performance.now();
+    // Chỉ chào khi vừa bật vẫy tay (xét ở khung có người điều khiển để autoTick không gây chào lại).
+    const wave = !!s.wave;
+    if (wave && !this.waveOn && !this.has('wave') && !s.air && !s.ride && s.move <= 0.05) {
+      if (this.greetAmp < 0.02 && this.waveW < 0.02) this.greetPh = 0;
+      this.greetT = 0;
+    }
+    this.waveOn = wave;
     this.step(s);
   }
 
@@ -632,7 +664,6 @@ class GlbAnimator {
         rz = Math.sin(t * 1.3) * 0.045;
         rx = Math.sin(t * 0.9 + 1) * 0.025 + (s.run ? 0.16 : 0.1) * Math.min(1, mv);
         if (s.talk) sy = 1 + Math.abs(Math.sin(t * 12)) * 0.035;
-        if (s.wave) rz += Math.sin(t * 8) * 0.06;
       }
     } else if (!this.mixer) {
       const moving = mv > 0.05 && !s.air;
@@ -647,7 +678,33 @@ class GlbAnimator {
         rz = Math.sin(t * 0.8) * 0.02;
       }
       if (s.talk) sy *= 1 + Math.abs(Math.sin(t * 12)) * 0.035;
-      if (s.wave) rz += Math.sin(t * 8) * 0.06;
+    }
+    let ry = 0;
+    if (!this.has('wave')) {
+      // Vẫy tay: nhún nhảy nhỏ lúc bắt đầu + lắc người (xoay & nghiêng cùng nhịp), về đúng 0 khi thôi vẫy.
+      const busy = mv > 0.05 || !!s.air || !!s.ride;
+      if (this.greetT >= 0) {
+        if (busy) this.greetT = -1;
+        else {
+          const [dy, ds] = this.greetHop(this.greetT, h);
+          y += dy;
+          sy *= ds;
+          this.greetT += dt;
+          if (this.greetT > Math.max(GREET.burst, GREET.crouch + GREET.air + GREET.land)) this.greetT = -1;
+        }
+      }
+      const burst = this.greetT >= 0 && this.greetT < GREET.burst;
+      const ampGoal = burst ? 1 : s.wave && !busy ? GREET.rest : 0;
+      this.greetAmp = approach(this.greetAmp, ampGoal, burst ? 10 : 4, dt);
+      if (ampGoal === 0 && this.greetAmp < 0.004) this.greetAmp = 0;
+      this.waveW = approach(this.waveW, s.wave ? 1 : 0, 6, dt);
+      if (!s.wave && this.waveW < 0.004) this.waveW = 0;
+      if (this.greetAmp > 0 || this.waveW > 0) {
+        this.greetPh = (this.greetPh + dt * GREET.speed) % (Math.PI * 2);
+        const w = Math.sin(this.greetPh);
+        ry = w * GREET.yaw * this.greetAmp;
+        rz += w * GREET.roll * Math.max(this.waveW, this.greetAmp);
+      }
     }
     const wantHop = happy > 0.4 && !this.has('happy') ? happy : 0;
     this.hop = approach(this.hop, wantHop, 6, dt);
@@ -656,6 +713,7 @@ class GlbAnimator {
     this.inner.scale.set(this.baseScale.x * (2 - sy), this.baseScale.y * sy, this.baseScale.z * (2 - sy));
     this.inner.rotation.z = rz;
     this.inner.rotation.x = rx;
+    this.inner.rotation.y = this.baseRotY + ry;
     if (this.fx) {
       this.fx.obj.position.y = this.fx.y + (y - this.baseY);
       this.fx.obj.rotation.y = t * this.fx.spin;
@@ -664,6 +722,22 @@ class GlbAnimator {
     // Gật đầu khi nói.
     this.talkW = approach(this.talkW, s.talk ? 1 : 0, 8, dt);
     if (this.head && this.talkW > 0.01) this.head.rotateX(Math.sin(t * 9) * 0.09 * this.talkW);
+  }
+
+  /** Cú nhún nhảy lúc chào: [độ cao cộng thêm, hệ số co giãn dọc] tại thời điểm g (giây). */
+  private greetHop(g: number, h: number): [number, number] {
+    if (this.float) {
+      // Bay: vọt nhẹ lên rồi hạ xuống êm, không chạm đất.
+      return g < GREET.floatLen ? [Math.sin((Math.PI * g) / GREET.floatLen) ** 2 * GREET.floatHop * h, 1] : [0, 1];
+    }
+    const { crouch, air, land } = GREET;
+    if (g < crouch) return [0, 1 - 0.05 * Math.sin((Math.PI * g) / crouch)];
+    if (g < crouch + air) {
+      const u = (g - crouch) / air;
+      return [4 * GREET.hop * h * u * (1 - u), 1 + 0.03 * Math.sin(2 * Math.PI * u) ** 2];
+    }
+    if (g < crouch + air + land) return [0, 1 - 0.045 * Math.sin((Math.PI * (g - crouch - air)) / land)];
+    return [0, 1];
   }
 }
 

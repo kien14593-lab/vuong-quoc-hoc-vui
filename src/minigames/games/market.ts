@@ -136,8 +136,6 @@ class MarketGame extends MiniGame {
     this.model('crate_fruit', undefined, [-3.0, 0, -1.0], 0.3, 1.12);
     this.model('crate_fruit', undefined, [3.0, 0, -0.95], -0.2, 1.12);
     this.cashier = this.model('npc_cat', undefined, [2.0, 0, -1.45], -0.25, 1.12);
-    const st = this.cashier && this.anim(this.cashier);
-    if (st) st.wave = true;
     this.scene.add(group([
       rbox(1.25, 0.16, 0.9, 0.08, '#d7a56d', { p: [this.tray.x, 0.08, this.tray.z] }),
       rbox(0.9, 0.08, 0.55, 0.04, '#fff8ee', { p: [this.tray.x, 0.22, this.tray.z] }),
@@ -146,6 +144,9 @@ class MarketGame extends MiniGame {
   }
 
   protected async play(): Promise<void> {
+    // Vẫy chào khi bắt đầu chơi (lúc màn hướng dẫn đã đóng, trẻ nhìn thấy).
+    const hi = this.cashier && this.anim(this.cashier);
+    if (hi) hi.wave = true;
     while (this.more) {
       this.clearRound();
       const q = this.question('money');

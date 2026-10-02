@@ -42,7 +42,6 @@ class BuilderGame extends MiniGame {
     this.model('fence', { len: 3.5, style: 'picket' }, [-5.6, 0, 2.0], 0, 1);
     this.model('flower_bed', { len: 2.6 }, [4.8, 0, 2.5], 0.1, 1);
     this.worker = this.model('npc_rabbit', undefined, [-3.7, 0, 0.8], 0.6, 1.25);
-    this.anim(this.worker)!.wave = true;
 
     this.site.add(box(4.3, 0.08, 3.4, '#d9c2a2', { p: [0, 0.04, 0] }));
     this.site.add(group([box(0.2, 0.04, 3.4, '#f1e6cc'), box(4.3, 0.04, 0.2, '#f1e6cc')], { p: [0, 0.1, 0] }));
@@ -57,6 +56,8 @@ class BuilderGame extends MiniGame {
   }
 
   protected async play(): Promise<void> {
+    // Vẫy chào khi bắt đầu chơi (lúc màn hướng dẫn đã đóng, trẻ nhìn thấy).
+    this.anim(this.worker)!.wave = true;
     while (this.more) {
       this.clearChoices();
       const q = this.builderQuestion();
