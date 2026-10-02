@@ -89,6 +89,20 @@ export function modelDef(key: string): ModelDef<any> | undefined {
   return defs.get(key);
 }
 
+/**
+ * Bán kính thân của mô hình (m, chưa nhân tỉ lệ): vật cản tròn đầu tiên, ưu tiên vòng tròn đặt ở tâm.
+ * NPC dùng số này để đẩy người chơi ra đúng cỡ nhân vật (Bác Voi 0.7, Thỏ Bông 0.45). Không có → undefined.
+ */
+export function modelRadius(key: string, opts: Record<string, unknown> = {}): number | undefined {
+  for (const def of [defs.get(key), baseDefs.get(key)]) {
+    const col = def && (typeof def.colliders === 'function' ? def.colliders(opts) : def.colliders);
+    const circles = (col ?? []).filter((c: Collider): c is CircleCollider => c.kind === 'circle');
+    const c = circles.find((k) => !k.at || (k.at[0] === 0 && k.at[1] === 0)) ?? circles[0];
+    if (c) return c.r;
+  }
+  return undefined;
+}
+
 export function modelKeys(prefix = ''): string[] {
   return [...defs.keys()].filter((k) => k.startsWith(prefix)).sort();
 }

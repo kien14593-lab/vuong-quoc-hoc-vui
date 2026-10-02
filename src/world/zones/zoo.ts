@@ -125,6 +125,8 @@ export class ZooZone extends Zone {
       color: CAST.voi.color,
       rot: -25,
       r: 2.8,
+      // Đôi tai rộng ≈1.9 m: đẩy bé ra xa hơn vật cản 0.7 của mô hình để tóc không lẹm vào tai khi đứng cạnh.
+      radius: 0.95,
       mark: () => (!on('zoo.open') ? '!' : ''),
       talk: () => this.talkElephant(),
     });

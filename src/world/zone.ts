@@ -14,7 +14,7 @@ import type { MiniInfo, MiniResult } from '../minigames/base';
 import { ask, promptCard, type AskOptions, type AskResult } from '../ui/question';
 import type { Stage as AnswerStage } from '../game/challenge';
 import { miniDef, miniName, miniTitle } from '../minigames/registry';
-import { buildModel, collectTicks, type Collider } from '../models/registry';
+import { buildModel, collectTicks, modelRadius, type Collider } from '../models/registry';
 import type { Speaker } from '../ui/dialog';
 import { say } from '../ui/dialog';
 import { hud } from '../ui/hud';
@@ -138,6 +138,11 @@ export interface NpcOpts {
   opts?: Record<string, unknown>;
   rot?: number;
   scale?: number;
+  /**
+   * Bán kính thân (m, chưa nhân `scale`) để đẩy người chơi ra, không cho lẹm vào nhân vật.
+   * Mặc định lấy vật cản tròn của mô hình (Bác Voi 0.7, Chú Gấu 0.65, Thỏ Bông 0.45). Khác `r` (vùng bấm nói chuyện).
+   */
+  radius?: number;
   /** Đi lang thang trong bán kính này (m). */
   wander?: number;
   talk?: (npc: Npc) => void | Promise<void>;
@@ -516,7 +521,7 @@ export abstract class Zone implements Stage {
 
   /** Thêm NPC. */
   npc(key: string, x: number, z: number, o: NpcOpts): Npc {
-    const actor = new Actor(key, { opts: o.opts, x, z, rot: o.rot ?? 0, scale: o.scale });
+    const actor = new Actor(key, { opts: o.opts, x, z, rot: o.rot ?? 0, scale: o.scale, radius: o.radius ?? modelRadius(key, o.opts) });
     actor.fixed = !o.wander;
     if (o.wander) actor.wander = { x, z, r: o.wander, next: engine.t + 2 + this.rnd() * 4, pause: [2.5, 6] };
     this.scene.add(actor.root);
