@@ -4,7 +4,8 @@
     "npc_bear.glb",
     "npc_cat.glb",
     "npc_owl.glb",
-    "npc_rabbit.glb"
+    "npc_rabbit.glb",
+    "npc_robot.glb"
   ],
   "nguon": {
     "npc_bear": [
@@ -18,6 +19,9 @@
     ],
     "npc_rabbit": [
       "tho.glb"
+    ],
+    "npc_robot": [
+      "robot.glb"
     ]
   }
 }

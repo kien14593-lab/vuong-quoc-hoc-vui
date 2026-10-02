@@ -151,7 +151,7 @@ xương và động tác thật** (đi, chạy, vẫy tay…).
 **Thứ tự gợi ý** (HY 3D cho khoảng 20 lượt mỗi ngày – nên làm từng con, xem trong trò chơi rồi mới làm tiếp):
 
 1. **Chú Gấu** ✅, **Thỏ Bông** ✅, **Cô Mèo** ✅, **Bác Cú** ✅ (đã xong – Tencent HY 3D).
-2. Robot Bíp, Chú Hề Bibo, Bác Voi, Nhà Vua, Hiệp Sĩ Thỏ.
+2. **Robot Bíp** ✅ (đã xong – Tencent HY 3D), Chú Hề Bibo, Bác Voi, Nhà Vua, Hiệp Sĩ Thỏ.
 3. Cô Sóc, Ông Rùa, Bạn Nai (+ thú Sở Thú nếu muốn).
 
 **Không nên thay:**
@@ -207,13 +207,15 @@ Gọng kính **dày** và tua mũ **ngắn, dày**: chi tiết mảnh dễ bị 
 A wise brown owl teacher standing on two legs: round chubby body, brown feathers, cream belly with small feather spots, little ear tufts, big round glasses with thick frames, small yellow beak, wings as short arms, orange feet, navy graduation cap with a short thick gold tassel. Cute chibi 3D cartoon for a kids game: big round head, small round body, short limbs, big shiny eyes, friendly smile, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, wings slightly away from body, facing front, no base, no background.
 ```
 
-### 5.5. Robot Bíp – gác Mê Cung
+### 5.5. Robot Bíp – gác Mê Cung ✅ đã có mô hình AI (Tencent HY 3D)
 
 Robot bay lơ lửng, không có chân → **không cần gắn xương**. Chỉ tải mô hình: `robot.glb`
 (trò chơi tự cho robot bay bồng bềnh, lắc lư).
 
+Không vẽ vòng bay hay ánh sáng phát sáng (HY 3D không làm được phần trong suốt, phát sáng – trò chơi tự thêm vòng bay), ăng-ten **dày** cho khỏi gãy, và ở bước 1 thay *"plain white background"* bằng *"plain light grey background"* để thân trắng không lẫn vào nền.
+
 ```text
-A cute little helper robot: glossy white and mint rounded cube body, dark screen face with glowing cyan eyes and a smile, small antenna with a glowing ball on top, short rounded arms, no legs, floating on a glowing cyan hover ring. Cute chibi 3D cartoon for a kids game, soft rounded shapes, pastel toy look. Full body, arms slightly away from body, facing front, no base, no background.
+A cute little helper robot. One rounded cube body in soft matte white with mint trim, a big dark navy screen on the front with two big bright cyan eyes and a cyan smile (flat colors, no glow), a mint band across the lower front, one short thick antenna with a big round cyan ball on top, short thick rounded arms with round mint mitten hands, no legs, smooth rounded bottom. Cute chibi 3D cartoon for a kids game, soft rounded shapes, pastel matte vinyl toy look. Full body including the antenna, arms slightly away from the body, facing front, empty hands. No hover ring, no base, no ground, no shadow.
 ```
 
 ### 5.6. Chú Hề Bibo – Khu Vui Chơi

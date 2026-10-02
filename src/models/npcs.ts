@@ -217,6 +217,11 @@ function buildBear(): THREE.Group {
   return finishRoot(b.root, b.rig, 2.0);
 }
 
+/** Vòng đẩy phát sáng dưới thân Robot Bíp (dùng chung cho mô hình AI cùng khóa). */
+export function hoverJet(): THREE.Group {
+  return pivot([0, -0.12, 0], [torus(0.34, 0.025, '#68e8ff', { r: [90, 0, 0], emissive: '#5ff3ff', glow: 0.9, opacity: 0.72, ts: 28, seg: 6 }), cone(0.13, 0.28, '#68e8ff', { p: [0, -0.12, 0], r: [180, 0, 0], emissive: '#5ff3ff', glow: 0.6, opacity: 0.55, seg: 16 })], 'hoverJet');
+}
+
 function buildRobot(): THREE.Group {
   const root = new THREE.Group(); root.name = 'npc_robot';
   const rig: Rig = { root, kind: 'float', height: 1.45, stride: 0.35, cadence: 2.0 };
@@ -231,7 +236,7 @@ function buildRobot(): THREE.Group {
   const antenna = pivot([0, 0.62, 0], [cyl(0.018, 0.018, 0.22, '#6b7c93', { ...ss, p: [0, 0.09, 0], seg: 8 }), ball(0.07, '#70f4ff', { p: [0, 0.22, 0], emissive: '#5ff3ff', glow: 1.2, seg: 12 })], 'antenna');
   antenna.userData.tick = (_dt: number, t: number) => { antenna.scale.setScalar(1 + Math.sin(t * 5) * 0.04); };
   body.add(antenna);
-  const hover = pivot([0, -0.12, 0], [torus(0.34, 0.025, '#68e8ff', { r: [90, 0, 0], emissive: '#5ff3ff', glow: 0.9, opacity: 0.72, ts: 28, seg: 6 }), cone(0.13, 0.28, '#68e8ff', { p: [0, -0.12, 0], r: [180, 0, 0], emissive: '#5ff3ff', glow: 0.6, opacity: 0.55, seg: 16 })], 'hoverJet');
+  const hover = hoverJet();
   body.add(hover); root.add(body);
   rig.body = body; rig.armL = armL; rig.armR = armR; rig.eyes = eyes; rig.mouth = mouth;
   rig.custom = (r, s) => {
@@ -369,7 +374,7 @@ const reg = (key: string, build: (o?: any) => THREE.Object3D, height: number, r:
 
 reg('npc_rabbit', () => buildRabbit(false), 1.35, 0.45, 'Thỏ Bông: tai earL/earR, mắt eyeL/eyeR, miệng mouth, đuôi tail.', undefined, { portrait: 'bust' });
 reg('npc_bear', buildBear, 2.0, 0.65, 'Chú Gấu: mũ thám hiểm, balo, mapRoll cầm tay.');
-reg('npc_robot', buildRobot, 1.45, 0.5, 'Robot Bíp: antenna và hoverJet có tick/custom, mắt phát sáng eyeL/eyeR.');
+reg('npc_robot', buildRobot, 1.45, 0.5, 'Robot Bíp: antenna và hoverJet có tick/custom, mắt phát sáng eyeL/eyeR.', undefined, { hover: { gap: 0.42, fx: hoverJet, spin: 1.6 }, portrait: 'bust' });
 reg('npc_cat', buildCat, 1.45, 0.45, 'Cô Mèo: earL/earR, tail, tạp dề shop.');
 reg('npc_squirrel', buildSquirrel, 1.55, 0.5, 'Cô Sóc: tail lớn cuộn, acorn cầm tay, kẹp lá.');
 reg('npc_turtle', buildTurtle, 1.45, 0.52, 'Ông Rùa: shell, glasses, walkingStick; cadence chậm.');

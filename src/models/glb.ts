@@ -74,13 +74,13 @@ export interface GlbLook {
   colors?: Record<string, string>;
   /** Kiểu vật liệu: 'lambert' (mặc định – hợp phong cách game), 'toon' (tô bóng 3 mức), 'standard' (giữ nguyên PBR). */
   material?: 'lambert' | 'toon' | 'standard';
-  /** Chiều cao mong muốn (m); mặc định = chiều cao của mô hình dựng bằng code cùng khóa. */
+  /** Chiều cao mong muốn (m); mặc định = chiều cao của mô hình dựng bằng code cùng khóa (trừ độ nâng `offset`). */
   height?: number;
   /** Tỉ lệ cố định (bỏ qua `height`). */
   scale?: number;
   /** Xoay thêm quanh trục đứng (độ) để mặt trước hướng +Z. */
   rotY?: number;
-  /** Dịch thêm sau khi đặt chân xuống y = 0 (mét). */
+  /** Dịch thêm sau khi đặt chân xuống y = 0 (mét); nâng lên (y > 0) thì nhãn tên cũng nâng theo. */
   offset?: [number, number, number];
   /** Tên clip cho từng vai trò (ghi đè tự nhận). */
   clips?: Partial<Record<ClipRole, string | string[]>>;
@@ -145,8 +145,13 @@ export function defineGlbModel(key: string, spec: GlbSpec): void {
     const def: ModelDef<any> = {
       build: (o: Record<string, unknown> = {}) => buildGlb(entry, o),
       colliders: spec.colliders ?? base?.colliders,
-      height: (o: Record<string, unknown> = {}) =>
-        entry.prepared.get(variantIndex(entry, o))?.height ?? lookOf(entry, variantIndex(entry, o)).height ?? baseHeight(entry, o) ?? 1.5,
+      height: (o: Record<string, unknown> = {}) => {
+        const vi = variantIndex(entry, o);
+        const look = lookOf(entry, vi);
+        const h = entry.prepared.get(vi)?.height ?? look.height;
+        // Đỉnh mô hình tính từ mặt đất (để đặt nhãn tên) – gồm cả độ nâng của nhân vật bay.
+        return h !== undefined ? h + liftOf(entry, look) : baseHeight(entry, o) ?? 1.5;
+      },
       tags: [...new Set([...(spec.tags ?? base?.tags ?? []), 'glb'])],
       desc: spec.desc ?? `${spec.source === 'ai' ? 'AI' : 'GLB'}${spec.credit ? ` (${spec.credit})` : ''}${base?.desc ? ' – ' + base.desc : ''}`,
       variants: spec.variants?.length ? spec.variants.map((_, i) => ({ v: i })) : undefined,
@@ -406,6 +411,10 @@ class GlbAnimator {
     private readonly inner: THREE.Group,
     private readonly prep: Prepared,
     private readonly look: GlbLook,
+    /** Bay lơ lửng (rig 'float'): nhấp nhô thay cho nhún bước. */
+    private readonly float = false,
+    /** Hiệu ứng dưới thân (vòng đẩy của robot): nhấp nhô theo thân và tự quay. */
+    private readonly fx?: { obj: THREE.Object3D; y: number; spin: number },
   ) {
     if (prep.roles.size) {
       this.mixer = new THREE.AnimationMixer(model);
@@ -487,7 +496,16 @@ class GlbAnimator {
     let sy = 1;
     let rz = 0;
     let rx = 0;
-    if (!this.mixer) {
+    if (this.float) {
+      // Bay lơ lửng: nhấp nhô lên xuống, lắc lư nhẹ, nghiêng về trước khi bay đi (không nhún theo bước chân).
+      y += Math.sin(t * 2.2) * 0.08;
+      if (!this.mixer) {
+        rz = Math.sin(t * 1.3) * 0.045;
+        rx = Math.sin(t * 0.9 + 1) * 0.025 + (s.run ? 0.16 : 0.1) * Math.min(1, mv);
+        if (s.talk) sy = 1 + Math.abs(Math.sin(t * 12)) * 0.035;
+        if (s.wave) rz += Math.sin(t * 8) * 0.06;
+      }
+    } else if (!this.mixer) {
       const moving = mv > 0.05 && !s.air;
       const k = Math.min(1, mv);
       this.phase += dt * Math.PI * 2 * (s.run ? 3.3 : 2.4) * (moving ? 1 : 0);
@@ -509,6 +527,10 @@ class GlbAnimator {
     this.inner.scale.set(this.baseScale.x * (2 - sy), this.baseScale.y * sy, this.baseScale.z * (2 - sy));
     this.inner.rotation.z = rz;
     this.inner.rotation.x = rx;
+    if (this.fx) {
+      this.fx.obj.position.y = this.fx.y + (y - this.baseY);
+      this.fx.obj.rotation.y = t * this.fx.spin;
+    }
 
     // Gật đầu khi nói.
     this.talkW = approach(this.talkW, s.talk ? 1 : 0, 8, dt);
@@ -537,6 +559,11 @@ function variantIndex(entry: Entry, o: Record<string, unknown>): number {
 function baseHeight(entry: Entry, o: Record<string, unknown>): number | undefined {
   const h = entry.base?.height;
   return typeof h === 'function' ? h(o) : h;
+}
+
+/** Độ nâng khỏi mặt đất (m): "nang-len" trong cấu hình, hoặc khoảng hở bay của mô hình dựng bằng code (Robot Bíp). */
+function liftOf(entry: Entry, look: GlbLook): number {
+  return look.offset?.[1] ?? entry.base?.hover?.gap ?? 0;
 }
 
 function prepare(entry: Entry, vi: number, o: Record<string, unknown>): Prepared | null {
@@ -606,7 +633,8 @@ function prepare(entry: Entry, vi: number, o: Record<string, unknown>): Prepared
   probe.updateMatrixWorld(true);
   const bb = new THREE.Box3().setFromObject(probe, true);
   const rawH = Math.max(1e-4, bb.max.y - bb.min.y);
-  const height = look.height ?? (look.scale ? rawH * look.scale : baseHeight(entry, o) ?? rawH);
+  const fallback = baseHeight(entry, o);
+  const height = look.height ?? (look.scale ? rawH * look.scale : fallback !== undefined ? Math.max(0.1, fallback - liftOf(entry, look)) : rawH);
   const scale = look.scale ?? height / rawH;
 
   // Khung bao của lưới có xương: tính sẵn theo tư thế nghỉ (nới rộng cho hoạt cảnh) để các bản sao
@@ -662,15 +690,25 @@ function buildGlb(entry: Entry, o: Record<string, unknown>): THREE.Object3D {
   inner.add(model);
   inner.scale.setScalar(prep.scale);
   inner.rotation.y = THREE.MathUtils.degToRad(look.rotY ?? 0);
-  const off = look.offset ?? [0, 0, 0];
+  const hover = entry.base?.hover;
+  const off = look.offset ?? [0, hover?.gap ?? 0, 0];
   inner.position.set(off[0], prep.baseY + off[1], off[2]);
 
   const root = new THREE.Group();
   root.name = entry.key;
   root.add(inner);
 
-  const anim = new GlbAnimator(model, inner, prep, look);
-  const rig: Rig = { root, kind: entry.spec.kind ?? 'biped', height: prep.height, animator: anim, head: anim.head };
+  const kind = entry.spec.kind ?? (hover ? 'float' : 'biped');
+  let fx: { obj: THREE.Object3D; y: number; spin: number } | undefined;
+  if (hover?.fx) {
+    // Hiệu ứng bay của mô hình dựng bằng code (vòng đẩy phát sáng), đặt ngay dưới đáy mô hình.
+    const obj = hover.fx();
+    obj.position.set(off[0], off[1] - 0.06, off[2]);
+    root.add(obj);
+    fx = { obj, y: obj.position.y, spin: hover.spin ?? 0 };
+  }
+  const anim = new GlbAnimator(model, inner, prep, look, kind === 'float', fx);
+  const rig: Rig = { root, kind, height: prep.height + off[1], animator: anim, head: anim.head };
   root.userData.rig = rig;
   root.userData.compacted = true;
   root.userData.glb = true;

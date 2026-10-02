@@ -47,6 +47,11 @@ export interface ModelDef<O = Record<string, unknown>> {
   variants?: O[];
   /** Khung ảnh chân dung khi nói chuyện (mặc định 'head'); nhân vật tai dài (Thỏ Bông) dùng 'bust' để thấy cả khuôn mặt. */
   portrait?: 'head' | 'bust' | 'full';
+  /**
+   * Nhân vật bay lơ lửng (Robot Bíp). Mô hình GLB cùng khóa (mô hình AI) kế thừa: nâng lên `gap` mét khi cấu hình
+   * chưa ghi "nang-len", nhấp nhô kiểu bay và gắn hiệu ứng `fx` dưới thân (quay `spin` rad/giây).
+   */
+  hover?: { gap: number; fx?: () => THREE.Object3D; spin?: number };
 }
 
 const defs = new Map<string, ModelDef<any>>();

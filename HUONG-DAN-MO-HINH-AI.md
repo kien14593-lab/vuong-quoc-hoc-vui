@@ -130,7 +130,7 @@ Nếu nhân vật quá to/nhỏ, quay lưng lại, hay màu bị lạ: mở **`m
 | `chieu-cao` | Chiều cao trong game (mét). Bỏ trống = bằng nhân vật có sẵn. |
 | `xoay` | Xoay thêm (độ) nếu nhân vật quay lưng/quay ngang: thử `180`, `90`, `-90`. |
 | `vat-lieu` | `mem` (mặc định – mịn, không bóng, hợp phong cách pastel), `hoat-hinh` (tô bóng kiểu hoạt hình), `goc` (giữ nguyên vật liệu gốc). |
-| `nang-len` / `ha-xuong` | Nâng/hạ nhân vật (mét) nếu bị lơ lửng hoặc lún. |
+| `nang-len` / `ha-xuong` | Nâng/hạ nhân vật (mét) nếu bị lơ lửng hoặc lún. Riêng Robot Bíp: `nang-len` là độ cao bay (bỏ trống = 0.42 như robot có sẵn), còn `chieu-cao` chỉ tính thân robot. |
 | `toc-do-di`, `toc-do-chay` | Tốc độ phát động tác đi/chạy (1 = bình thường; 1.3 = nhanh hơn). |
 | `an` | Ẩn bớt chi tiết theo tên lưới, vd. `["Sword"]`. |
 | `dong-tac` | Chỉ rõ động tác nào dùng vào việc gì khi trò chơi nhận nhầm (tên các động tác được in ra lúc chạy công cụ), vd. `{ "vui": "FunnyDancing_01", "dung": "Idle_02" }`. Tên việc: `dung`, `di`, `chay`, `nhay`, `vay-tay`, `noi`, `vui`, `ngoi`, `an`. |
