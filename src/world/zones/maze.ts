@@ -319,7 +319,7 @@ export class MazeZone extends Zone {
     this.exitGate = this.place('maze_exit_gate', 23.2, -6.2, { rot: 90, dynamic: true, reserve: 2.5, collide: !on(EXIT_FLAG) });
     if (on(EXIT_FLAG)) this.openExitGate(true);
     this.sign(23.2, -6.2, '🚪 Cửa ra Sở Thú', { y: 3.7, maxDist: 38 });
-    this.robot = this.npc(CAST.robot.art, 20.2, -8.7, {
+    this.robot = this.npc(CAST.robot.art, 20.9, -8.0, {
       name: CAST.robot.name,
       color: CAST.robot.color,
       rot: 35,

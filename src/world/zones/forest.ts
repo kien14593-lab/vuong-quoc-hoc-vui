@@ -135,7 +135,7 @@ export class ForestZone extends Zone {
       mark: () => (!on('forest.bridge') ? '!' : ''),
       talk: () => this.solveBridge(),
     });
-    this.sign(-2.8, BRIDGE_Z + 4.8, '🌉 Cầu Phép Cộng', { y: 2.3 });
+    this.sign(2.8, BRIDGE_Z + 4.8, '🌉 Cầu Phép Cộng', { y: 2.3 });
     this.interact({
       id: 'forest:bridge',
       x: 0,
