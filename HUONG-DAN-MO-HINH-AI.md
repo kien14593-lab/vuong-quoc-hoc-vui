@@ -30,6 +30,8 @@ bằng mô hình 3D tạo bằng AI (Tencent HY 3D, Meshy, Tripo...) mà **khôn
 
 - Miễn phí khoảng **20 lượt tạo mỗi ngày** (theo thông báo của Tencent; có thể thay đổi). Ghi công: `Tencent HY 3D`.
 - Tệp rất nặng (khoảng **80 MB**, **1,5 triệu mặt**) – công cụ **tự giảm** còn khoảng 60.000 tam giác (dưới 1 MB).
+- Trò chơi chỉ tải trước nhân vật của **màn hình tiêu đề**; nhân vật ở các khu vực khác được tải dần sau đó (hoặc lúc
+  chuyển cảnh vào khu vực) – nên **thêm nhiều nhân vật không làm bản chơi trên web mở chậm hơn**.
 - Mô hình **không có khung xương** – trò chơi tự cho nhân vật nhún nhảy, "thở", lắc lư. Nút gắn xương tự động
   (*Auto-Rigging*) của HY 3D **tốn điểm** – không bắt buộc.
 
@@ -147,6 +149,7 @@ Lưu ý: tệp JSON dùng dấu ngoặc kép `"`, các mục cách nhau bằng d
 | *chưa có khung xương* | Bình thường (HY 3D không có khung xương) – trò chơi tự cho nhân vật nhún nhảy. Muốn cử động thật: gắn xương (Meshy Rig/Animate, HY 3D Auto-Rigging – tốn điểm) rồi tải lại. Không bắt buộc. |
 | *không có tệp gốc trong mo-hinh-ai – giữ nguyên mô hình đã lắp* | Bình thường – nhân vật đã lắp được giữ. Muốn gỡ: `--go <tên>` (mục 3). |
 | *tệp không có động tác nào* | Khi tải tệp động tác, chọn kèm Animation. |
+| Mạng rất chậm: nhân vật AI tạm hiện thành nhân vật có sẵn | Bình thường – chờ quá 15 giây thì trò chơi tạm dùng nhân vật có sẵn để bé chơi tiếp; ra rồi vào lại khu vực là có mô hình AI. |
 | Nhân vật quay lưng | `"xoay": 180` trong `cau-hinh.json`. |
 | Nhân vật quá to/nhỏ | `"chieu-cao": ...` trong `cau-hinh.json`. |
 | *Chưa có Node.js* | Cài Node.js bản LTS từ <https://nodejs.org>, rồi chạy lại. |

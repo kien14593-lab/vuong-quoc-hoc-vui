@@ -1,7 +1,8 @@
 import { audio } from '../core/audio';
 import { awardBadge, hasBadge, hasProfile, profile, saveNow, setPosition, unloadProfile, type ZoneId } from '../core/state';
 import { engine } from '../engine/core';
-import { runMini, type MiniResult } from '../minigames';
+import { miniDef, runMini, type MiniResult } from '../minigames';
+import { ensureGlb, glbReady } from '../models';
 import { h, nextFrame, wait } from '../ui/dom';
 import { hud } from '../ui/hud';
 import { closeAllModals } from '../ui/modal';
@@ -15,6 +16,7 @@ import { nav } from '../world/nav';
 import { TitleStage } from '../world/title';
 import type { Spawn, Zone } from '../world/zone';
 import { createZone } from '../world/zones';
+import { miniModels, zoneModels } from './needs';
 import { checkBadges, zoneLock, ZONE_META } from './story';
 
 /**
@@ -37,7 +39,11 @@ export function currentZone(): Zone | null {
 
 function veilEl(): HTMLElement {
   if (!veil) {
-    veil = h('div.fade-veil', h('div.fade-veil-text'));
+    veil = h(
+      'div.fade-veil',
+      h('div.fade-veil-text'),
+      h('div.fade-veil-load', h('div.boot-bar', h('div.boot-bar-fill')), h('div.boot-text', 'Đang chuẩn bị các bạn...')),
+    );
     layer('top').appendChild(veil);
   }
   return veil;
@@ -46,8 +52,24 @@ function veilEl(): HTMLElement {
 async function fade(on: boolean, text = ''): Promise<void> {
   const v = veilEl();
   if (on) (v.firstElementChild as HTMLElement).textContent = text;
+  else v.querySelector('.fade-veil-load')?.classList.remove('on');
   v.classList.toggle('on', on);
   await wait(on ? 380 : 40);
+}
+
+/**
+ * Chờ tải mô hình AI cho cảnh sắp vào (trong lúc màn chuyển cảnh). Chờ lâu mới hiện thanh tiến độ;
+ * quá hạn/lỗi thì nhân vật dùng tạm mô hình dựng bằng code (không bao giờ kẹt).
+ */
+async function waitModels(keys: string[], ms = 15000): Promise<void> {
+  if (glbReady(keys)) return;
+  const load = veilEl().querySelector<HTMLElement>('.fade-veil-load')!;
+  const fill = load.querySelector<HTMLElement>('.boot-bar-fill')!;
+  fill.style.width = '0%';
+  const hint = setTimeout(() => load.classList.add('on'), 800);
+  await ensureGlb(keys, { timeoutMs: ms, onProgress: (f) => (fill.style.width = `${Math.round(f * 100)}%`) });
+  clearTimeout(hint);
+  load.classList.remove('on');
 }
 
 /** Màn hình tiêu đề (cảnh làng 3D phía sau + menu). */
@@ -65,7 +87,10 @@ export async function goZone(id: ZoneId, spawn: Spawn = 'start'): Promise<void> 
   moving = true;
   try {
     const meta = ZONE_META[id];
+    // Tải mô hình AI của khu vực song song với màn mờ dần. (Dựng lỗi thì về làng: mô hình AI của làng đã nạp từ màn tiêu đề.)
+    const models = waitModels(zoneModels(id, hasProfile() ? profile().equipped.pet : null));
     await fade(true, `${meta.icon} ${meta.name}`);
+    await models;
     closeAllModals();
     hud.setAction(null);
     await nextFrame();
@@ -91,14 +116,23 @@ export async function goZone(id: ZoneId, spawn: Spawn = 'start'): Promise<void> 
 }
 
 /** Chơi một trò chơi nhỏ từ khu vực hiện tại rồi quay lại đúng chỗ cũ. */
-function playMini(id: string): Promise<MiniResult | null> {
-  return new Promise((resolve) => {
-    const z = zone;
-    if (!z) {
-      resolve(null);
-      return;
+async function playMini(id: string): Promise<MiniResult | null> {
+  const z = zone;
+  if (!z) return null;
+  z.pause();
+  const keys = miniModels(id);
+  const veiled = !glbReady(keys);
+  if (veiled) {
+    const info = miniDef(id)?.info;
+    const models = waitModels(keys);
+    await fade(true, info ? `${info.icon} ${info.name.replace(/^[^\p{L}\p{N}]+/u, '')}` : '');
+    await models;
+    if (zone !== z) {
+      void fade(false);
+      return null;
     }
-    z.pause();
+  }
+  return new Promise((resolve) => {
     const ok = runMini(
       id,
       (res) => {
@@ -116,6 +150,7 @@ function playMini(id: string): Promise<MiniResult | null> {
       z.enter();
       resolve(null);
     }
+    if (veiled) void fade(false);
   });
 }
 

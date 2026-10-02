@@ -11,7 +11,9 @@ import type { AnimState, Rig, RigKind } from './rig';
  *
  *  - `defineGlbModel('npc_bear', { src })` thay mô hình cùng khóa; mô hình dựng bằng code vẫn được giữ làm dự phòng
  *    (khi tệp chưa nạp/lỗi) và cho va chạm, chiều cao, mô tả mặc định.
- *  - Gọi `await preloadGlb()` một lần lúc khởi động (trước khi dựng cảnh) để `buildModel` luôn đồng bộ.
+ *  - Tệp được nạp theo nhu cầu: `await ensureGlb(keys)` trước khi dựng cảnh cần các khóa đó (màn tiêu đề, từng
+ *    khu vực, trò chơi nhỏ – danh sách ở game/needs.ts) để `buildModel` luôn đồng bộ; `prefetchGlb()` nạp trước phần
+ *    còn lại ở nền. Tệp chưa nạp xong/lỗi thì dùng mô hình dựng bằng code. `preloadGlb()` nạp tất cả (trang xem thử).
  *  - Mô hình được chuẩn hóa: chân chạm y = 0, cao đúng `height` mét, mặt trước hướng +Z (chỉnh bằng `rotY`).
  *  - Hoạt cảnh (idle/walk/run/...) tự nhận theo tên clip, điều khiển qua `animateRig` như mô hình dựng bằng code.
  *    Mô hình không có xương/hoạt cảnh vẫn "sống" nhờ hoạt cảnh đồ chơi (nhún, lắc, thở).
@@ -124,9 +126,24 @@ interface Entry {
   prepared: Map<number, Prepared | null>;
 }
 
+/** Một tệp đang tải. */
+interface Load {
+  /** Ưu tiên thấp (nạp trước ở nền) – nhường đường khi một khu vực cần tệp khác ngay. */
+  low: boolean;
+  ctrl: AbortController;
+  /** Số byte đã nhận / tổng (đọc từ đầu tệp GLB; -1 = không rõ). */
+  got: number;
+  total: number;
+  /** Đã tải xong, đang giải nén – không hủy nữa. */
+  parsing: boolean;
+  promise: Promise<void>;
+}
+
 const entries = new Map<string, Entry>();
 const gltfs = new Map<string, GLTF>();
-const pending = new Map<string, Promise<GLTF | null>>();
+const loads = new Map<string, Load>();
+/** Hàng đợi nạp trước ở nền (lần lượt từng tệp, ưu tiên thấp). */
+const queue: string[] = [];
 const failed = new Set<string>();
 let enabled = true;
 let loader: GLTFLoader | undefined;
@@ -180,40 +197,152 @@ function getLoader(): GLTFLoader {
   return loader;
 }
 
-function loadUrl(url: string): Promise<GLTF | null> {
-  let p = pending.get(url);
-  if (!p) {
-    p = getLoader()
-      .loadAsync(url)
-      .then((g) => {
-        gltfs.set(url, g);
-        return g;
-      })
-      .catch((e) => {
-        failed.add(url);
-        console.warn('[glb] không nạp được', url.slice(0, 80), e);
-        return null;
-      });
-    pending.set(url, p);
+const settled = (url: string) => gltfs.has(url) || failed.has(url);
+
+/** Các tệp (mô hình + hoạt cảnh, mọi biến thể) của các khóa có mô hình GLB. */
+function urlsFor(keys: Iterable<string>): string[] {
+  const out = new Set<string>();
+  for (const k of keys) {
+    const e = entries.get(k);
+    if (e) for (const u of urlsOf(e.spec)) out.add(u);
   }
-  return p;
+  return [...out];
 }
 
-/** Nạp tất cả tệp GLB đã khai báo. Gọi lại an toàn (chỉ nạp tệp mới). */
-export async function preloadGlb(onProgress?: (done: number, total: number) => void): Promise<void> {
-  const urls = new Set<string>();
-  for (const e of entries.values()) for (const u of urlsOf(e.spec)) urls.add(u);
-  const list = [...urls];
-  let done = 0;
-  onProgress?.(0, list.length);
-  await Promise.all(
-    list.map((u) =>
-      loadUrl(u).then(() => {
-        done++;
-        onProgress?.(done, list.length);
-      }),
-    ),
-  );
+async function download(url: string, ld: Load): Promise<ArrayBuffer> {
+  const res = await fetch(url, { signal: ld.ctrl.signal, priority: ld.low ? 'low' : 'high' } as RequestInit);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const reader = res.body?.getReader();
+  if (!reader) return res.arrayBuffer();
+  const parts: Uint8Array[] = [];
+  const head = new Uint8Array(12);
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (ld.got < 12) head.set(value.subarray(0, 12 - ld.got), ld.got);
+    parts.push(value);
+    ld.got += value.byteLength;
+    if (!ld.total && ld.got >= 12) {
+      // Đầu tệp GLB: "glTF", phiên bản, tổng dung lượng – để tính tiến độ (kể cả khi máy chủ nén gzip).
+      const dv = new DataView(head.buffer);
+      ld.total = dv.getUint32(0, true) === 0x46546c67 ? dv.getUint32(8, true) : -1;
+    }
+  }
+  const buf = new Uint8Array(ld.got);
+  let at = 0;
+  for (const p of parts) {
+    buf.set(p, at);
+    at += p.byteLength;
+  }
+  return buf.buffer;
+}
+
+function startLoad(url: string, low: boolean): Load {
+  const ld: Load = { low, ctrl: new AbortController(), got: 0, total: 0, parsing: false, promise: Promise.resolve() };
+  ld.promise = download(url, ld)
+    .then((buf) => {
+      ld.parsing = true;
+      return getLoader().parseAsync(buf, url.startsWith('data:') ? '' : THREE.LoaderUtils.extractUrlBase(url));
+    })
+    .then((g) => {
+      gltfs.set(url, g);
+    })
+    .catch((e) => {
+      if (ld.ctrl.signal.aborted) return;
+      failed.add(url);
+      console.warn('[glb] không nạp được', url.slice(0, 80), e);
+    })
+    .finally(() => {
+      if (loads.get(url) === ld) loads.delete(url);
+      pump();
+    });
+  loads.set(url, ld);
+  return ld;
+}
+
+/** Nạp trước ở nền: chỉ một tệp mỗi lúc và chỉ khi không có tệp nào khác đang tải. */
+function pump(): void {
+  if (loads.size) return;
+  while (queue.length) {
+    const u = queue.shift()!;
+    if (!settled(u) && !loads.has(u)) {
+      startLoad(u, true);
+      return;
+    }
+  }
+}
+
+export interface EnsureOpts {
+  /** Chờ tối đa (ms). Quá hạn: trả về false, tệp vẫn tải tiếp và được dùng từ lần dựng mô hình sau. */
+  timeoutMs?: number;
+  /** Tiến độ 0..1. */
+  onProgress?: (frac: number) => void;
+}
+
+/**
+ * Nạp (ưu tiên cao) các tệp GLB của các khóa và chờ xong. Các tệp đang nạp trước ở nền mà không cần ngay
+ * sẽ tạm dừng để nhường đường. Không bao giờ báo lỗi: tệp lỗi/quá hạn thì nhân vật dùng mô hình dựng bằng code.
+ * Trả về true khi mọi tệp đã sẵn sàng.
+ */
+export function ensureGlb(keys: Iterable<string>, o: EnsureOpts = {}): Promise<boolean> {
+  const urls = enabled ? urlsFor(keys).filter((u) => !settled(u)) : [];
+  if (!urls.length) {
+    o.onProgress?.(1);
+    return Promise.resolve(true);
+  }
+  const need = new Set(urls);
+  for (const [u, ld] of loads) {
+    if (ld.low && !ld.parsing && !need.has(u)) {
+      ld.ctrl.abort();
+      loads.delete(u);
+      queue.unshift(u);
+    }
+  }
+  const mine = urls.map((u) => {
+    const ld = loads.get(u);
+    if (!ld) return startLoad(u, false);
+    ld.low = false;
+    return ld;
+  });
+  const frac = () =>
+    mine.reduce((s, ld, i) => s + (settled(urls[i]) ? 1 : ld.total > 0 ? Math.min(0.98, ld.got / ld.total) : 0), 0) / mine.length;
+  return new Promise<boolean>((resolve) => {
+    let over = false;
+    const tick = o.onProgress ? setInterval(() => o.onProgress!(frac()), 120) : undefined;
+    const timer = o.timeoutMs
+      ? setTimeout(() => {
+          console.warn('[glb] chờ quá lâu – tạm dùng mô hình dựng bằng code:', urls.filter((u) => !settled(u)).map((u) => u.slice(0, 80)));
+          finish(false);
+        }, o.timeoutMs)
+      : undefined;
+    function finish(ok: boolean): void {
+      if (over) return;
+      over = true;
+      clearInterval(tick);
+      clearTimeout(timer);
+      o.onProgress?.(1);
+      resolve(ok);
+    }
+    void Promise.all(mine.map((ld) => ld.promise)).then(() => finish(urls.every((u) => gltfs.has(u))));
+  });
+}
+
+/** Các tệp GLB của các khóa đã xong (nạp được hoặc lỗi) chưa – xong thì dựng mô hình không cần chờ. */
+export function glbReady(keys?: Iterable<string>): boolean {
+  return !enabled || urlsFor(keys ?? entries.keys()).every(settled);
+}
+
+/** Nạp trước ở nền (ưu tiên thấp, lần lượt theo thứ tự) để các khu vực sau mở ngay; bỏ qua khi bật tiết kiệm dữ liệu. */
+export function prefetchGlb(keys?: Iterable<string>): void {
+  if (!enabled) return;
+  if ((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return;
+  for (const u of urlsFor(keys ?? entries.keys())) if (!settled(u) && !queue.includes(u)) queue.push(u);
+  pump();
+}
+
+/** Nạp và chờ các tệp GLB của các khóa (mặc định: tất cả – cho trang xem thử). Gọi lại an toàn (chỉ nạp tệp mới). */
+export async function preloadGlb(keys?: Iterable<string>, o: EnsureOpts = {}): Promise<void> {
+  await ensureGlb(keys ?? [...entries.keys()], o);
 }
 
 /* ------------------------------------------------------------------ */
@@ -667,7 +796,8 @@ function prepare(entry: Entry, vi: number, o: Record<string, unknown>): Prepared
     height,
     headName: findHead(tpl),
   };
-  entry.prepared.set(vi, prep);
+  // Tệp hoạt cảnh phụ chưa nạp xong: dùng tạm, chưa lưu (lần sau dựng lại đủ hoạt cảnh).
+  if ((look.animSrc ?? []).every((a) => settled(typeof a === 'string' ? a : a.src))) entry.prepared.set(vi, prep);
   return prep;
 }
 

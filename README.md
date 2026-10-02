@@ -69,13 +69,15 @@ Chép tệp `.glb` (tạo bằng Tencent HY 3D, Meshy, Tripo…) vào thư mục
 
 Công nghệ: **Three.js** (3D), **TypeScript**, **Vite**, **Vitest**. Mọi mô hình đều có bản dựng bằng code
 (pastel, low-poly), có thể thay bằng tệp GLB (Chú Gấu, Thỏ Bông, Cô Mèo, Bác Cú, Robot Bíp và Chú Hề Bibo đã dùng
-mô hình AI).
+mô hình AI). Mô hình AI được tải theo cảnh: màn hình tiêu đề tải trước, mỗi khu vực/mini-game chờ mô hình của mình lúc
+chuyển cảnh (quá 15 giây thì dùng bản dựng bằng code), phần còn lại tải dần ở chế độ nền. Danh sách nằm trong
+`src/game/needs.ts`; `tests/needs.test.ts` báo lỗi nếu một cảnh dùng nhân vật chưa có trong danh sách.
 
 ```bash
 npm install
 npm run dev          # chạy thử tại http://localhost:5173
 npm run typecheck    # kiểm tra kiểu TypeScript
-npm test             # chạy kiểm thử (bộ sinh câu hỏi toán)
+npm test             # chạy kiểm thử (bộ sinh câu hỏi toán, danh sách mô hình theo cảnh)
 npm run build        # bản web vào dist/
 npm run build:single # bản 1 tệp HTML vào dist-single/ (DongGoi.bat dùng lệnh này)
 ```

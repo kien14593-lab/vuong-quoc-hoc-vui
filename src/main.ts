@@ -8,8 +8,9 @@ import { engine } from './engine/core';
 import { loadFonts } from './engine/text';
 import { showTitle } from './game/app';
 import { installDebug } from './game/debug';
+import { modelsInStoryOrder, TITLE_MODELS } from './game/needs';
 import { startPlayTimer } from './game/playtime';
-import { preloadGlb } from './models';
+import { glbKeys, prefetchGlb, preloadGlb } from './models';
 import { initUI } from './ui/root';
 
 /** Thanh tiến độ trên màn hình khởi động. */
@@ -27,7 +28,8 @@ async function main(): Promise<void> {
   bootProgress(0.3, 'Đang tải phông chữ...');
   await loadFonts();
   bootProgress(0.55, 'Đang chuẩn bị các bạn thú...');
-  await preloadGlb();
+  // Chỉ chờ mô hình AI của màn hình tiêu đề; mỗi khu vực tự tải mô hình của mình khi chuyển cảnh (game/needs.ts).
+  await preloadGlb(TITLE_MODELS, { timeoutMs: 20000, onProgress: (f) => bootProgress(0.55 + 0.3 * f) });
   bootProgress(0.85, 'Sắp xong rồi...');
   showTitle();
   startPlayTimer();
@@ -38,6 +40,8 @@ async function main(): Promise<void> {
     boot.classList.add('hide');
     window.setTimeout(() => boot.remove(), 700);
   }
+  // Tải dần ở nền mô hình của các khu vực sau (theo thứ tự trẻ sẽ gặp) để lúc vào khu vực không phải chờ.
+  window.setTimeout(() => prefetchGlb([...modelsInStoryOrder(), ...glbKeys()]), 1500);
 }
 
 void main().catch((e) => {

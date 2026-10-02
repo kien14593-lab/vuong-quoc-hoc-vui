@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { Equipped, Look } from '../core/state';
 import { disposeTree } from '../engine/merge';
+import { ensureGlb, glbReady } from '../models/glb';
 import { buildModel, hasModel } from '../models/registry';
 
 /**
@@ -105,7 +106,7 @@ export function renderPortrait(obj: THREE.Object3D, o: PortraitOpts = {}): strin
   return url;
 }
 
-function cached(k: string, make: () => THREE.Object3D | null, o: PortraitOpts): string {
+function cached(k: string, make: () => THREE.Object3D | null, o: PortraitOpts, keep = true): string {
   const hit = cache.get(k);
   if (hit !== undefined) return hit;
   const obj = make();
@@ -113,7 +114,7 @@ function cached(k: string, make: () => THREE.Object3D | null, o: PortraitOpts): 
   const url = renderPortrait(obj, o);
   disposeTree(obj);
   if (cache.size > 400) cache.clear();
-  if (url) cache.set(k, url);
+  if (url && keep) cache.set(k, url);
   return url;
 }
 
@@ -121,7 +122,10 @@ function cached(k: string, make: () => THREE.Object3D | null, o: PortraitOpts): 
 export function modelPortrait(key: string, o: PortraitOpts = {}): string {
   if (!hasModel(key)) return '';
   const k = JSON.stringify(['m', key, o]);
-  return cached(k, () => buildModel(key, o.opts ?? {}), o);
+  // Mô hình AI chưa tải xong: vẽ tạm bằng mô hình dựng bằng code nhưng không lưu (lần sau vẽ lại bằng mô hình AI).
+  const ready = glbReady([key]);
+  if (!ready) void ensureGlb([key]);
+  return cached(k, () => buildModel(key, o.opts ?? {}), o, ready);
 }
 
 /** Chân dung người chơi theo ngoại hình + trang phục. */

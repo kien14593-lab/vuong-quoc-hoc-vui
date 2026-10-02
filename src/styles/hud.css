@@ -796,6 +796,8 @@
   pointer-events: none;
   transition: opacity 0.35s ease;
   display: flex;
+  flex-direction: column;
+  gap: 28px;
   align-items: center;
   justify-content: center;
 }
@@ -810,4 +812,23 @@
   font-weight: 800;
   color: var(--ink);
   animation: bob 1s ease-in-out infinite;
+}
+
+/* Thanh tải mô hình – chỉ hiện khi phải chờ lâu (mạng chậm). */
+.fade-veil-load {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.fade-veil-load.on {
+  opacity: 1;
+}
+
+.fade-veil-load .boot-bar {
+  width: min(60vw, 420px);
+  height: 24px;
 }
