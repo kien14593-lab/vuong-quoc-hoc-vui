@@ -35,6 +35,8 @@ vào mục `"nguon"` khi lắp mô hình). Nên đọc điều khoản sử dụ
 
 - Ảnh tốt: **một nhân vật**, **nhìn thẳng**, **nền trơn**, thấy đủ toàn thân, tay tách khỏi người, hai chân có khe hở.
 - Ảnh hợp lệ: **PNG/JPG/WEBP**, tối đa **10 MB**, mỗi cạnh **512–4096 px**, gần **vuông**.
+- Nhân vật có **nhiều phần màu trắng** (Robot Bíp, Chú Hề Bibo…): đổi *"plain white background"* thành
+  *"plain light grey background"* để phần trắng không lẫn vào nền.
 - **Mẹo để nhân vật mới cùng phong cách với Chú Gấu** (cô đã làm Thỏ Bông và Cô Mèo như vậy): trong **Gemini**, đính kèm ảnh
   mẫu của Gấu (`gau-anh-mau-3.png`) cùng với câu lệnh của nhân vật, thêm vào **đầu** câu lệnh:
   `Use the attached bear only as a style reference (same 3D render style, proportions and soft materials). Draw a new character:`
@@ -151,7 +153,7 @@ xương và động tác thật** (đi, chạy, vẫy tay…).
 **Thứ tự gợi ý** (HY 3D cho khoảng 20 lượt mỗi ngày – nên làm từng con, xem trong trò chơi rồi mới làm tiếp):
 
 1. **Chú Gấu** ✅, **Thỏ Bông** ✅, **Cô Mèo** ✅, **Bác Cú** ✅ (đã xong – Tencent HY 3D).
-2. **Robot Bíp** ✅ (đã xong – Tencent HY 3D), Chú Hề Bibo, Bác Voi, Nhà Vua, Hiệp Sĩ Thỏ.
+2. **Robot Bíp** ✅, **Chú Hề Bibo** ✅ (đã xong – Tencent HY 3D), Bác Voi, Nhà Vua, Hiệp Sĩ Thỏ.
 3. Cô Sóc, Ông Rùa, Bạn Nai (+ thú Sở Thú nếu muốn).
 
 **Không nên thay:**
@@ -218,12 +220,14 @@ Không vẽ vòng bay hay ánh sáng phát sáng (HY 3D không làm được ph�
 A cute little helper robot. One rounded cube body in soft matte white with mint trim, a big dark navy screen on the front with two big bright cyan eyes and a cyan smile (flat colors, no glow), a mint band across the lower front, one short thick antenna with a big round cyan ball on top, short thick rounded arms with round mint mitten hands, no legs, smooth rounded bottom. Cute chibi 3D cartoon for a kids game, soft rounded shapes, pastel matte vinyl toy look. Full body including the antenna, arms slightly away from the body, facing front, empty hands. No hover ring, no base, no ground, no shadow.
 ```
 
-### 5.6. Chú Hề Bibo – Khu Vui Chơi
+### 5.6. Chú Hề Bibo – Khu Vui Chơi ✅ đã có mô hình AI (Tencent HY 3D)
 
 Tệp: `chu-he-dung.glb` · `chu-he-noi.glb` · `chu-he-vay-tay.glb` · `chu-he-vui.glb`
 
+Găng tay **tròn**, cổ áo xếp nếp **dày** và **quả bông** trên đỉnh mũ (chi tiết mảnh dễ bị thủng khi tạo 3D), miệng **cười khép** cho hiền, ở bước 1 dùng *"plain light grey background"* vì có nhiều phần trắng, và ghi rõ *"He is a human, not a bear"* vì ảnh mẫu phong cách là chú gấu (AI dễ vẽ thêm lông, tai thú).
+
 ```text
-A sweet friendly clown, cute and NOT scary: fair skin, no face paint, small round red nose, orange hair with colorful fluffy puffs on both sides, small purple party hat, white ruffle collar, rainbow striped shirt, blue shorts, red sneakers. Cute chibi 3D cartoon for a kids game: big round head, small round body, short limbs, big shiny eyes, friendly smile, rosy cheeks, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from body, legs apart, facing front, empty hands, no base, no background.
+A sweet, friendly human clown, cute and NOT scary: fair skin, no face paint, small round red nose, big shiny eyes, rosy cheeks, gentle closed-mouth smile, orange hair with big round colorful fluffy puffs on both sides, small purple cone party hat with a round pompom on top, thick puffy white ruffle collar, rainbow striped shirt, blue shorts, round white cartoon gloves, chunky red sneakers. Cute chibi 3D cartoon for a kids game: big round head, small round body, short thick limbs, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from body, legs apart, facing front, empty hands, no base, no ground, no shadow. He is a human, not a bear: no fur, no animal ears, no muzzle.
 ```
 
 ### 5.7. Bác Voi – giữ cổng Sở Thú

@@ -3,6 +3,7 @@
   "files": [
     "npc_bear.glb",
     "npc_cat.glb",
+    "npc_clown.glb",
     "npc_owl.glb",
     "npc_rabbit.glb",
     "npc_robot.glb"
@@ -13,6 +14,9 @@
     ],
     "npc_cat": [
       "meo.glb"
+    ],
+    "npc_clown": [
+      "he.glb"
     ],
     "npc_owl": [
       "cu.glb"

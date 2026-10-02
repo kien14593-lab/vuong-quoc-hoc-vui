@@ -4,5 +4,6 @@
   "tho": { "chieu-cao": 1.7, "xoay": 0, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
   "meo": { "chieu-cao": 1.55, "xoay": 0, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
   "cu": { "chieu-cao": 1.6, "xoay": 0, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
-  "robot": { "chieu-cao": 1.0, "xoay": 0, "nang-len": 0.42, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" }
+  "robot": { "chieu-cao": 1.0, "xoay": 0, "nang-len": 0.42, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
+  "he": { "chieu-cao": 1.9, "xoay": 0, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" }
 }
