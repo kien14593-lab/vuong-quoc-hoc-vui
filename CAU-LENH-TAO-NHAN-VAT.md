@@ -150,7 +150,7 @@ xương và động tác thật** (đi, chạy, vẫy tay…).
 
 **Thứ tự gợi ý** (HY 3D cho khoảng 20 lượt mỗi ngày – nên làm từng con, xem trong trò chơi rồi mới làm tiếp):
 
-1. **Chú Gấu** ✅, **Thỏ Bông** ✅, **Cô Mèo** ✅ (đã xong – Tencent HY 3D), Bác Cú.
+1. **Chú Gấu** ✅, **Thỏ Bông** ✅, **Cô Mèo** ✅, **Bác Cú** ✅ (đã xong – Tencent HY 3D).
 2. Robot Bíp, Chú Hề Bibo, Bác Voi, Nhà Vua, Hiệp Sĩ Thỏ.
 3. Cô Sóc, Ông Rùa, Bạn Nai (+ thú Sở Thú nếu muốn).
 
@@ -197,12 +197,14 @@ Tệp: `meo-dung.glb` · `meo-di.glb` · `meo-noi.glb` · `meo-vay-tay.glb` · `
 A kind orange tabby cat shopkeeper lady standing on two legs: orange fur with darker stripes on the forehead, pointy ears with pink inside, white whiskers, pink nose, sunny yellow apron with a small pocket, curled tail. Cute chibi 3D cartoon for a kids game: big round head, small round body, short limbs, big shiny eyes, friendly smile, rosy cheeks, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from body, legs apart, facing front, empty hands, no base, no background.
 ```
 
-### 5.4. Bác Cú – canh Cầu Phép Cộng trong Rừng ⭐
+### 5.4. Bác Cú – canh Cầu Phép Cộng trong Rừng ⭐ ✅ đã có mô hình AI (Tencent HY 3D)
 
 Tệp: `cu-dung.glb` · `cu-noi.glb` · `cu-vay-tay.glb` · `cu-vui.glb`
 
+Gọng kính **dày** và tua mũ **ngắn, dày**: chi tiết mảnh dễ bị đứt hoặc thủng khi tạo mô hình 3D.
+
 ```text
-A wise brown owl teacher standing on two legs: round chubby body, brown feathers, cream belly with small feather spots, little ear tufts, big round glasses, small yellow beak, wings as short arms, orange feet, navy graduation cap with a gold tassel. Cute chibi 3D cartoon for a kids game: big round head, small round body, short limbs, big shiny eyes, friendly smile, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, wings slightly away from body, facing front, no base, no background.
+A wise brown owl teacher standing on two legs: round chubby body, brown feathers, cream belly with small feather spots, little ear tufts, big round glasses with thick frames, small yellow beak, wings as short arms, orange feet, navy graduation cap with a short thick gold tassel. Cute chibi 3D cartoon for a kids game: big round head, small round body, short limbs, big shiny eyes, friendly smile, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, wings slightly away from body, facing front, no base, no background.
 ```
 
 ### 5.5. Robot Bíp – gác Mê Cung

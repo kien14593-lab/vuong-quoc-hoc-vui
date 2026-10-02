@@ -2,5 +2,6 @@
   "_ghi-chu": "Đổi tên tệp này thành cau-hinh.json rồi sửa. Chỉ cần ghi những nhân vật muốn tinh chỉnh. Xem HUONG-DAN-MO-HINH-AI.md.",
   "gau": { "chieu-cao": 1.9, "xoay": 0, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
   "tho": { "chieu-cao": 1.7, "xoay": 0, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
-  "meo": { "chieu-cao": 1.55, "xoay": 0, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" }
+  "meo": { "chieu-cao": 1.55, "xoay": 0, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
+  "cu": { "chieu-cao": 1.6, "xoay": 0, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" }
 }
