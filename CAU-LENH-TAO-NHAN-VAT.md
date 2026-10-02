@@ -35,7 +35,7 @@ vào mục `"nguon"` khi lắp mô hình). Nên đọc điều khoản sử dụ
 
 - Ảnh tốt: **một nhân vật**, **nhìn thẳng**, **nền trơn**, thấy đủ toàn thân, tay tách khỏi người, hai chân có khe hở.
 - Ảnh hợp lệ: **PNG/JPG/WEBP**, tối đa **10 MB**, mỗi cạnh **512–4096 px**, gần **vuông**.
-- **Mẹo để nhân vật mới cùng phong cách với Chú Gấu** (cô đã làm Thỏ Bông như vậy): trong **Gemini**, đính kèm ảnh
+- **Mẹo để nhân vật mới cùng phong cách với Chú Gấu** (cô đã làm Thỏ Bông và Cô Mèo như vậy): trong **Gemini**, đính kèm ảnh
   mẫu của Gấu (`gau-anh-mau-3.png`) cùng với câu lệnh của nhân vật, thêm vào **đầu** câu lệnh:
   `Use the attached bear only as a style reference (same 3D render style, proportions and soft materials). Draw a new character:`
   và vào **cuối cùng**: `Do not copy the bear's hat, scarf or backpack.`
@@ -150,7 +150,7 @@ xương và động tác thật** (đi, chạy, vẫy tay…).
 
 **Thứ tự gợi ý** (HY 3D cho khoảng 20 lượt mỗi ngày – nên làm từng con, xem trong trò chơi rồi mới làm tiếp):
 
-1. **Chú Gấu** ✅, **Thỏ Bông** ✅ (đã xong – Tencent HY 3D), Cô Mèo, Bác Cú.
+1. **Chú Gấu** ✅, **Thỏ Bông** ✅, **Cô Mèo** ✅ (đã xong – Tencent HY 3D), Bác Cú.
 2. Robot Bíp, Chú Hề Bibo, Bác Voi, Nhà Vua, Hiệp Sĩ Thỏ.
 3. Cô Sóc, Ông Rùa, Bạn Nai (+ thú Sở Thú nếu muốn).
 
@@ -189,7 +189,7 @@ Tệp: `tho-dung.glb` · `tho-noi.glb` · `tho-vay-tay.glb` · `tho-vui.glb`
 A sweet white bunny standing on two legs: fluffy white fur, long upright ears with pink inside, pink nose, teal vest with a little pink bow at the collar, small round fluffy tail. Cute chibi 3D cartoon for a kids game: big round head, small round body, short limbs, big shiny eyes, friendly smile, rosy cheeks, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from body, legs apart, facing front, empty hands, no base, no background.
 ```
 
-### 5.3. Cô Mèo – bán hàng ở Làng ⭐
+### 5.3. Cô Mèo – bán hàng ở Làng ⭐ ✅ đã có mô hình AI (Tencent HY 3D)
 
 Tệp: `meo-dung.glb` · `meo-di.glb` · `meo-noi.glb` · `meo-vay-tay.glb` · `meo-vui.glb`
 

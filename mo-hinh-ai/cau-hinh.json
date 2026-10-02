@@ -1,5 +1,6 @@
 {
   "_ghi-chu": "Tinh chỉnh các mô hình AI trong game. Sửa xong chạy lại CapNhatMoHinh.bat. Xem HUONG-DAN-MO-HINH-AI.md.",
   "gau": { "chieu-cao": 1.9, "xoay": 0, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
-  "tho": { "chieu-cao": 1.7, "xoay": 0, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" }
+  "tho": { "chieu-cao": 1.7, "xoay": 0, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
+  "meo": { "chieu-cao": 1.55, "xoay": 0, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" }
 }

@@ -5,6 +5,12 @@
     "material": "lambert",
     "credit": "Tencent HY 3D (hy3d.tencent.ai)"
   },
+  "npc_cat": {
+    "height": 1.55,
+    "rotY": 0,
+    "material": "lambert",
+    "credit": "Tencent HY 3D (hy3d.tencent.ai)"
+  },
   "npc_rabbit": {
     "height": 1.7,
     "rotY": 0,
