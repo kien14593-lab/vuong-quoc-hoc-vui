@@ -35,6 +35,8 @@ const ROOM_IDS: RoomId[] = ['mul', 'frac', 'geo'];
 const CHOICE_COLORS = ['#8fd3ff', '#ffd166', '#ff9ec7', '#9be09b', '#c7b3ff'];
 const CASTLE_STYLE = { stone: '#fff2dc', trim: '#e8c5ff', roof: '#b197fc', flag: '#ff7aa8', accent: '#ffd166' };
 const HALL_STYLE = { stone: '#fff2dc', trim: '#e8c5ff', floor: '#fff8ee', carpet: '#d6b5ff' };
+/** Góc xoay tối đa (rad) của Nhà Vua trên ngai khi nói chuyện. */
+const KING_TURN = THREE.MathUtils.degToRad(25);
 
 /** 🏰 LÂU ĐÀI TRÍ TUỆ – ba phòng thử thách và thử thách cuối của Nhà Vua. */
 export class CastleZone extends Zone {
@@ -240,8 +242,10 @@ export class CastleZone extends Zone {
       rot: 0,
       r: 2.8,
       mark: () => (this.roomsDone() && !on('castle.king') ? '!' : on('castle.king') ? '★' : '?'),
-      talk: async () => {
-        void this.runKing();
+      talk: (npc) => {
+        // Vua ngồi trên ngai: chỉ xoay nhẹ về phía bé (xoay nhiều thì chân và áo choàng lộ ra trước ghế).
+        npc.actor.yawGoal = THREE.MathUtils.clamp(npc.actor.yawGoal, -KING_TURN, KING_TURN);
+        return this.runKing();
       },
     });
   }

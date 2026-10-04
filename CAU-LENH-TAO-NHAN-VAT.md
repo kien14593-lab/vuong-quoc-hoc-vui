@@ -35,7 +35,7 @@ vào mục `"nguon"` khi lắp mô hình). Nên đọc điều khoản sử dụ
 
 - Ảnh tốt: **một nhân vật**, **nhìn thẳng**, **nền trơn**, thấy đủ toàn thân, tay tách khỏi người, hai chân có khe hở.
 - Ảnh hợp lệ: **PNG/JPG/WEBP**, tối đa **10 MB**, mỗi cạnh **512–4096 px**, gần **vuông**.
-- Nhân vật có **nhiều phần màu trắng** (Robot Bíp, Chú Hề Bibo…): đổi *"plain white background"* thành
+- Nhân vật có **nhiều phần màu trắng** (Robot Bíp, Chú Hề Bibo, Nhà Vua…): đổi *"plain white background"* thành
   *"plain light grey background"* để phần trắng không lẫn vào nền.
 - **Mẹo để nhân vật mới cùng phong cách với Chú Gấu** (cô đã làm Thỏ Bông và Cô Mèo như vậy): trong **Gemini**, đính kèm ảnh
   mẫu của Gấu (`gau-anh-mau-3.png`) cùng với câu lệnh của nhân vật, thêm vào **đầu** câu lệnh:
@@ -153,7 +153,7 @@ xương và động tác thật** (đi, chạy, vẫy tay…).
 **Thứ tự gợi ý** (HY 3D cho khoảng 20 lượt mỗi ngày – nên làm từng con, xem trong trò chơi rồi mới làm tiếp):
 
 1. **Chú Gấu** ✅, **Thỏ Bông** ✅, **Cô Mèo** ✅, **Bác Cú** ✅ (đã xong – Tencent HY 3D).
-2. **Robot Bíp** ✅, **Chú Hề Bibo** ✅, **Bác Voi** ✅ (đã xong – Tencent HY 3D), Nhà Vua, Hiệp Sĩ Thỏ.
+2. **Robot Bíp** ✅, **Chú Hề Bibo** ✅, **Bác Voi** ✅, **Nhà Vua** ✅ (đã xong – Tencent HY 3D), Hiệp Sĩ Thỏ.
 3. Cô Sóc, Ông Rùa, Bạn Nai (+ thú Sở Thú nếu muốn).
 
 **Không nên thay:**
@@ -240,12 +240,14 @@ Tai, vòi và ngà đều **dày** (chi tiết mảnh dễ bị thủng khi tạ
 A big, gentle elephant zoo keeper standing upright on two legs: soft blue-grey skin, lighter belly, big rounded ears that are thick and soft like a plush toy (not paper-thin) with light pink inside, a short thick trunk that ends above the chest with the tip curled slightly up (not touching the body), two short thick rounded white tusks, round feet with light toenails, small khaki zoo keeper cap with a short thick front brim, khaki vest with a big gold star badge. Cute chibi 3D cartoon for a kids game: big round head, small round body, short thick limbs, big shiny eyes, friendly smile, rosy cheeks, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from body, legs apart, facing front, empty hands, no base, no ground, no shadow.
 ```
 
-### 5.8. Nhà Vua – Lâu Đài
+### 5.8. Nhà Vua – Lâu Đài ✅ đã có mô hình AI (Tencent HY 3D)
 
 Tệp: `vua-dung.glb` · `vua-noi.glb` · `vua-vay-tay.glb` · `vua-vui.glb`
 
+Vương miện răng **ngắn, dày** có đá đỏ to, áo choàng chỉ **tới gối** (không chạm đất), **tay để trống** (không cầm quyền trượng – chi tiết mảnh dễ bị thủng khi tạo 3D), ở bước 1 dùng *"plain light grey background"* vì râu và cổ áo màu trắng, và ghi rõ *"He is a human, not a bear"* vì ảnh mẫu phong cách là chú gấu.
+
 ```text
-A kind chubby old king (chibi human): gold crown, fluffy white mustache and beard, purple robe with gold trim, red cape with a white fluffy collar, brown boots. Cute chibi 3D cartoon for a kids game: big round head, small round body, short limbs, big shiny eyes, friendly smile, rosy cheeks, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from body, legs apart, facing front, empty hands, no base, no background.
+A kind, chubby old king (chibi human): fair skin, big shiny eyes, rosy cheeks, friendly smile under a big fluffy white mustache, short round fluffy white beard, short white hair, chunky gold crown with short thick rounded points and a few big round red gems, knee-length purple robe with gold trim, thick puffy white collar, short thick red cape hanging behind him to the knees (not touching the ground), purple trousers, chunky brown boots. Cute chibi 3D cartoon for a kids game: big round head, small round body, short thick limbs, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from body, legs apart, facing front, empty hands, no base, no ground, no shadow. He is a human, not a bear: no fur, no animal ears, no muzzle.
 ```
 
 ### 5.9. Hiệp Sĩ Thỏ – giữ các phòng thử thách ở Lâu Đài (một tệp dùng cho mọi hiệp sĩ)
