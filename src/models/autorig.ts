@@ -706,18 +706,17 @@ export function autoRig(meshes: AutoRigMesh[], o: AutoRigOpts = {}): AutoRigResu
     notes.push('không thấy cổ – ước lượng');
   }
   const neckZ = zMid(zSpan(neck - 2, neck + 2, (i) => Math.abs(i - mid) < coreW[neck] / 2 + 1), 0);
-  // Đầu: hàng rộng nhất phía trên cổ.
-  let eqJ = neck + 1;
-  {
-    let wMax = 0;
-    for (let j = neck + 1; j <= top; j++) if (coreW[j] > wMax) wMax = coreW[j];
-    const rows: number[] = [];
-    for (let j = neck + 1; j <= top; j++) if (coreW[j] >= wMax * 0.98) rows.push(j);
-    if (rows.length) eqJ = rows[rows.length >> 1];
-  }
-  const headHalfW = (coreW[eqJ] / 2) * c;
-  const headSpan = zSpan(neck + 1, top, (i) => Math.abs(i - mid) < coreW[eqJ] / 2 + 1);
-  const faceSpan = zSpan(eqJ - Math.round(R * 0.04), eqJ + Math.round(R * 0.02), (i) => Math.abs(i - mid) < coreW[eqJ] * 0.15 + 1);
+  // Hộp sọ: bề ngang đo ở hàng tâm vòng tròn đầu (tai, bím tóc thường tách khỏi đầu ở đó), giới hạn theo bán kính
+  // vòng tròn để bím tóc / tai / búi tóc dính liền không làm đầu "to" ra (mũ, kính sẽ quá rộng, quá cao).
+  const headH = Math.max(1, top - neck);
+  const hcRow = hc > neck && hc <= top ? hc : Math.round(neck + headH / 2);
+  const hrC = hc > 0 ? hr : headH / 2;
+  const skullHalf = clamp(coreW[hcRow] / 2, hrC * 0.85, hrC * 1.3);
+  const headHalfW = skullHalf * c;
+  const inSkull = (i: number) => Math.abs(i - mid) < skullHalf + 1;
+  const headSpan = zSpan(neck + 1, top, inSkull);
+  // Mặt trước: mũi / má ở nửa dưới đầu (giữa miệng và mắt), chỉ các cột giữa mặt.
+  const faceSpan = zSpan(Math.round(neck + headH * 0.18), Math.round(neck + headH * 0.5), (i) => Math.abs(i - mid) < skullHalf * 0.35 + 1);
 
   /* ---------------- 6. Nhãn từng ô ---------------- */
   const lab = new Int8Array(N).fill(-1);
@@ -913,8 +912,8 @@ export function autoRig(meshes: AutoRigMesh[], o: AutoRigOpts = {}): AutoRigResu
   const torsoHalf = armOk ? ((arms[0]!.torsoEdge - arms[1]!.torsoEdge + 1) / 2) * c : coreW[neck] * c;
   const chestSpan = zSpan(chestJ - 2, chestJ + 2, (i) => Math.abs(i - mid) * c < torsoHalf * 0.6);
   const anchors: AutoRigAnchors = {
-    head: [X(mid), Y(eqJ), zMid(headSpan, neckZ)],
-    headR: [headHalfW, ((top - neck) / 2) * c, headSpan[0] <= headSpan[1] ? (headSpan[1] - headSpan[0]) / 2 : headHalfW],
+    head: [X(mid), Y(neck + headH / 2), zMid(headSpan, neckZ)],
+    headR: [headHalfW, (headH / 2) * c, headSpan[0] <= headSpan[1] ? (headSpan[1] - headSpan[0]) / 2 : headHalfW],
     headTop: Y(top) + c / 2,
     faceZ: faceSpan[1] > -Infinity ? faceSpan[1] : zMid(headSpan, 0) + headHalfW,
     neck: neckP,
@@ -1142,7 +1141,7 @@ export function rigReport(r: Pick<AutoRigResult, 'ok' | 'fail' | 'warnings' | 'm
 }
 
 /** Phiên bản cách dò xương: tăng khi đổi thuật toán để công cụ dò lại mô hình cũ. */
-export const RIG_VERSION = 1;
+export const RIG_VERSION = 2;
 
 /**
  * Kết quả dò xương lưu sẵn trong config.json (công cụ xử lý mô hình tính trước, trọng số da nằm trong GLB:
