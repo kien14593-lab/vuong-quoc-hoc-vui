@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import { sfx } from '../core/audio';
 import { item } from '../core/items';
-import type { Equipped, Look } from '../core/state';
+import type { Kid } from '../core/outfits';
+import type { Equipped } from '../core/state';
 import { damp } from '../engine/tween';
+import type { PlayerOpts } from '../models/character';
 import { buildModel } from '../models/registry';
 import { Actor } from './actor';
 import type { FollowCam } from './camera';
@@ -37,7 +39,7 @@ function addXray(root: THREE.Object3D): void {
   const meshes: THREE.Mesh[] = [];
   root.traverse((o) => {
     const m = o as THREE.Mesh;
-    if (m.isMesh && !m.userData.xray && !(m as THREE.SkinnedMesh).isSkinnedMesh) meshes.push(m);
+    if (m.isMesh && !m.userData.xray) meshes.push(m);
   });
   const cloned = new Map<THREE.Material, THREE.Material>();
   for (const m of meshes) {
@@ -56,7 +58,15 @@ function addXray(root: THREE.Object3D): void {
       return c;
     });
     m.material = Array.isArray(m.material) ? next : next[0];
-    const x = new THREE.Mesh(m.geometry, xrayMat);
+    const sm = m as THREE.SkinnedMesh;
+    let x: THREE.Mesh;
+    if (sm.isSkinnedMesh) {
+      // Bé AI có xương: hình bóng cũng uốn theo xương (cùng bộ xương, cùng ma trận gắn).
+      const xs = new THREE.SkinnedMesh(sm.geometry, xrayMat);
+      xs.bind(sm.skeleton, sm.bindMatrix);
+      xs.frustumCulled = false;
+      x = xs;
+    } else x = new THREE.Mesh(m.geometry, xrayMat);
     x.userData.xray = true;
     x.renderOrder = 50;
     x.castShadow = false;
@@ -79,15 +89,15 @@ export class Player extends Actor {
   private tmpR = new THREE.Vector3();
   private tmpP = { x: 0, z: 0 };
 
-  constructor(look: Look, eq: Equipped, o: { x?: number; z?: number; rot?: number } = {}) {
-    super('player', { opts: { look, eq }, x: o.x, z: o.z, rot: o.rot, speed: WALK, radius: 0.42 });
+  constructor(kid: Kid, eq: Equipped, o: { x?: number; z?: number; rot?: number } = {}) {
+    super('player', { opts: { kid, eq } satisfies PlayerOpts, x: o.x, z: o.z, rot: o.rot, speed: WALK, radius: 0.42 });
     addXray(this.model);
     this.setBoard(!!eq.board, eq.board);
   }
 
-  /** Thay trang phục / ngoại hình. */
-  refresh(look: Look, eq: Equipped): void {
-    const next = buildModel('player', { look, eq });
+  /** Thay bé (trai/gái), bộ đồ, mũ, balo, phụ kiện. */
+  refresh(kid: Kid, eq: Equipped): void {
+    const next = buildModel<PlayerOpts>('player', { kid, eq });
     addXray(next);
     const old = this.swapModel(next);
     old.traverse((o) => {

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { audio, sfx, type TrackId } from '../core/audio';
 import { bus } from '../core/events';
+import { playerKey } from '../core/outfits';
 import { addCoins, addKeys, addStars, addTickets, giveItem, hasProfile, isCollected, level, markCollected, profile, setPosition, type ZoneId } from '../core/state';
 import { engine, type Quality, type Stage } from '../engine/core';
 import { Fx } from '../engine/fx';
@@ -14,6 +15,7 @@ import type { MiniInfo, MiniResult } from '../minigames/base';
 import { ask, promptCard, type AskOptions, type AskResult } from '../ui/question';
 import type { Stage as AnswerStage } from '../game/challenge';
 import { miniDef, miniName, miniTitle } from '../minigames/registry';
+import { ensureGlb, glbReady } from '../models/glb';
 import { buildModel, collectTicks, modelRadius, type Collider } from '../models/registry';
 import type { Speaker } from '../ui/dialog';
 import { say } from '../ui/dialog';
@@ -286,6 +288,7 @@ export abstract class Zone implements Stage {
   private ray = new THREE.Raycaster();
   private plane = new THREE.Plane(UP, 0);
   private lookTimer = 0;
+  private lookTok = 0;
   private entered = false;
 
   constructor(
@@ -352,7 +355,7 @@ export abstract class Zone implements Stage {
 
     const sp = this.resolveSpawn(this.spawnReq);
     const p = profile();
-    this.player = new Player(p.look, p.equipped, { x: sp.x, z: sp.z, rot: sp.rot });
+    this.player = new Player(p.kid, p.equipped, { x: sp.x, z: sp.z, rot: sp.rot });
     this.scene.add(this.player.root);
     this.makePet();
     // Sinh ra ngoài vùng cổng là đủ: quay lại ngay vẫn đi qua được (độ trễ r+0.6 chỉ dùng khi bị cổng khóa đẩy ra).
@@ -1166,8 +1169,20 @@ export abstract class Zone implements Stage {
   private onLook(): void {
     if (this.disposed || !hasProfile()) return;
     const p = profile();
-    this.player.refresh(p.look, p.equipped);
-    this.makePet();
+    // Bộ đồ mới chưa tải: chờ tải xong mới thay (không hiện tạm bé dựng bằng code); đổi liên tục thì chỉ lấy lần cuối.
+    const key = playerKey(p.kid, p.equipped.outfit);
+    const tok = ++this.lookTok;
+    const go = () => {
+      if (tok !== this.lookTok || this.disposed || !hasProfile()) return;
+      const q = profile();
+      this.player.refresh(q.kid, q.equipped);
+      this.makePet();
+    };
+    if (glbReady([key])) go();
+    else {
+      this.makePet();
+      void ensureGlb([key]).then(go);
+    }
   }
 
   /** Cảnh quay ngắn: camera lướt tới một điểm rồi quay lại. */

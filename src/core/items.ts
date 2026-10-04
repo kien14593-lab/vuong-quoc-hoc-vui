@@ -1,7 +1,10 @@
-/** Danh mục vật phẩm: trang phục, thú cưng, ván trượt, đồ trang trí, hạt giống, vật phẩm nhiệm vụ. */
-export type ItemCat = 'shirt' | 'pants' | 'shoes' | 'hat' | 'backpack' | 'acc' | 'pet' | 'board' | 'decor' | 'seed' | 'quest';
+import { OUTFITS, type Kid } from './outfits';
 
-export type WearSlot = 'shirt' | 'pants' | 'shoes' | 'hat' | 'backpack' | 'acc';
+/** Danh mục vật phẩm: bộ đồ, mũ, balo, phụ kiện, thú cưng, ván trượt, đồ trang trí, hạt giống, vật phẩm nhiệm vụ. */
+export type ItemCat = 'outfit' | 'hat' | 'backpack' | 'acc' | 'pet' | 'board' | 'decor' | 'seed' | 'quest';
+
+/** Chỗ mặc/đeo trên người bé. */
+export type WearSlot = 'outfit' | 'hat' | 'backpack' | 'acc';
 
 export type DecorSlot = 'rug' | 'lamp' | 'corner' | 'sofa' | 'shelf' | 'wall1' | 'wall2' | 'wall3' | 'table' | 'bedside' | 'corner2';
 
@@ -21,36 +24,17 @@ export interface ItemDef {
   slot?: DecorSlot;
   /** Không xuất hiện trong cửa hàng. */
   hidden?: boolean;
+  /** Biểu tượng (emoji) khi chưa có ảnh – bộ đồ. */
+  icon?: string;
+  /** Bộ đồ: khóa mô hình AI của từng bé (bé không có khóa thì không mặc được bộ đồ này). */
+  models?: Partial<Record<Kid, string>>;
 }
 
 const I = (d: ItemDef) => d;
 
 export const ITEMS: ItemDef[] = [
-  // Áo
-  I({ id: 'shirt_blue', name: 'Áo phông xanh', cat: 'shirt', price: 0, level: 1, style: 'tee', color: '#6cc3f0', color2: '#4aa3d8' }),
-  I({ id: 'shirt_pink', name: 'Áo phông hồng', cat: 'shirt', price: 0, level: 1, style: 'tee', color: '#ff9ec4', color2: '#f07aa8' }),
-  I({ id: 'shirt_yellow', name: 'Áo phông vàng', cat: 'shirt', price: 0, level: 1, style: 'tee', color: '#ffd76a', color2: '#f2b84b' }),
-  I({ id: 'shirt_green', name: 'Áo phông xanh lá', cat: 'shirt', price: 0, level: 1, style: 'tee', color: '#8ddc97', color2: '#5fbf6e' }),
-  I({ id: 'shirt_stripe', name: 'Áo kẻ sọc', cat: 'shirt', price: 15, level: 1, style: 'stripe', color: '#ffffff', color2: '#ff7b7b' }),
-  I({ id: 'shirt_star', name: 'Áo ngôi sao', cat: 'shirt', price: 25, level: 1, style: 'star', color: '#8f7bff', color2: '#ffe066' }),
-  I({ id: 'shirt_dress', name: 'Váy hoa', cat: 'shirt', price: 30, level: 1, style: 'dress', color: '#ffb3d1', color2: '#ffffff' }),
-  I({ id: 'shirt_hoodie', name: 'Áo hoodie cam', cat: 'shirt', price: 40, level: 2, style: 'hoodie', color: '#ffa45c', color2: '#e8843a' }),
-  I({ id: 'shirt_math', name: 'Áo "1 + 1 = 2"', cat: 'shirt', price: 50, level: 3, style: 'math', color: '#5ec8b8', color2: '#ffffff' }),
-  I({ id: 'shirt_rainbow', name: 'Áo cầu vồng', cat: 'shirt', price: 80, level: 4, style: 'rainbow', color: '#ff8fab', color2: '#7ec8e3' }),
-  I({ id: 'shirt_robe', name: 'Áo choàng phù thủy', cat: 'shirt', price: 120, level: 4, style: 'robe', color: '#6a5acd', color2: '#ffd166' }),
-  // Quần, váy
-  I({ id: 'pants_jean', name: 'Quần jean', cat: 'pants', price: 0, level: 1, style: 'pants', color: '#5b7fc7' }),
-  I({ id: 'pants_skirt', name: 'Chân váy hồng', cat: 'pants', price: 0, level: 1, style: 'skirt', color: '#ff7eb3' }),
-  I({ id: 'pants_shorts', name: 'Quần soóc', cat: 'pants', price: 0, level: 1, style: 'shorts', color: '#c9a27e' }),
-  I({ id: 'pants_green', name: 'Quần xanh lá', cat: 'pants', price: 15, level: 1, style: 'pants', color: '#62b06f' }),
-  I({ id: 'pants_purple', name: 'Váy tím', cat: 'pants', price: 20, level: 2, style: 'skirt', color: '#a58cff' }),
-  I({ id: 'pants_red', name: 'Quần soóc đỏ', cat: 'pants', price: 15, level: 1, style: 'shorts', color: '#ff6b6b' }),
-  // Giày
-  I({ id: 'shoes_red', name: 'Giày đỏ', cat: 'shoes', price: 0, level: 1, style: 'sneaker', color: '#ff6b6b' }),
-  I({ id: 'shoes_white', name: 'Giày trắng', cat: 'shoes', price: 10, level: 1, style: 'sneaker', color: '#ffffff' }),
-  I({ id: 'shoes_boots', name: 'Ủng vàng', cat: 'shoes', price: 20, level: 2, style: 'boot', color: '#ffd23f' }),
-  I({ id: 'shoes_star', name: 'Giày lấp lánh', cat: 'shoes', price: 45, level: 3, style: 'sparkle', color: '#c77dff' }),
-  I({ id: 'shoes_rocket', name: 'Giày tên lửa', cat: 'shoes', price: 90, level: 5, style: 'rocket', color: '#4dabf7' }),
+  // Bộ đồ (mô hình AI của bé – tự nhận theo tệp, xem core/outfits.ts)
+  ...OUTFITS,
   // Mũ
   I({ id: 'hat_cap', name: 'Mũ lưỡi trai', cat: 'hat', price: 15, level: 1, style: 'cap', color: '#ff6b6b' }),
   I({ id: 'hat_flower', name: 'Kẹp hoa', cat: 'hat', price: 12, level: 1, style: 'flower', color: '#ff8fab' }),
@@ -116,9 +100,7 @@ export function item(id: string): ItemDef | undefined {
 }
 
 export const CAT_NAMES: Record<ItemCat, string> = {
-  shirt: 'Áo',
-  pants: 'Quần – váy',
-  shoes: 'Giày',
+  outfit: 'Bộ đồ',
   hat: 'Mũ',
   backpack: 'Balo',
   acc: 'Phụ kiện',
@@ -151,6 +133,36 @@ export const PLANTS: Record<string, { stages: number; harvest: { coins: number; 
   magic: { stages: 5, harvest: { coins: 40, xp: 20 }, name: 'Cây phép thuật' },
 };
 
+/**
+ * Áo, quần, giày cũ (trước khi có bé AI và bộ đồ) đã bỏ khỏi trò chơi: mã → giá đã mua (xu). Hồ sơ cũ được trả lại
+ * đúng giá các món phải mua (một lần, xem state.ts); đồ được tặng lúc tạo hồ sơ có giá 0.
+ */
+export const RETIRED_WEAR: Readonly<Record<string, number>> = {
+  shirt_blue: 0,
+  shirt_pink: 0,
+  shirt_yellow: 0,
+  shirt_green: 0,
+  shirt_stripe: 15,
+  shirt_star: 25,
+  shirt_dress: 30,
+  shirt_hoodie: 40,
+  shirt_math: 50,
+  shirt_rainbow: 80,
+  shirt_robe: 120,
+  pants_jean: 0,
+  pants_skirt: 0,
+  pants_shorts: 0,
+  pants_green: 15,
+  pants_purple: 20,
+  pants_red: 15,
+  shoes_red: 0,
+  shoes_white: 10,
+  shoes_boots: 20,
+  shoes_star: 45,
+  shoes_rocket: 90,
+};
+
+/** Dữ liệu cũ: màu da, màu tóc, kiểu tóc, màu mắt – chỉ còn dùng cho bé dựng bằng code (dự phòng khi chưa có mô hình AI). */
 export const SKIN_TONES = ['#ffe0c7', '#f6c9a4', '#e0a77e', '#b97c56', '#8d5a3b'];
 export const HAIR_COLORS = ['#3b2b2b', '#6b4226', '#c68642', '#f2c14e', '#e86a92', '#7a5cff'];
 export const HAIR_STYLES = ['Ngắn', 'Tóc dựng', 'Tóc dài', 'Hai bím', 'Tóc nấm', 'Tóc xoăn'];

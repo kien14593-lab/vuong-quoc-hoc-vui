@@ -1,7 +1,8 @@
 import '../src/styles/fonts';
 import '../src/styles/main.css';
 import '../src/styles/screens.css';
-import { createProfile, listProfiles, loadProfile } from '../src/core/state';
+import { createProfile, listProfiles, loadProfile, setKid } from '../src/core/state';
+import type { Kid } from '../src/core/outfits';
 import { engine, type Quality } from '../src/engine/core';
 import { loadFonts } from '../src/engine/text';
 import type { Grade } from '../src/math/types';
@@ -14,6 +15,7 @@ import { initUI, layer } from '../src/ui/root';
  * Bàn thử trò chơi nhỏ (dành cho phát triển).
  *  ?game=fishing        mở thẳng trò chơi (không có = sảnh chọn trò)
  *  ?grade=1..5          lớp của hồ sơ thử (mặc định 2)
+ *  ?kid=trai|gai        bé trai / bé gái của hồ sơ thử (mặc định bé trai)
  *  ?quality=high|low    chất lượng đồ họa
  *  ?auto=start          bỏ qua màn hướng dẫn
  *  ?auto=solve          bỏ qua hướng dẫn + tự trả lời đúng mỗi vòng (kiểm thử luồng chơi)
@@ -23,12 +25,16 @@ import { initUI, layer } from '../src/ui/root';
 const q = new URLSearchParams(location.search);
 const grade = Math.max(1, Math.min(5, Number(q.get('grade') ?? 2))) as Grade;
 const auto = q.get('auto') ?? '';
+const kid: Kid = q.get('kid') === 'gai' ? 'gai' : 'trai';
 
 function ensureProfile(): void {
   const name = `Bé Thử Lớp ${grade}`;
   const found = listProfiles().find((p) => p.name === name);
-  if (found && loadProfile(found.id)) return;
-  createProfile({ name, grade, look: { skin: 1, hair: 0, hairColor: 0, eyes: 0 }, equipped: {} });
+  if (found && loadProfile(found.id)) {
+    if (q.has('kid')) setKid(kid);
+    return;
+  }
+  createProfile({ name, grade, kid });
 }
 
 function start(id: string): void {

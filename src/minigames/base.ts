@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { audio, sfx } from '../core/audio';
 import { speak, stopSpeech } from '../core/speech';
-import { addCoins, addXp, profile, recordMini, skill } from '../core/state';
+import { addCoins, addXp, playerLook, profile, recordMini, skill } from '../core/state';
 import { engine, type Quality, type Stage } from '../engine/core';
 import { Fx } from '../engine/fx';
 import { setupLights, setupSky, type LightRig } from '../engine/lighting';
@@ -202,9 +202,10 @@ export abstract class MiniGame implements Stage {
    * Dựng mô hình theo khóa (xem danh sách trong src/models) và thêm vào cảnh, bọc trong một Group
    * (đặt vị trí/góc/tỉ lệ trên Group này). Hàm `tick` trong mô hình tự chạy; mô hình có khung (rig)
    * tự hoạt cảnh (thở, chớp mắt) – dùng `anim(obj)` để cho đi/vẫy tay/vui mừng.
+   * Khóa 'player' không kèm tùy chọn = bé của hồ sơ đang chơi (bé trai / bé gái, bộ đồ, mũ, balo, phụ kiện đang mặc).
    */
   model<O = Record<string, unknown>>(key: string, opts?: O, at: [number, number, number] = [0, 0, 0], rotY = 0, scale = 1, parent: THREE.Object3D = this.scene): THREE.Group {
-    const obj = buildModel(key, opts);
+    const obj = buildModel(key, opts ?? (key === 'player' ? (playerLook() as O) : undefined));
     obj.traverse((o) => {
       if ((o as THREE.Mesh).isMesh && !o.userData.noShadow) o.castShadow = true;
     });

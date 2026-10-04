@@ -7,7 +7,7 @@ import { button, h, type Child } from './dom';
 import { coinIcon } from './icons';
 import { openModal } from './modal';
 import { inputBlocked, layer } from './root';
-import { playerPortrait } from './portrait';
+import { setPlayerPortrait } from './portrait';
 import { confetti } from './toast';
 
 /**
@@ -286,8 +286,7 @@ class Hud {
     if (!this.root || !hasProfile()) return;
     const p = profile();
     const e = this.els;
-    const url = playerPortrait(p.look, p.equipped, { framing: 'head', size: 200, yaw: 16 });
-    if (url && (e.avatar as HTMLImageElement).src !== url) (e.avatar as HTMLImageElement).src = url;
+    setPlayerPortrait(e.avatar as HTMLImageElement, p.kid, p.equipped, { framing: 'head', size: 200, yaw: 16 });
     const lp = levelProgress(p.xp);
     e.level.textContent = String(lp.level);
     e.name.textContent = p.name;

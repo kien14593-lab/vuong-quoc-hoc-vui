@@ -63,7 +63,7 @@ function openPicker(): void {
             void enterWorld();
           },
         },
-        h('div.pc-avatar', avatarImg(p.look, p.equipped, 'pc-img')),
+        h('div.pc-avatar', avatarImg(p.kid, p.equipped, 'pc-img')),
         h('div.pc-name', p.name),
         h('div.pc-info', `Lớp ${p.grade} · Cấp ${p.level} · ⭐ ${p.stars}`),
         h(

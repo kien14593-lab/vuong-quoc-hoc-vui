@@ -118,6 +118,11 @@ export interface GlbSpec extends GlbLook {
   source?: 'cc0' | 'ai' | 'custom';
   /** Biến thể (chọn bằng tùy chọn `v`): mỗi biến thể ghi đè một phần cấu hình. */
   variants?: Partial<GlbLook>[];
+  /**
+   * Bé (nhân vật chính): tinh chỉnh chỗ gắn đồ – "head" (mũ, kính) / "body" (balo, khăn...): dịch [x, y, z] (mét)
+   * và phóng to (số thứ tư, mặc định 1). Từ cau-hinh.json "gan-do": { "dau": [...], "than": [...] }.
+   */
+  dress?: { head?: [number, number, number, number?]; body?: [number, number, number, number?] };
 }
 
 interface Prepared {
@@ -381,6 +386,11 @@ export function glbReady(keys?: Iterable<string>): boolean {
 /** Khóa này có mô hình GLB đăng ký không (bật hay tắt GLB đều trả lời theo tệp có sẵn). */
 export function hasGlb(key: string): boolean {
   return entries.has(key);
+}
+
+/** Cấu hình GLB của khóa (config.json + mặc định) – để đọc tinh chỉnh riêng, vd. chỗ gắn đồ của bé. */
+export function glbSpec(key: string): Readonly<GlbSpec> | undefined {
+  return entries.get(key)?.spec;
 }
 
 /** Mô hình GLB của khóa đã nạp xong, dựng ngay được (không lỗi, đang bật GLB). */

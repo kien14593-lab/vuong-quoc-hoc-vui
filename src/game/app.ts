@@ -1,10 +1,12 @@
 import { audio } from '../core/audio';
-import { awardBadge, hasBadge, hasProfile, profile, saveNow, setPosition, unloadProfile, type ZoneId } from '../core/state';
+import { KIDS, kidKey } from '../core/outfits';
+import { awardBadge, hasBadge, hasProfile, profile, saveNow, setPosition, takeRefundNotice, unloadProfile, type ZoneId } from '../core/state';
 import { engine } from '../engine/core';
 import { miniDef, miniTitle, runMini, type MiniResult } from '../minigames';
-import { ensureGlb, glbReady } from '../models';
+import { ensureGlb, glbReady, prefetchGlb } from '../models';
 import { h, nextFrame, wait } from '../ui/dom';
 import { hud } from '../ui/hud';
+import { coinIcon } from '../ui/icons';
 import { closeAllModals } from '../ui/modal';
 import { clearBlocks, inputBlocked, layer } from '../ui/root';
 import { openBag } from '../ui/screens/bag';
@@ -12,11 +14,12 @@ import { openMiniHub } from '../ui/screens/minihub';
 import { openSettings } from '../ui/screens/settings';
 import { hideTitleMenu, showTitleMenu } from '../ui/screens/title';
 import { openWorldMap } from '../ui/screens/worldmap';
+import { toast } from '../ui/toast';
 import { nav } from '../world/nav';
 import { TitleStage } from '../world/title';
 import type { Spawn, Zone } from '../world/zone';
 import { createZone } from '../world/zones';
-import { miniModels, zoneModels } from './needs';
+import { miniModels, zoneModels, type PlayerNeed } from './needs';
 import { checkBadges, zoneLock, ZONE_META } from './story';
 
 /**
@@ -72,6 +75,13 @@ async function waitModels(keys: string[], ms = 15000): Promise<void> {
   load.classList.remove('on');
 }
 
+/** Bé của hồ sơ đang chơi (tải mô hình bé + bộ đồ trước khi vào cảnh có bé). */
+function playerNeed(): PlayerNeed | null {
+  if (!hasProfile()) return null;
+  const p = profile();
+  return { kid: p.kid, outfit: p.equipped.outfit };
+}
+
 /** Màn hình tiêu đề (cảnh làng 3D phía sau + menu). */
 export function showTitle(): void {
   zone = null;
@@ -87,8 +97,8 @@ export async function goZone(id: ZoneId, spawn: Spawn = 'start'): Promise<void> 
   moving = true;
   try {
     const meta = ZONE_META[id];
-    // Tải mô hình AI của khu vực song song với màn mờ dần. (Dựng lỗi thì về làng: mô hình AI của làng đã nạp từ màn tiêu đề.)
-    const models = waitModels(zoneModels(id, hasProfile() ? profile().equipped.pet : null));
+    // Tải mô hình AI của khu vực (và bé) song song với màn mờ dần. (Dựng lỗi thì về làng: mô hình AI của làng đã nạp từ màn tiêu đề.)
+    const models = waitModels(zoneModels(id, hasProfile() ? profile().equipped.pet : null, playerNeed()));
     await fade(true, `${meta.icon} ${meta.name}`);
     await models;
     closeAllModals();
@@ -120,7 +130,7 @@ async function playMini(id: string): Promise<MiniResult | null> {
   const z = zone;
   if (!z) return null;
   z.pause();
-  const keys = miniModels(id);
+  const keys = miniModels(id, playerNeed());
   const veiled = !glbReady(keys);
   if (veiled) {
     const info = miniDef(id)?.info;
@@ -204,6 +214,11 @@ export async function enterWorld(o: EnterOpts = {}): Promise<void> {
   bindHud();
   await goZone(id, spawn);
   checkBadges();
+  // Hồ sơ cũ: báo số xu trả lại cho áo, quần, giày đã bỏ.
+  const refund = hasProfile() ? takeRefundNotice() : 0;
+  if (refund > 0) toast(`Áo, quần, giày cũ đã được đổi thành ${refund} xu. Ghé cửa hàng xem Bộ đồ mới nhé!`, { icon: coinIcon(), tone: 'good', ms: 7000 });
+  // Tải sẵn (ở nền) bé kia mặc đồ thường ngày để đổi bé trai ↔ bé gái trong Túi đồ không phải chờ.
+  if (hasProfile()) prefetchGlb(KIDS.filter((k) => k !== profile().kid).map(kidKey));
 }
 
 /** Thoát về màn hình tiêu đề (lưu hồ sơ). */

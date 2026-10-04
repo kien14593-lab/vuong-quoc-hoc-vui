@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import names from '../src/assets/models/ai-names.json';
+import { DEFAULT_OUTFIT } from '../src/core/outfits';
 import { CAST } from '../src/game/cast';
-import { EVERY_ZONE_MODELS, MINI_MODELS, TITLE_MODELS, ZONE_MODELS, miniModels, modelsInStoryOrder, zoneModels } from '../src/game/needs';
+import { EVERY_ZONE_MODELS, MINI_MODELS, MINI_WITH_PLAYER, TITLE_MODELS, ZONE_MODELS, miniModels, modelsInStoryOrder, playerModels, zoneModels } from '../src/game/needs';
 
 /**
  * Mô hình AI chỉ được tải cho cảnh cần nó (game/needs.ts). Kiểm tra bằng cách đọc mã nguồn: mọi nhân vật/con thú
@@ -106,5 +107,43 @@ describe('mô hình cần cho từng cảnh (needs.ts)', () => {
     expect(all.indexOf(CAST.cu.art)).toBeLessThan(all.indexOf(CAST.robot.art));
     expect(all.indexOf(CAST.robot.art)).toBeLessThan(all.indexOf(CAST.he.art));
     expect(zoneModels('forest', 'pet_fox')).toEqual(expect.arrayContaining([CAST.cu.art, CAST.gau.art, 'pet_fox']));
+  });
+});
+
+describe('bé (người chơi) – mô hình theo hồ sơ', () => {
+  const boy = { kid: 'trai' as const, outfit: DEFAULT_OUTFIT };
+  const girl = { kid: 'gai' as const, outfit: 'outfit_khong_co' };
+
+  it('bé mặc bộ đồ đang chọn (bộ đồ không có cho bé → đồ thường ngày); chưa có hồ sơ → không cần', () => {
+    expect(playerModels(boy)).toEqual(['player_trai']);
+    expect(playerModels(girl)).toEqual(['player_gai']);
+    expect(playerModels(null)).toEqual([]);
+    expect(playerModels()).toEqual([]);
+  });
+
+  it('mọi khu vực đều có bé', () => {
+    for (const id of ZONE_FILES) {
+      const z = id as keyof typeof ZONE_MODELS;
+      expect(zoneModels(z, null, girl), id).toContain('player_gai');
+      expect(zoneModels(z, 'pet_dog', boy), id).toEqual(expect.arrayContaining(['player_trai', 'pet_dog']));
+      expect(zoneModels(z).some((k) => k.startsWith('player_')), id).toBe(false);
+    }
+  });
+
+  it('trò chơi nhỏ có bé (khóa \'player\') ghi trong MINI_WITH_PLAYER, đủ và không thừa', () => {
+    const withPlayer: string[] = [];
+    for (const p of GAME_FILES) {
+      const code = strip(SRC[p]);
+      const id = /defineMini\(\s*\{[\s\S]*?\bid:\s*'([\w-]+)'/.exec(code)![1];
+      if (/['"`]player['"`]/.test(code)) withPlayer.push(id);
+      const keys = miniModels(id, boy);
+      expect(keys.includes('player_trai'), id).toBe(MINI_WITH_PLAYER.includes(id as never));
+      expect(miniModels(id).some((k) => k.startsWith('player_')), id).toBe(false);
+    }
+    expect(sorted(withPlayer)).toEqual(sorted(MINI_WITH_PLAYER));
+  });
+
+  it('không tải sẵn bé cùng nhân vật cốt truyện (bé tải theo hồ sơ)', () => {
+    expect(modelsInStoryOrder().filter((k) => k.startsWith('player_'))).toEqual([]);
   });
 });

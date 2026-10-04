@@ -20,7 +20,7 @@ import type { Grade, Topic } from '../src/math/types';
 window.__VQTH_DASHBOARD_SKIP_GATE__ = true;
 
 function seedProfile(name: string, grade: Grade, days: number, focus: Topic[]): Profile {
-  const p = newProfile({ name, grade, look: { skin: 1, hair: 2, hairColor: 1, eyes: 1 }, equipped: {} });
+  const p = newProfile({ name, grade, kid: 'gai' });
   p.id = `dash-dev-${grade}-${name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
   p.created = Date.now() - (days + 5) * 86400000;
   p.xp = grade === 2 ? 360 : 820;

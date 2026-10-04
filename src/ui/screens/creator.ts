@@ -1,142 +1,73 @@
 import { sfx } from '../../core/audio';
-import { EYE_COLORS, HAIR_COLORS, HAIR_STYLES, item, SKIN_TONES } from '../../core/items';
-import { createProfile, type Equipped, type Look } from '../../core/state';
+import { DEFAULT_OUTFIT, KID_NAMES, KIDS, type Kid } from '../../core/outfits';
+import { createProfile } from '../../core/state';
 import { enterWorld } from '../../game/app';
 import type { Grade } from '../../math/types';
-import { avatarUrl } from '../avatar';
+import { avatarImg } from '../avatar';
 import { button, h } from '../dom';
 import { openModal } from '../modal';
 import { toast } from '../toast';
 
-const SHIRTS = ['shirt_blue', 'shirt_pink', 'shirt_yellow', 'shirt_green'];
-const PANTS = ['pants_jean', 'pants_skirt', 'pants_shorts'];
-
-function rnd(n: number): number {
-  return Math.floor(Math.random() * n);
-}
-
-/** Màn hình tạo nhân vật mới. */
+/** Màn hình tạo nhân vật mới: chọn bé trai / bé gái, nhập tên, chọn lớp. */
 export function openCreator(): void {
-  const look: Look = { skin: rnd(SKIN_TONES.length), hair: rnd(HAIR_STYLES.length), hairColor: rnd(HAIR_COLORS.length), eyes: rnd(EYE_COLORS.length) };
-  const eq: Equipped = { shirt: SHIRTS[rnd(SHIRTS.length)], pants: PANTS[rnd(PANTS.length)], shoes: 'shoes_red', hat: null, backpack: null, acc: null, pet: null, board: null };
+  let kid: Kid | null = null;
   let grade: Grade = 1;
-  const views = [15, 60, 120, 180, 240, 300];
-  let view = 0;
 
-  const preview = h<HTMLImageElement>('img.cr-avatar', { alt: '', draggable: false });
   const nameInput = h<HTMLInputElement>('input.cr-name', { type: 'text', maxlength: 14, placeholder: 'Nhập tên của bạn...', spellcheck: false, autocomplete: 'off' });
   const refresh: (() => void)[] = [];
-  const update = () => {
-    preview.src = avatarUrl(look, eq, { yaw: views[view], framing: 'full', size: 560 });
-    refresh.forEach((f) => f());
-  };
+  const update = () => refresh.forEach((f) => f());
 
-  const swatchRow = (colors: string[], get: () => number, set: (i: number) => void) => {
-    const row = h('div.cr-swatches');
-    const btns = colors.map((c, i) =>
-      h('button.cr-swatch', {
+  /* Hai thẻ lớn: bé trai, bé gái (ảnh vẽ từ mô hình AI, chờ tải thì hiện bóng bé tạm). */
+  const kidsEl = h('div.cr-kids');
+  const kidCards = KIDS.map((k) =>
+    h(
+      `button.cr-kid.${k}`,
+      {
         type: 'button',
-        style: { background: c },
         onclick: () => {
-          set(i);
+          kid = k;
           sfx('pop');
           update();
         },
-      }),
-    );
-    btns.forEach((b) => row.appendChild(b));
-    refresh.push(() => btns.forEach((b, i) => b.classList.toggle('on', get() === i)));
-    return row;
-  };
+      },
+      h('div.cr-kid-stage', avatarImg(k, { outfit: DEFAULT_OUTFIT }, 'cr-kid-img', { framing: 'full', size: 480, yaw: 14 })),
+      h('div.cr-kid-name', KID_NAMES[k]),
+    ),
+  );
+  kidCards.forEach((c) => kidsEl.appendChild(c));
+  refresh.push(() => {
+    kidsEl.classList.toggle('picked', kid !== null);
+    kidCards.forEach((c, i) => c.classList.toggle('on', KIDS[i] === kid));
+  });
 
-  const optionRow = <T,>(opts: T[], label: (o: T) => HTMLElement | string, get: () => T, set: (o: T) => void, cls = '') => {
-    const row = h(`div.cr-options${cls ? '.' + cls : ''}`);
-    const btns = opts.map((o) =>
-      h(
-        'button.cr-opt',
-        {
-          type: 'button',
-          onclick: () => {
-            set(o);
-            sfx('pop');
-            update();
-          },
+  const gradeRow = h('div.cr-options.grades');
+  const gradeBtns = ([1, 2, 3, 4, 5] as Grade[]).map((g) =>
+    h(
+      'button.cr-opt',
+      {
+        type: 'button',
+        onclick: () => {
+          grade = g;
+          sfx('pop');
+          update();
         },
-        label(o),
-      ),
-    );
-    btns.forEach((b) => row.appendChild(b));
-    refresh.push(() => btns.forEach((b, i) => b.classList.toggle('on', get() === opts[i])));
-    return row;
-  };
-
-  const hairThumbs: HTMLImageElement[] = [];
-  const hairRow = optionRow(
-    HAIR_STYLES.map((_, i) => i),
-    (i) => {
-      const img = h<HTMLImageElement>('img.cr-hair-thumb', { alt: '', draggable: false });
-      hairThumbs[i] = img;
-      return h('span.cr-hair', img, h('span', HAIR_STYLES[i]));
-    },
-    () => look.hair,
-    (i) => (look.hair = i),
-    'hair',
+      },
+      h('span.cr-grade', `Lớp ${g}`),
+    ),
   );
-  refresh.push(() => hairThumbs.forEach((img, i) => (img.src = avatarUrl({ ...look, hair: i }, { ...eq, hat: null }, { yaw: 20, framing: 'head', size: 160 }))));
-
-  const shirtRow = optionRow(
-    SHIRTS,
-    (id) => h('span.cr-cloth', h('i', { style: { background: item(id)?.color ?? '#ccc' } }), item(id)?.name.replace('Áo phông ', '') ?? id),
-    () => eq.shirt,
-    (id) => (eq.shirt = id),
-  );
-  const pantsRow = optionRow(
-    PANTS,
-    (id) => h('span.cr-cloth', h('i', { style: { background: item(id)?.color ?? '#ccc' } }), item(id)?.name ?? id),
-    () => eq.pants,
-    (id) => (eq.pants = id),
-  );
-  const gradeRow = optionRow<Grade>(
-    [1, 2, 3, 4, 5],
-    (g) => h('span.cr-grade', `Lớp ${g}`),
-    () => grade,
-    (g) => (grade = g),
-    'grades',
-  );
-
-  const randomize = () => {
-    look.skin = rnd(SKIN_TONES.length);
-    look.hair = rnd(HAIR_STYLES.length);
-    look.hairColor = rnd(HAIR_COLORS.length);
-    look.eyes = rnd(EYE_COLORS.length);
-    eq.shirt = SHIRTS[rnd(SHIRTS.length)];
-    eq.pants = PANTS[rnd(PANTS.length)];
-    sfx('whoosh');
-    update();
-  };
-
-  const turn = (d: number) => {
-    view = (view + d + views.length) % views.length;
-    update();
-  };
+  gradeBtns.forEach((b) => gradeRow.appendChild(b));
+  refresh.push(() => gradeBtns.forEach((b, i) => b.classList.toggle('on', grade === i + 1)));
 
   const section = (title: string, ...kids: (HTMLElement | null)[]) => h('div.cr-section', h('div.cr-label', title), ...kids);
 
   const body = h(
     'div.creator',
-    h(
-      'div.cr-left',
-      h('div.cr-stage', preview),
-      h('div.cr-turn', button('◀', () => turn(-1), 'btn-round btn-soft', { title: 'Xoay trái' }), button('🎲 Ngẫu nhiên', randomize, 'btn-yellow'), button('▶', () => turn(1), 'btn-round btn-soft', { title: 'Xoay phải' })),
-    ),
+    h('div.cr-left', h('div.cr-label', 'Bạn là bé trai hay bé gái?'), kidsEl),
     h(
       'div.cr-right',
       section('Tên của bạn', nameInput),
       section('Bạn học lớp mấy?', gradeRow, h('div.cr-hint', 'Câu hỏi trong game sẽ phù hợp với lớp của bạn.')),
-      section('Kiểu tóc', hairRow),
-      h('div.cr-two', section('Màu tóc', swatchRow(HAIR_COLORS, () => look.hairColor, (i) => (look.hairColor = i))), section('Màu da', swatchRow(SKIN_TONES, () => look.skin, (i) => (look.skin = i)))),
-      h('div.cr-two', section('Màu mắt', swatchRow(EYE_COLORS, () => look.eyes, (i) => (look.eyes = i))), section('Quần – váy', pantsRow)),
-      section('Áo', shirtRow),
+      h('div.cr-hint.cr-later', '👕 Sau này bạn có thể đổi bé và mặc bộ đồ mới trong Túi đồ.'),
     ),
   );
 
@@ -151,7 +82,15 @@ export function openCreator(): void {
       sfx('error');
       return;
     }
-    createProfile({ name, grade, look: { ...look }, equipped: { ...eq } });
+    if (!kid) {
+      kidsEl.classList.remove('shake');
+      void kidsEl.offsetWidth;
+      kidsEl.classList.add('shake');
+      toast('Hãy chọn bé trai hoặc bé gái nhé!', { icon: '👆', tone: 'warn' });
+      sfx('error');
+      return;
+    }
+    createProfile({ name, grade, kid });
     sfx('levelup');
     modal.close();
     void enterWorld();

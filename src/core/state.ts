@@ -2,12 +2,14 @@ import { SAVE_VERSION } from '../config';
 import { initialSkill, updateSkill, type SkillChange, type SkillState } from '../math/adaptive';
 import type { Grade, Topic } from '../math/types';
 import { bus } from './events';
-import { item, type DecorSlot, type WearSlot } from './items';
+import { item, RETIRED_WEAR, type DecorSlot, type WearSlot } from './items';
+import { DEFAULT_OUTFIT, isKid, outfitFits, type Kid } from './outfits';
 import { badgeDef, coinsForAttempts, levelFromXp, xpForAttempts } from './progression';
 import { storage } from './storage';
 
 export type ZoneId = 'village' | 'forest' | 'maze' | 'park' | 'zoo' | 'castle' | 'house';
 
+/** Ngoại hình bé dựng bằng code (dữ liệu cũ – nay bé là mô hình AI, không còn chọn da, tóc, mắt). */
 export interface Look {
   skin: number;
   hair: number;
@@ -16,9 +18,8 @@ export interface Look {
 }
 
 export interface Equipped {
-  shirt: string;
-  pants: string;
-  shoes: string;
+  /** Bộ đồ đang mặc (vật phẩm loại 'outfit'; mặc định "Đồ thường ngày"). */
+  outfit: string;
   hat: string | null;
   backpack: string | null;
   acc: string | null;
@@ -70,6 +71,8 @@ export interface Profile {
   grade: Grade;
   created: number;
   lastPlayed: number;
+  /** Bé trai hay bé gái (mô hình AI) – chọn khi tạo hồ sơ, đổi được trong Túi đồ. */
+  kid: Kid;
   look: Look;
   equipped: Equipped;
   xp: number;
@@ -92,6 +95,8 @@ export interface Profile {
   totalMs: number;
   pos: { zone: ZoneId; x: number; y: number } | null;
   mini: Record<string, { best: number; plays: number }>;
+  /** Số xu vừa trả lại cho áo, quần, giày cũ – báo cho bé một lần rồi xóa. */
+  refund?: number;
 }
 
 export interface ProfileSummary {
@@ -100,6 +105,7 @@ export interface ProfileSummary {
   grade: Grade;
   created: number;
   lastPlayed: number;
+  kid: Kid;
   look: Look;
   equipped: Equipped;
   level: number;
@@ -160,12 +166,10 @@ function uid(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
 
-export function newProfile(opts: { name: string; grade: Grade; look: Look; equipped: Partial<Equipped> }): Profile {
+export function newProfile(opts: { name: string; grade: Grade; kid: Kid; look?: Look; equipped?: Partial<Equipped> }): Profile {
   const now = Date.now();
   const equipped: Equipped = {
-    shirt: 'shirt_blue',
-    pants: 'pants_jean',
-    shoes: 'shoes_red',
+    outfit: DEFAULT_OUTFIT,
     hat: null,
     backpack: null,
     acc: null,
@@ -173,8 +177,7 @@ export function newProfile(opts: { name: string; grade: Grade; look: Look; equip
     board: null,
     ...opts.equipped,
   };
-  const inventory: Record<string, number> = {};
-  for (const id of ['shirt_blue', 'shirt_pink', 'shirt_yellow', 'shirt_green', 'pants_jean', 'pants_skirt', 'pants_shorts', 'shoes_red']) inventory[id] = 1;
+  const inventory: Record<string, number> = { [DEFAULT_OUTFIT]: 1 };
   return {
     v: SAVE_VERSION,
     id: uid(),
@@ -182,7 +185,8 @@ export function newProfile(opts: { name: string; grade: Grade; look: Look; equip
     grade: opts.grade,
     created: now,
     lastPlayed: now,
-    look: opts.look,
+    kid: opts.kid,
+    look: opts.look ?? kidLook(opts.kid),
     equipped,
     xp: 0,
     coins: 0,
@@ -211,17 +215,71 @@ export function newProfile(opts: { name: string; grade: Grade; look: Look; equip
   };
 }
 
-function migrate(p: Profile): Profile {
-  const base = newProfile({ name: p.name, grade: p.grade, look: p.look, equipped: p.equipped });
-  return { ...base, ...p, v: SAVE_VERSION, equipped: { ...base.equipped, ...p.equipped } };
+/** Ngoại hình bé dựng bằng code tương ứng (chỉ dùng khi thiếu mô hình AI): bé trai tóc ngắn đen, bé gái hai bím. */
+export function kidLook(kid: Kid): Look {
+  return { skin: 1, hair: kid === 'gai' ? 3 : 0, hairColor: 0, eyes: 0 };
+}
+
+/** Váy (áo váy, chân váy) của hồ sơ cũ – dùng để đoán bé gái. */
+const GIRL_WEAR = new Set(['shirt_dress', 'pants_skirt', 'pants_purple']);
+/** Chỗ mặc cũ đã bỏ. */
+const OLD_SLOTS = ['shirt', 'pants', 'shoes'];
+
+/** Đoán bé trai hay bé gái từ hồ sơ cũ: tóc dài, hai bím hoặc đang mặc váy → bé gái; còn lại → bé trai. */
+export function guessKid(p: { look?: Partial<Look> | null; equipped?: object | null }): Kid {
+  const hair = p.look?.hair;
+  if (hair === 2 || hair === 3) return 'gai';
+  const eq = (p.equipped ?? {}) as Record<string, unknown>;
+  return OLD_SLOTS.some((s) => typeof eq[s] === 'string' && GIRL_WEAR.has(eq[s] as string)) ? 'gai' : 'trai';
+}
+
+/**
+ * Áo, quần, giày cũ: bỏ khỏi túi đồ và chỗ mặc, trả lại xu cho món phải mua (đồ được tặng không tính).
+ * Dựa vào chính túi đồ nên chạy lại cũng không trả hai lần. Trả về số xu đã trả.
+ */
+function refundRetired(p: Profile): number {
+  let coins = 0;
+  for (const [id, n] of Object.entries(p.inventory)) {
+    if (!(id in RETIRED_WEAR)) continue;
+    coins += RETIRED_WEAR[id] * Math.max(0, Math.floor(Number(n) || 0));
+    delete p.inventory[id];
+  }
+  if (coins > 0) {
+    p.coins = (p.coins ?? 0) + coins;
+    p.refund = (p.refund ?? 0) + coins;
+  }
+  return coins;
+}
+
+function migrate(raw: Profile): Profile {
+  const kid = isKid(raw.kid) ? raw.kid : guessKid(raw);
+  const base = newProfile({ name: raw.name, grade: raw.grade, kid });
+  const p: Profile = {
+    ...base,
+    ...raw,
+    v: SAVE_VERSION,
+    kid,
+    look: raw.look ?? base.look,
+    inventory: { ...(raw.inventory ?? base.inventory) },
+    equipped: { ...base.equipped, ...raw.equipped },
+  };
+  const eq = p.equipped as unknown as Record<string, unknown>;
+  for (const s of OLD_SLOTS) delete eq[s];
+  refundRetired(p);
+  if (!outfitFits(kid, p.equipped.outfit)) p.equipped.outfit = DEFAULT_OUTFIT;
+  if (!p.inventory[DEFAULT_OUTFIT]) p.inventory[DEFAULT_OUTFIT] = 1;
+  return p;
 }
 
 function summary(p: Profile): ProfileSummary {
-  return { id: p.id, name: p.name, grade: p.grade, created: p.created, lastPlayed: p.lastPlayed, look: p.look, equipped: p.equipped, level: levelFromXp(p.xp), stars: p.stars };
+  return { id: p.id, name: p.name, grade: p.grade, created: p.created, lastPlayed: p.lastPlayed, kid: p.kid, look: p.look, equipped: p.equipped, level: levelFromXp(p.xp), stars: p.stars };
 }
 
 export function listProfiles(): ProfileSummary[] {
-  return storage.getJSON<ProfileSummary[]>('profiles', []).sort((a, b) => b.lastPlayed - a.lastPlayed);
+  return storage
+    .getJSON<ProfileSummary[]>('profiles', [])
+    .map((s) => (isKid(s.kid) && s.equipped?.outfit ? s : { ...s, kid: isKid(s.kid) ? s.kid : guessKid(s), equipped: { ...s.equipped, outfit: s.equipped?.outfit ?? DEFAULT_OUTFIT } }))
+    .sort((a, b) => b.lastPlayed - a.lastPlayed);
 }
 
 function writeIndex(p: Profile): void {
@@ -397,17 +455,38 @@ export function takeItem(id: string, n = 1): boolean {
 }
 
 export function equip(slot: WearSlot | 'pet' | 'board', id: string | null): void {
-  const eq = profile().equipped;
-  if ((slot === 'shirt' || slot === 'pants' || slot === 'shoes') && !id) return;
-  (eq as unknown as Record<string, string | null>)[slot] = id;
+  const p = profile();
+  if (slot === 'outfit' && (!id || !outfitFits(p.kid, id))) return;
+  (p.equipped as unknown as Record<string, string | null>)[slot] = id;
   bus.emit('look', {});
   save();
 }
 
-export function setLook(look: Partial<Look>): void {
-  Object.assign(profile().look, look);
+/** Đổi bé trai ↔ bé gái: giữ mọi bộ đồ đã có; bộ đang mặc chưa có cho bé này thì mặc "Đồ thường ngày". */
+export function setKid(kid: Kid): void {
+  const p = profile();
+  if (!isKid(kid) || p.kid === kid) return;
+  p.kid = kid;
+  p.look = { ...p.look, hair: kidLook(kid).hair };
+  if (!outfitFits(kid, p.equipped.outfit)) p.equipped.outfit = DEFAULT_OUTFIT;
   bus.emit('look', {});
   save();
+}
+
+/** Số xu vừa trả lại cho áo, quần, giày cũ mà bé chưa được báo (0 nếu không có) – lấy xong thì xóa. */
+export function takeRefundNotice(): number {
+  const p = profile();
+  const n = p.refund ?? 0;
+  if (p.refund !== undefined) {
+    delete p.refund;
+    save();
+  }
+  return n;
+}
+
+/** Bé và đồ đang mặc của hồ sơ đang chơi (tùy chọn dựng mô hình 'player'); chưa chọn hồ sơ → {} (bé mẫu). */
+export function playerLook(): { kid?: Kid; eq?: Equipped } {
+  return current ? { kid: current.kid, eq: { ...current.equipped } } : {};
 }
 
 export function setDecor(slot: DecorSlot, id: string | null): void {
@@ -569,7 +648,7 @@ export function writeProfile(p: Profile): void {
 export function resetProfileProgress(id: string): Profile | null {
   const old = readProfile(id);
   if (!old) return null;
-  const fresh = newProfile({ name: old.name, grade: old.grade, look: old.look, equipped: old.equipped });
+  const fresh = newProfile({ name: old.name, grade: old.grade, kid: old.kid, look: old.look, equipped: old.equipped });
   const reset: Profile = {
     ...fresh,
     id: old.id,

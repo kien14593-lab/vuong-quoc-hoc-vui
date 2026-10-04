@@ -29,5 +29,5 @@ export const COLORS = {
 
 export const SAVE_PREFIX = 'vqth';
 
-/** Phiên bản dữ liệu lưu – tăng khi đổi cấu trúc hồ sơ. */
-export const SAVE_VERSION = 1;
+/** Phiên bản dữ liệu lưu – tăng khi đổi cấu trúc hồ sơ. 2: bé AI (bé trai/bé gái) và bộ đồ thay cho áo, quần, giày. */
+export const SAVE_VERSION = 2;

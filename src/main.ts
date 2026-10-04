@@ -41,7 +41,8 @@ async function main(): Promise<void> {
     window.setTimeout(() => boot.remove(), 700);
   }
   // Tải dần ở nền mô hình của các khu vực sau (theo thứ tự trẻ sẽ gặp) để lúc vào khu vực không phải chờ.
-  window.setTimeout(() => prefetchGlb([...modelsInStoryOrder(), ...glbKeys()]), 1500);
+  // Bộ đồ của bé (player_trai__…, player_gai__…) chỉ tải khi cần: mạng chậm không phải tải mọi bộ đồ.
+  window.setTimeout(() => prefetchGlb([...modelsInStoryOrder(), ...glbKeys().filter((k) => !k.includes('__'))]), 1500);
 }
 
 void main().catch((e) => {

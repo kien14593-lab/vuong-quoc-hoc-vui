@@ -3,7 +3,8 @@ import '../src/styles/main.css';
 import '../src/styles/screens.css';
 import '../src/styles/hud.css';
 import '../src/styles/menus.css';
-import { addCoins, addKeys, addStars, addTickets, addXp, createProfile, deleteProfile, listProfiles, loadProfile, markCollected, profile, saveNow, setFlag, setQuestState, type ZoneId } from '../src/core/state';
+import { addCoins, addKeys, addStars, addTickets, addXp, createProfile, deleteProfile, listProfiles, loadProfile, markCollected, profile, saveNow, setFlag, setKid, setQuestState, type ZoneId } from '../src/core/state';
+import type { Kid } from '../src/core/outfits';
 import { engine, type Quality } from '../src/engine/core';
 import { loadFonts } from '../src/engine/text';
 import { enterWorld, showTitle } from '../src/game/app';
@@ -17,6 +18,7 @@ import { initUI } from '../src/ui/root';
  *  ?zone=forest            khu vực cần mở (mặc định village)
  *  ?spawn=from_village     điểm xuất hiện (mặc định start) – hoặc "x,z"
  *  ?grade=1..5             lớp của hồ sơ thử (mặc định 2)
+ *  ?kid=trai|gai           bé trai / bé gái của hồ sơ thử (mặc định bé gái)
  *  ?fresh=1                xóa hồ sơ thử cũ, bắt đầu lại từ đầu
  *  ?flags=intro.done,bear.start,quest.stars=done   bật cờ cốt truyện (k hoặc k=giá_trị)
  *  ?collect=village.star.1,village.star.2          đánh dấu vật phẩm đã nhặt
@@ -34,13 +36,17 @@ const list = (k: string) =>
     .map((s) => s.trim())
     .filter(Boolean);
 const num = (k: string) => Number(q.get(k) ?? 0) || 0;
+const kid: Kid = q.get('kid') === 'trai' ? 'trai' : 'gai';
 
 function ensureProfile(): void {
   const name = `Bé Khu Vực ${grade}`;
   const found = listProfiles().find((p) => p.name === name);
   if (found && q.get('fresh') === '1') deleteProfile(found.id);
-  else if (found && loadProfile(found.id)) return;
-  createProfile({ name, grade, look: { skin: 1, hair: 2, hairColor: 1, eyes: 0 }, equipped: {} });
+  else if (found && loadProfile(found.id)) {
+    if (q.has('kid')) setKid(kid);
+    return;
+  }
+  createProfile({ name, grade, kid });
 }
 
 function applyParams(): void {

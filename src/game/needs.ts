@@ -1,12 +1,13 @@
+import { playerKey, type Kid } from '../core/outfits';
 import type { ZoneId } from '../core/state';
 import type { MiniId } from '../minigames/registry';
 import { CAST } from './cast';
 
 /**
  * NHÂN VẬT CẦN CHO TỪNG CẢNH – để chỉ tải tệp mô hình AI (GLB) khi cần, trò chơi mở nhanh hơn:
- *  - màn hình tiêu đề: tải lúc khởi động (main.ts);
- *  - mỗi khu vực / trò chơi nhỏ: tải trong lúc màn hình chuyển cảnh (game/app.ts);
- *  - phần còn lại: tải dần ở nền sau khi hiện màn hình tiêu đề.
+ *  - màn hình tiêu đề: tải lúc khởi động (main.ts) – không chờ mô hình bé (thẻ hồ sơ hiện bóng bé tạm rồi tự thay);
+ *  - mỗi khu vực / trò chơi nhỏ: tải trong lúc màn hình chuyển cảnh (game/app.ts), kèm bé của hồ sơ đang chơi;
+ *  - phần còn lại: tải dần ở nền sau khi hiện màn hình tiêu đề (trừ các bộ đồ: chỉ tải khi cần).
  * Ghi đủ mọi nhân vật/con thú xuất hiện (cả người chỉ nói trong hội thoại – để có ảnh chân dung);
  * khóa chưa có mô hình AI thì bỏ qua, không tốn gì. Quên ghi → tests/needs.test.ts báo lỗi.
  */
@@ -37,13 +38,28 @@ export const MINI_MODELS: Partial<Record<MiniId, readonly string[]>> = {
   pizza: ['animal_penguin', 'animal_monkey', 'animal_hippo'],
 };
 
-/** Mô hình cần trước khi dựng khu vực (kèm thú cưng đang mang theo – mã vật phẩm cũng là khóa mô hình). */
-export function zoneModels(id: ZoneId, pet?: string | null): string[] {
-  return [...new Set([...ZONE_MODELS[id], ...EVERY_ZONE_MODELS, ...(pet ? [pet] : [])])];
+/** Trò chơi nhỏ có bé (người chơi) trong cảnh – cần mô hình bé mặc bộ đồ đang chọn. */
+export const MINI_WITH_PLAYER: readonly MiniId[] = ['fishing', 'maze_run', 'runner', 'shoot_answer'];
+
+/** Bé của hồ sơ đang chơi: bé trai / bé gái và bộ đồ đang mặc. */
+export interface PlayerNeed {
+  kid: Kid;
+  outfit: string | null;
 }
 
-export function miniModels(id: string): string[] {
-  return [...(MINI_MODELS[id as MiniId] ?? [])];
+/** Mô hình bé (người chơi) đang mặc bộ đồ: player_trai, player_gai__the_thao... (không có hồ sơ → không cần). */
+export function playerModels(p?: PlayerNeed | null): string[] {
+  return p ? [playerKey(p.kid, p.outfit)] : [];
+}
+
+/** Mô hình cần trước khi dựng khu vực (kèm thú cưng đang mang theo – mã vật phẩm cũng là khóa mô hình – và bé). */
+export function zoneModels(id: ZoneId, pet?: string | null, player?: PlayerNeed | null): string[] {
+  return [...new Set([...ZONE_MODELS[id], ...EVERY_ZONE_MODELS, ...(pet ? [pet] : []), ...playerModels(player)])];
+}
+
+/** Mô hình cần trước khi chơi trò chơi nhỏ (kèm bé nếu trò chơi có bé). */
+export function miniModels(id: string, player?: PlayerNeed | null): string[] {
+  return [...(MINI_MODELS[id as MiniId] ?? []), ...(MINI_WITH_PLAYER.includes(id as MiniId) ? playerModels(player) : [])];
 }
 
 /** Mọi mô hình theo thứ tự trẻ sẽ gặp (để tải dần ở nền). */

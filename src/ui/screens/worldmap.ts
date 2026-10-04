@@ -1,9 +1,9 @@
 import { sfx } from '../../core/audio';
 import { profile, type ZoneId } from '../../core/state';
 import { bearStage, bearSteps, canTravel, storyObjective, visited, zoneLock, ZONE_META, ZONE_ORDER } from '../../game/story';
+import { avatarImg } from '../avatar';
 import { button, h } from '../dom';
 import { openModal } from '../modal';
-import { playerPortrait } from '../portrait';
 import { toast } from '../toast';
 
 /** Đường nối giữa các khu vực trên bản đồ. */
@@ -77,7 +77,7 @@ export function openWorldMap(current: ZoneId, go: (z: ZoneId) => void): void {
       h('span.wm-name', m.name),
       lock ? h('span.wm-lock', '🔒') : null,
       goal ? h('span.wm-goal', '!') : null,
-      here ? h('img.wm-me', { src: playerPortrait(profile().look, profile().equipped, { framing: 'head', size: 160, yaw: 16 }), alt: '' }) : null,
+      here ? avatarImg(profile().kid, profile().equipped, 'wm-me', { framing: 'head', size: 160, yaw: 16 }) : null,
     );
     map.appendChild(node);
   }

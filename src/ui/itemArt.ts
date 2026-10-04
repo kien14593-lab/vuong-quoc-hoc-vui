@@ -1,16 +1,16 @@
 import { item, PLANTS, type ItemCat } from '../core/items';
+import { outfitFits, playerKey, type Kid } from '../core/outfits';
 import { hasProfile, profile, type Equipped } from '../core/state';
+import { ensureGlb, glbReady } from '../models/glb';
 import { h } from './dom';
 import { modelPortrait, playerPortrait, type Framing } from './portrait';
 
 /**
- * Ảnh minh họa vật phẩm (dựng từ mô hình 3D): quần áo hiện trên chính nhân vật của bé,
+ * Ảnh minh họa vật phẩm (dựng từ mô hình 3D): bộ đồ, mũ, balo, phụ kiện hiện trên chính bé của người chơi,
  * thú cưng / đồ trang trí / hạt giống hiện mô hình riêng.
  */
 export const CAT_EMOJI: Record<ItemCat, string> = {
-  shirt: '👕',
-  pants: '👖',
-  shoes: '👟',
+  outfit: '👕',
   hat: '🧢',
   backpack: '🎒',
   acc: '🎀',
@@ -22,25 +22,35 @@ export const CAT_EMOJI: Record<ItemCat, string> = {
 };
 
 const WEAR: Partial<Record<ItemCat, { framing: Framing; yaw: number; zoom?: number }>> = {
-  shirt: { framing: 'bust', yaw: 18 },
-  pants: { framing: 'full', yaw: 18 },
-  shoes: { framing: 'full', yaw: 30 },
+  outfit: { framing: 'full', yaw: 18 },
   hat: { framing: 'head', yaw: 22 },
   backpack: { framing: 'bust', yaw: 160 },
   acc: { framing: 'bust', yaw: 24 },
 };
 
-/** Ảnh (data URL) của vật phẩm; '' nếu không dựng được. */
+/** Bé + đồ để vẽ ảnh một món đeo trên người (null: không phải đồ mặc/đeo hoặc chưa chọn hồ sơ). */
+function wearLook(id: string): { kid: Kid; eq: Equipped } | null {
+  const d = item(id);
+  if (!d || !WEAR[d.cat] || !hasProfile()) return null;
+  const p = profile();
+  const eq: Equipped = { ...p.equipped, pet: null, board: null, [d.cat]: id };
+  let kid = p.kid;
+  if (d.cat === 'outfit') {
+    // Bộ đồ hiện riêng (không mũ, balo); bộ đồ chỉ có cho bé kia thì vẽ trên bé kia.
+    eq.hat = eq.backpack = eq.acc = null;
+    if (!outfitFits(kid, id)) kid = (Object.keys(d.models ?? {})[0] as Kid | undefined) ?? kid;
+  } else if (d.cat !== 'hat') eq.hat = d.cat === 'acc' ? p.equipped.hat : null;
+  return { kid, eq };
+}
+
+/** Ảnh (data URL) của vật phẩm; '' nếu không dựng được (hoặc mô hình bé/bộ đồ chưa tải xong). */
 export function itemArt(id: string, size = 220): string {
   const d = item(id);
   if (!d) return '';
   const w = WEAR[d.cat];
   if (w) {
-    if (!hasProfile()) return '';
-    const p = profile();
-    const eq: Equipped = { ...p.equipped, pet: null, board: null, [d.cat]: id };
-    if (d.cat !== 'hat') eq.hat = d.cat === 'acc' ? p.equipped.hat : null;
-    return playerPortrait(p.look, eq, { framing: w.framing, yaw: w.yaw, size, zoom: w.zoom });
+    const look = wearLook(id);
+    return look ? playerPortrait(look.kid, look.eq, { framing: w.framing, yaw: w.yaw, size, zoom: w.zoom }) : '';
   }
   switch (d.cat) {
     case 'pet':
@@ -76,17 +86,37 @@ function pump(): void {
   requestAnimationFrame(step);
 }
 
+/**
+ * Mô hình bộ đồ chưa tải: tải lần lượt TỪNG tệp (mạng chậm không phải tải mọi bộ đồ cùng lúc), chỉ cho ảnh còn
+ * đang hiện trên màn hình (đóng cửa hàng / đổi ngăn thì bỏ qua phần còn lại).
+ */
+let modelChain: Promise<unknown> = Promise.resolve();
+
+function whenModel(key: string, box: HTMLElement, then: () => void): void {
+  if (glbReady([key])) return then();
+  modelChain = modelChain.then(async () => {
+    if (!box.isConnected) return;
+    await ensureGlb([key]);
+    if (box.isConnected) then();
+  });
+}
+
 /** Thẻ ảnh vật phẩm (có biểu tượng tạm trong lúc dựng ảnh). */
 export function itemThumb(id: string, cls = 'item-art', size = 220): HTMLElement {
   const d = item(id);
-  const box = h(`div.${cls}`, h('span.item-art-emoji', d ? CAT_EMOJI[d.cat] : '❔'));
-  queue.push(() => {
-    if (!box.isConnected) return;
-    const url = itemArt(id, size);
-    if (!url) return;
-    box.replaceChildren(h('img', { src: url, alt: '', draggable: false }));
-  });
-  pump();
+  const box = h(`div.${cls}`, h('span.item-art-emoji', d ? (d.icon ?? CAT_EMOJI[d.cat]) : '❔'));
+  const draw = () => {
+    queue.push(() => {
+      if (!box.isConnected) return;
+      const url = itemArt(id, size);
+      if (!url) return;
+      box.replaceChildren(h('img', { src: url, alt: '', draggable: false }));
+    });
+    pump();
+  };
+  const look = wearLook(id);
+  if (look) whenModel(playerKey(look.kid, look.eq.outfit), box, draw);
+  else draw();
   return box;
 }
 

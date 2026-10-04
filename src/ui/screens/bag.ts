@@ -1,34 +1,67 @@
 import { sfx } from '../../core/audio';
 import { bus } from '../../core/events';
 import { CAT_NAMES, item, ITEMS, type ItemCat } from '../../core/items';
+import { DEFAULT_OUTFIT, KID_NAMES, KIDS, OUTFITS, outfitFits } from '../../core/outfits';
 import { BADGES } from '../../core/progression';
-import { equip, hasBadge, profile } from '../../core/state';
+import { equip, hasBadge, profile, setKid } from '../../core/state';
 import { button, h } from '../dom';
 import { coinIcon } from '../icons';
 import { itemThumb } from '../itemArt';
 import { openModal } from '../modal';
-import { playerPortrait } from '../portrait';
+import { setPlayerPortrait } from '../portrait';
 
 type Tab = 'wear' | 'pet' | 'items' | 'badges';
 
-const WEAR_CATS: ItemCat[] = ['shirt', 'pants', 'shoes', 'hat', 'backpack', 'acc'];
+const WEAR_CATS: ItemCat[] = ['outfit', 'hat', 'backpack', 'acc'];
 const OPTIONAL: ItemCat[] = ['hat', 'backpack', 'acc', 'pet', 'board'];
+const KID_ICON = { trai: '👦', gai: '👧' } as const;
 
-/** Túi đồ: thay trang phục, chọn thú cưng, xem vật phẩm và huy hiệu. */
+/** Túi đồ: chọn bé trai / bé gái, thay bộ đồ, mũ, balo, phụ kiện, chọn thú cưng, xem vật phẩm và huy hiệu. */
 export function openBag(start: Tab = 'wear'): void {
   let tab: Tab = start;
-  let cat: ItemCat = 'shirt';
+  let cat: ItemCat = 'outfit';
   const tabsEl = h('div.menu-tabs');
   const content = h('div.bag-content');
+  const kidsEl = h('div.bag-kids');
   const preview = h<HTMLImageElement>('img.shop-preview', { alt: '', draggable: false });
   let yaw = 18;
 
   const refreshPreview = () => {
     const p = profile();
-    preview.src = playerPortrait(p.look, p.equipped, { framing: 'full', size: 420, yaw });
+    setPlayerPortrait(preview, p.kid, p.equipped, { framing: 'full', size: 420, yaw });
   };
 
   const equipped = (c: ItemCat): string | null => (profile().equipped as unknown as Record<string, string | null>)[c] ?? null;
+
+  /** Bộ đồ đã có: bộ mặc được thì chạm để mặc; bộ chỉ có cho bé kia thì hiện mờ. */
+  const outfitGrid = () => {
+    const p = profile();
+    const other = KIDS.find((k) => k !== p.kid)!;
+    const mine = OUTFITS.filter((o) => o.id === DEFAULT_OUTFIT || (p.inventory[o.id] ?? 0) > 0);
+    const grid = h('div.shop-grid.bag-grid');
+    for (const d of mine) {
+      const fits = outfitFits(p.kid, d.id);
+      const on = p.equipped.outfit === d.id;
+      grid.appendChild(
+        h(
+          `div.shop-card.bag-card${on ? '.on' : ''}${fits ? '' : '.locked'}`,
+          {
+            onclick: () => {
+              if (on || !fits) return;
+              equip('outfit', d.id);
+              sfx('pop');
+              render();
+            },
+          },
+          itemThumb(d.id, 'item-art'),
+          h('div.shop-name', d.name),
+          on ? h('div.bag-on', '✔ Đang mặc') : fits ? null : h('div.shop-lock', `Chỉ có cho ${KID_NAMES[other].toLowerCase()}`),
+        ),
+      );
+    }
+    if (mine.length < 2) grid.appendChild(h('div.menu-empty', 'Ghé Cửa hàng của Cô Mèo để có thêm bộ đồ mới nhé!'));
+    return grid;
+  };
 
   const itemGrid = (cats: ItemCat[]) => {
     const p = profile();
@@ -72,6 +105,29 @@ export function openBag(start: Tab = 'wear'): void {
     }
     if (!owned.length) grid.appendChild(h('div.menu-empty', 'Chưa có món nào. Hãy ghé Cửa hàng của Cô Mèo nhé!'));
     return grid;
+  };
+
+  /** Nút chọn bé trai / bé gái (giữ nguyên mọi bộ đồ đã có). */
+  const renderKids = () => {
+    const cur = profile().kid;
+    kidsEl.replaceChildren(
+      ...KIDS.map((k) =>
+        h(
+          `button.bag-kid${k === cur ? '.on' : ''}`,
+          {
+            type: 'button',
+            onclick: () => {
+              if (k === profile().kid) return;
+              setKid(k);
+              sfx('pop');
+              render();
+            },
+          },
+          h('span.bag-kid-i', KID_ICON[k]),
+          KID_NAMES[k],
+        ),
+      ),
+    );
   };
 
   const render = () => {
@@ -118,7 +174,7 @@ export function openBag(start: Tab = 'wear'): void {
           ),
         ),
       );
-      content.append(sub, itemGrid([cat]));
+      content.append(sub, cat === 'outfit' ? outfitGrid() : itemGrid([cat]));
     } else if (tab === 'pet') {
       content.append(h('div.bag-section', 'Thú cưng đi theo bạn'), itemGrid(['pet']), h('div.bag-section', 'Ván trượt'), itemGrid(['board']));
     } else if (tab === 'items') {
@@ -148,6 +204,7 @@ export function openBag(start: Tab = 'wear'): void {
       const n = BADGES.filter((b) => hasBadge(b.id)).length;
       content.append(h('div.bag-section', `Bạn đã có ${n} / ${BADGES.length} huy hiệu`), grid);
     }
+    renderKids();
     refreshPreview();
   };
 
@@ -168,6 +225,7 @@ export function openBag(start: Tab = 'wear'): void {
         }, 'btn-round btn-soft'),
       ),
       h('div.shop-preview-name', profile().name),
+      kidsEl,
     ),
     h('div.shop-main', tabsEl, content),
   );

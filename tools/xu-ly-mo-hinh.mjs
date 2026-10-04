@@ -342,6 +342,17 @@ function convertConfig(raw) {
           else warn.push(`cau-hinh.json: "${name}" – động tác "${r}" không hợp lệ.`);
         }
         o.clips = clips;
+      } else if (sk === 'gan-do' || k === 'dress') {
+        // Chỗ gắn mũ/kính ("dau") và balo/khăn ("than") của bé: [dịch ngang, lên, ra trước (mét), phóng to].
+        const d = {};
+        for (const [part, arr] of Object.entries(v ?? {})) {
+          const sp = slug(part);
+          const slot = sp === 'dau' || part === 'head' ? 'head' : sp === 'than' || part === 'body' ? 'body' : null;
+          const nums = Array.isArray(arr) ? arr.map(Number) : [];
+          if (slot && nums.length >= 3 && nums.length <= 4 && nums.every(Number.isFinite)) d[slot] = nums;
+          else warn.push(`cau-hinh.json: "${name}" – "gan-do": "${part}" không hợp lệ (vd. "dau": [0, 0.02, 0, 1.05] = dịch ngang, lên, ra trước (mét), phóng to).`);
+        }
+        if (Object.keys(d).length) o.dress = d;
       } else warn.push(`cau-hinh.json: "${name}" – không hiểu mục "${k}" (bỏ qua).`);
     }
     out[key] = { ...out[key], ...o };
@@ -362,7 +373,7 @@ const label = (key) => {
   return KEY_VI[key] ?? key;
 };
 /** Cấu hình bộ đồ thừa hưởng từ bé (ghi đè được bằng mục "be-trai-<bộ đồ>" trong cau-hinh.json). */
-const KID_INHERIT = ['height', 'rotY', 'scale', 'offset', 'material', 'credit'];
+const KID_INHERIT = ['height', 'rotY', 'scale', 'offset', 'material', 'credit', 'dress'];
 
 /** Bỏ emoji không hiện được trên Windows 10 (≤ Emoji 12.0, quy tắc của tests/emoji12.ts). */
 let emojiIssues = () => [];

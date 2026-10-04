@@ -1,7 +1,10 @@
 import * as THREE from 'three';
-import type { Equipped, Look } from '../core/state';
+import { DEFAULT_OUTFIT, playerKey, type Kid } from '../core/outfits';
+import type { Equipped } from '../core/state';
 import { disposeTree } from '../engine/merge';
+import type { PlayerOpts } from '../models/character';
 import { ensureGlb, glbReady } from '../models/glb';
+import { kidModelKey } from '../models/kid';
 import { buildModel, hasModel } from '../models/registry';
 
 /**
@@ -128,10 +131,66 @@ export function modelPortrait(key: string, o: PortraitOpts = {}): string {
   return cached(k, () => buildModel(key, o.opts ?? {}), o, ready);
 }
 
-/** Chân dung người chơi theo ngoại hình + trang phục. */
-export function playerPortrait(look: Look, eq: Equipped, o: PortraitOpts = {}): string {
-  const k = JSON.stringify(['p', look, eq, o]);
-  return cached(k, () => buildModel('player', { look, eq }), o);
+/* ------------------------------------------------------------------ */
+/* Chân dung bé (người chơi)                                            */
+/* ------------------------------------------------------------------ */
+
+/** Đồ hiện trên chân dung bé (thú cưng, ván trượt không vẽ). */
+type Dress = Pick<Partial<Equipped>, 'outfit' | 'hat' | 'backpack' | 'acc'>;
+
+function dressOf(eq: Partial<Equipped>): Dress {
+  return { outfit: eq.outfit ?? DEFAULT_OUTFIT, hat: eq.hat ?? null, backpack: eq.backpack ?? null, acc: eq.acc ?? null };
+}
+
+/**
+ * Chân dung bé (trai/gái) mặc bộ đồ, đội mũ, đeo balo, phụ kiện. Mô hình AI của bộ đồ chưa tải xong → '' và bắt đầu tải
+ * (không vẽ tạm bé dựng bằng code) – dùng `setPlayerPortrait` để tự thay ảnh khi tải xong.
+ * Tệp lỗi / tắt mô hình AI → chân dung bé dựng bằng code.
+ */
+export function playerPortrait(kid: Kid, eq: Partial<Equipped>, o: PortraitOpts = {}): string {
+  const key = playerKey(kid, eq.outfit);
+  if (!glbReady([key])) {
+    void ensureGlb([key]);
+    return '';
+  }
+  const dress = dressOf(eq);
+  const k = JSON.stringify(['p', kid, dress, kidModelKey({ kid, eq: dress }) ?? 'code', o]);
+  return cached(k, () => buildModel<PlayerOpts>('player', { kid, eq: dress }), o);
+}
+
+/** Bóng bé tạm (SVG) khi chờ tải mô hình AI: 'head' = đầu + vai, còn lại = cả người. */
+export function playerPlaceholder(framing: Framing = 'full'): string {
+  const body =
+    framing === 'head'
+      ? '<circle cx="50" cy="44" r="27"/><path d="M14 100c2-20 17-30 36-30s34 10 36 30z"/>'
+      : '<circle cx="50" cy="26" r="17"/><path d="M30 92V60c0-9 9-16 20-16s20 7 20 16v32z"/><path d="M27 50l-9 22M73 50l9 22" stroke="#d5cce6" stroke-width="7" stroke-linecap="round"/>';
+  return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="#d5cce6">${body}</svg>`)}`;
+}
+
+let reqSeq = 0;
+
+/**
+ * Đặt chân dung bé vào thẻ ảnh. Mô hình AI chưa tải xong: hiện bóng bé tạm (hoặc giữ ảnh bé đang có) và nhấp nháy nhẹ
+ * (lớp `.portrait-wait`), tải xong thì tự thay. Gọi nhiều lần liên tiếp (bấm thử nhiều bộ đồ) chỉ lấy lần cuối.
+ */
+export function setPlayerPortrait(img: HTMLImageElement, kid: Kid, eq: Partial<Equipped>, o: PortraitOpts = {}): void {
+  const tok = String(++reqSeq);
+  img.dataset.portraitReq = tok;
+  const show = (url: string) => {
+    if (img.src !== url) img.src = url;
+    img.dataset.portraitReal = '1';
+    img.classList.remove('portrait-wait');
+  };
+  const url = playerPortrait(kid, eq, o);
+  if (url) return show(url);
+  if (img.dataset.portraitReal !== '1') img.src = playerPlaceholder(o.framing);
+  img.classList.add('portrait-wait');
+  void ensureGlb([playerKey(kid, eq.outfit)]).then(() => {
+    if (img.dataset.portraitReq !== tok) return;
+    const u = playerPortrait(kid, eq, o);
+    if (u) show(u);
+    else img.classList.remove('portrait-wait');
+  });
 }
 
 /** Xóa bộ nhớ đệm (ví dụ khi người chơi thay đồ – không bắt buộc vì khóa đã gồm trang phục). */

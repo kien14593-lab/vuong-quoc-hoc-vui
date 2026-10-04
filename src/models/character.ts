@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { EYE_COLORS, HAIR_COLORS, SKIN_TONES, item } from '../core/items';
-import type { Equipped, Look } from '../core/state';
+import type { Kid } from '../core/outfits';
+import type { Equipped } from '../core/state';
 import { ball, box, capsule, cone, cyl, DEG, extrude, group, lathe, pivot, rbox, sphPart, starShape, torus } from '../engine/kit';
 import { mat, smooth, tint } from '../engine/materials';
 import { compactModel } from '../engine/merge';
@@ -40,23 +41,29 @@ export const HIP_Y = 0.42;
 export const HEAD_CENTER_Y = HIP_Y + 0.5 + 0.36;
 export const HEAD_R = 0.44;
 
-const wear = (id: string | null | undefined, fallback?: Wear): Wear | null => {
+/** Kiểu dáng của một vật phẩm đeo (mũ, balo, phụ kiện) theo mã vật phẩm. */
+export const wear = (id: string | null | undefined, fallback?: Wear): Wear | null => {
   if (!id) return fallback ?? null;
   const it = item(id);
   if (!it?.style) return fallback ?? null;
   return { style: it.style, color: it.color ?? '#cccccc', color2: it.color2 };
 };
 
-/** Chuyển ngoại hình + trang phục của hồ sơ thành thông số dựng mô hình. */
-export function specFromProfile(look: Look, eq: Equipped): CharSpec {
+/**
+ * Bé dựng bằng code – chỉ dùng dự phòng khi mô hình AI của bé chưa tải được (giống ảnh mẫu của cô):
+ * bé trai tóc ngắn đen, áo xanh da trời có ngôi sao vàng, quần jean, giày đỏ;
+ * bé gái tóc hai bím, áo hồng, quần soóc tím nhạt, giày hồng.
+ */
+export function kidSpec(kid: Kid, eq: Partial<Equipped> = {}): CharSpec {
+  const girl = kid === 'gai';
   return {
-    skin: SKIN_TONES[look.skin] ?? SKIN_TONES[0],
-    hair: HAIR_COLORS[look.hairColor] ?? HAIR_COLORS[0],
-    hairStyle: look.hair,
-    eye: EYE_COLORS[look.eyes] ?? EYE_COLORS[0],
-    shirt: wear(eq.shirt, { style: 'tee', color: '#6cc3f0', color2: '#4aa3d8' })!,
-    pants: wear(eq.pants, { style: 'pants', color: '#5b7fc7' })!,
-    shoes: wear(eq.shoes, { style: 'sneaker', color: '#ff6b6b' })!,
+    skin: SKIN_TONES[1],
+    hair: HAIR_COLORS[0],
+    hairStyle: girl ? 3 : 0,
+    eye: EYE_COLORS[0],
+    shirt: girl ? { style: 'tee', color: '#ff9ec4', color2: '#f07aa8' } : { style: 'star', color: '#6cc3f0', color2: '#ffe066' },
+    pants: girl ? { style: 'shorts', color: '#c3a6f0' } : { style: 'pants', color: '#5b7fc7' },
+    shoes: { style: 'sneaker', color: girl ? '#ff8fb8' : '#ff6b6b' },
     hat: wear(eq.hat),
     bag: wear(eq.backpack),
     acc: wear(eq.acc),
@@ -421,7 +428,7 @@ function buildHair(sp: CharSpec, hatStyle: string | undefined): THREE.Object3D[]
   return out;
 }
 
-function buildHat(w: Wear): THREE.Object3D[] {
+export function buildHat(w: Wear): THREE.Object3D[] {
   const c = w.color;
   const out: THREE.Object3D[] = [];
   switch (w.style) {
@@ -504,7 +511,7 @@ function buildHat(w: Wear): THREE.Object3D[] {
 /* ------------------------------------------------------------------ */
 /* Balo & phụ kiện                                                      */
 /* ------------------------------------------------------------------ */
-function buildBag(w: Wear): THREE.Object3D[] {
+export function buildBag(w: Wear): THREE.Object3D[] {
   const c = w.color;
   const out: THREE.Object3D[] = [];
   // dây đeo trước ngực
@@ -533,7 +540,7 @@ function buildBag(w: Wear): THREE.Object3D[] {
   return out;
 }
 
-function buildAcc(w: Wear, headG: THREE.Group, body: THREE.Group, rig: Rig): void {
+export function buildAcc(w: Wear, headG: THREE.Group, body: THREE.Group, rig: Rig): void {
   const c = w.color;
   switch (w.style) {
     case 'glasses':
@@ -637,34 +644,43 @@ export function buildCharacter(sp: CharSpec): THREE.Group {
   return root;
 }
 
-export function buildPlayer(look: Look, eq: Equipped): THREE.Group {
-  return buildCharacter(specFromProfile(look, eq));
-}
-
 /* ------------------------------------------------------------------ */
 /* Đăng ký                                                              */
 /* ------------------------------------------------------------------ */
-const DEMO_LOOKS: { look: Look; eq: Equipped }[] = [
-  { look: { skin: 0, hair: 0, hairColor: 0, eyes: 0 }, eq: { shirt: 'shirt_blue', pants: 'pants_jean', shoes: 'shoes_red', hat: null, backpack: 'bag_blue', acc: null, pet: null, board: null } },
-  { look: { skin: 1, hair: 3, hairColor: 1, eyes: 1 }, eq: { shirt: 'shirt_pink', pants: 'pants_skirt', shoes: 'shoes_white', hat: 'hat_flower', backpack: null, acc: null, pet: null, board: null } },
-  { look: { skin: 2, hair: 1, hairColor: 0, eyes: 2 }, eq: { shirt: 'shirt_stripe', pants: 'pants_shorts', shoes: 'shoes_boots', hat: 'hat_cap', backpack: null, acc: 'acc_glasses', pet: null, board: null } },
-  { look: { skin: 0, hair: 2, hairColor: 3, eyes: 1 }, eq: { shirt: 'shirt_dress', pants: 'pants_skirt', shoes: 'shoes_star', hat: 'hat_bunny', backpack: 'bag_bear', acc: null, pet: null, board: null } },
-  { look: { skin: 3, hair: 5, hairColor: 0, eyes: 3 }, eq: { shirt: 'shirt_hoodie', pants: 'pants_green', shoes: 'shoes_rocket', hat: null, backpack: 'bag_rocket', acc: 'acc_scarf', pet: null, board: null } },
-  { look: { skin: 1, hair: 4, hairColor: 4, eyes: 0 }, eq: { shirt: 'shirt_star', pants: 'pants_purple', shoes: 'shoes_red', hat: 'hat_party', backpack: 'bag_star', acc: 'acc_bowtie', pet: null, board: null } },
-  { look: { skin: 4, hair: 0, hairColor: 5, eyes: 1 }, eq: { shirt: 'shirt_robe', pants: 'pants_jean', shoes: 'shoes_boots', hat: 'hat_wizard', backpack: null, acc: 'acc_cape', pet: null, board: null } },
-  { look: { skin: 2, hair: 3, hairColor: 2, eyes: 2 }, eq: { shirt: 'shirt_rainbow', pants: 'pants_red', shoes: 'shoes_white', hat: 'hat_crown', backpack: null, acc: 'acc_medal', pet: null, board: null } },
-  { look: { skin: 0, hair: 1, hairColor: 2, eyes: 0 }, eq: { shirt: 'shirt_math', pants: 'pants_jean', shoes: 'shoes_red', hat: 'hat_explorer', backpack: 'bag_blue', acc: null, pet: null, board: null } },
-  { look: { skin: 1, hair: 5, hairColor: 3, eyes: 1 }, eq: { shirt: 'shirt_yellow', pants: 'pants_shorts', shoes: 'shoes_white', hat: 'hat_beanie', backpack: null, acc: null, pet: null, board: null } },
-];
+/** Tùy chọn dựng 'player': bé nào, mặc gì (bộ đồ, mũ, balo, phụ kiện). */
+export interface PlayerOpts {
+  kid?: Kid;
+  eq?: Partial<Equipped>;
+  /** Mẫu xem thử thứ i (trang xem mô hình). */
+  i?: number;
+}
 
-defineModel<{ look?: Look; eq?: Equipped; i?: number }>('player', {
+/** Mẫu xem thử: lần lượt bé trai / bé gái với từng mũ, balo, phụ kiện. */
+const DEMO_WEAR: Partial<Equipped>[] = [
+  {},
+  {},
+  { backpack: 'bag_blue' },
+  { hat: 'hat_flower' },
+  { hat: 'hat_cap', acc: 'acc_glasses' },
+  { hat: 'hat_bunny', backpack: 'bag_bear' },
+  { backpack: 'bag_rocket', acc: 'acc_scarf' },
+  { hat: 'hat_party', backpack: 'bag_star', acc: 'acc_bowtie' },
+  { hat: 'hat_wizard', acc: 'acc_cape' },
+  { hat: 'hat_crown', acc: 'acc_medal' },
+  { hat: 'hat_explorer', backpack: 'bag_blue' },
+  { hat: 'hat_beanie' },
+];
+export const PLAYER_DEMOS: { kid: Kid; eq: Partial<Equipped> }[] = DEMO_WEAR.map((eq, i) => ({ kid: i % 2 ? 'gai' : 'trai', eq }));
+
+/** Bé dựng bằng code (dự phòng) – models/kid.ts thay bằng mô hình AI của bé khi đã tải xong. */
+defineModel<PlayerOpts>('player', {
   build: (o) => {
-    const d = DEMO_LOOKS[(o.i ?? 0) % DEMO_LOOKS.length];
-    return buildPlayer(o.look ?? d.look, o.eq ?? d.eq);
+    const d = PLAYER_DEMOS[(o.i ?? 0) % PLAYER_DEMOS.length];
+    return buildCharacter(kidSpec(o.kid ?? d.kid, o.eq ?? d.eq));
   },
   height: 1.8,
   colliders: [{ kind: 'circle', r: 0.4 }],
   tags: ['character'],
   desc: 'Nhân vật người chơi',
-  variants: DEMO_LOOKS.map((_, i) => ({ i })),
+  variants: PLAYER_DEMOS.map((_, i) => ({ i })),
 });
