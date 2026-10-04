@@ -258,6 +258,8 @@ export class ForestZone extends Zone {
       name: CAST.rua.name,
       color: CAST.rua.color,
       rot: 190,
+      // Mai rùa sâu ≈1.4 m, đầu to: đẩy bé ra xa hơn vật cản 0.52 của mô hình để mặt và mai không lẹm vào bé.
+      radius: 0.7,
       talk: async (npc) => {
         await say(CAST.rua, 'Chậm mà chắc! Ông có một câu hỏi rừng xanh cho cháu.');
         await this.quiz(mixedQuestion(), { src: 'forest:turtle', speaker: CAST.rua, title: 'Câu hỏi bên hồ', icon: '🐢' }, npc.actor.root, 10);

@@ -405,6 +405,8 @@ export class MazeZone extends Zone {
       name: CAST.rua.name,
       color: CAST.rua.color,
       rot: 25,
+      // Mai rùa sâu ≈1.4 m, đầu to: đẩy bé ra xa hơn vật cản 0.52 của mô hình để mặt và mai không lẹm vào bé.
+      radius: 0.7,
       action: 'Giải đố',
       icon: '🧩',
       talk: async () => {

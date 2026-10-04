@@ -10,6 +10,7 @@
     "npc_owl.glb",
     "npc_rabbit.glb",
     "npc_robot.glb",
+    "npc_turtle.glb",
     "pet_dog.glb"
   ],
   "nguon": {
@@ -39,6 +40,9 @@
     ],
     "npc_robot": [
       "robot.glb"
+    ],
+    "npc_turtle": [
+      "rua.glb"
     ],
     "pet_dog": [
       "cun.glb"

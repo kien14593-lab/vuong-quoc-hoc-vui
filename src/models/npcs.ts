@@ -377,7 +377,7 @@ reg('npc_bear', buildBear, 2.0, 0.65, 'Chú Gấu: mũ thám hiểm, balo, mapRo
 reg('npc_robot', buildRobot, 1.45, 0.5, 'Robot Bíp: antenna và hoverJet có tick/custom, mắt phát sáng eyeL/eyeR.', undefined, { hover: { gap: 0.42, fx: hoverJet, spin: 1.6 }, portrait: 'bust' });
 reg('npc_cat', buildCat, 1.45, 0.45, 'Cô Mèo: earL/earR, tail, tạp dề shop.');
 reg('npc_squirrel', buildSquirrel, 1.55, 0.5, 'Cô Sóc: tail lớn cuộn, acorn cầm tay, kẹp lá.');
-reg('npc_turtle', buildTurtle, 1.45, 0.52, 'Ông Rùa: shell, glasses, walkingStick; cadence chậm.');
+reg('npc_turtle', buildTurtle, 1.45, 0.52, 'Ông Rùa: shell, glasses, walkingStick; cadence chậm.', undefined, { portrait: 'bust' });
 reg('npc_deer', buildDeer, 1.55, 0.45, 'Bạn Nai: tai earL/earR, nụ sừng, đốm trắng, tail.');
 reg('npc_clown', buildClown, 1.8, 0.48, 'Chú Hề Bibo: buildCharacter + red nose, wig tufts, ruffle, jugglingBall.', undefined, { portrait: 'bust' });
 reg('npc_elephant', buildElephant, 2.2, 0.7, 'Bác Voi: tai earL/earR, trunk custom sway, mũ/áo keeper.', undefined, { portrait: 'bust' });

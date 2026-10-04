@@ -35,7 +35,7 @@ vào mục `"nguon"` khi lắp mô hình). Nên đọc điều khoản sử dụ
 
 - Ảnh tốt: **một nhân vật**, **nhìn thẳng**, **nền trơn**, thấy đủ toàn thân, tay tách khỏi người, hai chân có khe hở.
 - Ảnh hợp lệ: **PNG/JPG/WEBP**, tối đa **10 MB**, mỗi cạnh **512–4096 px**, gần **vuông**.
-- Nhân vật có **nhiều phần màu trắng** (Robot Bíp, Chú Hề Bibo, Nhà Vua…): đổi *"plain white background"* thành
+- Nhân vật có **nhiều phần màu trắng** (Robot Bíp, Chú Hề Bibo, Nhà Vua, Ông Rùa…): đổi *"plain white background"* thành
   *"plain light grey background"* để phần trắng không lẫn vào nền. Nhân vật mặc **giáp bạc** (Hiệp Sĩ Thỏ) thì giữ
   nền trắng – giáp bạc dễ lẫn vào nền xám.
 - **Mẹo để nhân vật mới cùng phong cách với Chú Gấu** (cô đã làm Thỏ Bông và Cô Mèo như vậy): trong **Gemini**, đính kèm ảnh
@@ -155,7 +155,7 @@ xương và động tác thật** (đi, chạy, vẫy tay…).
 
 1. **Chú Gấu** ✅, **Thỏ Bông** ✅, **Cô Mèo** ✅, **Bác Cú** ✅ (đã xong – Tencent HY 3D).
 2. **Robot Bíp** ✅, **Chú Hề Bibo** ✅, **Bác Voi** ✅, **Nhà Vua** ✅, **Hiệp Sĩ Thỏ** ✅ (đã xong – Tencent HY 3D).
-3. Cô Sóc, Ông Rùa, Bạn Nai (+ thú Sở Thú nếu muốn).
+3. Cô Sóc, **Ông Rùa** ✅ (đã xong – Tencent HY 3D), Bạn Nai (+ thú Sở Thú nếu muốn).
 
 **Không nên thay:**
 
@@ -272,12 +272,14 @@ Tệp: `soc-dung.glb` · `soc-di.glb` · `soc-noi.glb` · `soc-vay-tay.glb` · `
 A cheerful squirrel girl standing on two legs: orange-brown fur, cream belly and muzzle, small round ears, very big fluffy curled tail, small green leaf hair clip, light green scarf. Cute chibi 3D cartoon for a kids game: big round head, small round body, short limbs, big shiny eyes, friendly smile, rosy cheeks, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from body, legs apart, facing front, empty hands, no base, no background.
 ```
 
-### 5.11. Ông Rùa – Rừng Thông Thái, Mê Cung
+### 5.11. Ông Rùa – Rừng Thông Thái, Mê Cung ✅ đã có mô hình AI (Tencent HY 3D)
 
 Tệp: `rua-dung.glb` · `rua-noi.glb` · `rua-vay-tay.glb` · `rua-vui.glb`
 
+Kính **gọng nâu đậm, dày** (gọng mảnh dễ bị thủng khi tạo 3D), lông mày và râu là **một túm tròn dày** (không phải sợi mảnh), mai **rộng hơn người** để thấy viền mai ở hai bên, tay **tách khỏi mai** và **không cầm gậy**, ở bước 1 dùng *"plain light grey background"* vì lông mày và râu màu trắng, và ghi rõ *"He is a turtle, not a bear"* vì ảnh mẫu phong cách là chú gấu.
+
 ```text
-A gentle grandpa turtle standing upright on two legs: green skin, pale green belly, big brown dome shell on his back, small round silver glasses, white bushy eyebrows, short white beard. Cute chibi 3D cartoon for a kids game: big round head, small round body, short limbs, big shiny eyes, friendly smile, rosy cheeks, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from body, legs apart, facing front, empty hands, no base, no background.
+A kind, wise grandpa turtle standing upright on two legs: soft green skin, smooth round head with no ears, round glasses with thick dark brown frames, thick bushy white eyebrows, a short thick rounded white beard under the chin (one soft puff, not thin strands), pale yellow-green belly plate with big soft rounded segments, a big brown dome shell on his back with a thick rounded golden-tan rim and big soft hexagon patterns, the shell is wider than his body so its rim shows clearly on both sides, round feet. Cute chibi 3D cartoon for a kids game: big round head, small round body, short thick limbs, big shiny eyes, warm closed-mouth smile, rosy cheeks, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from body with a clear gap between the arms and the shell, legs apart, facing front, empty hands, no walking stick, no base, no ground, no shadow. He is a turtle, not a bear: smooth skin, no fur, no ears.
 ```
 
 ### 5.12. Bạn Nai – Rừng Thông Thái, Sở Thú
