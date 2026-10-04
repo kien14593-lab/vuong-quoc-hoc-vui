@@ -1,22 +1,17 @@
 import * as THREE from 'three';
+import { KINDS, lodLevels, type Level, type LodData, type LodJob, type LodReply, type Numbers, type RawAttr, type Simplifier } from './lod-core';
 
 /**
  * Mức chi tiết (LOD) tạo lúc chạy cho mô hình AI đứng yên nhiều con (thú Sở Thú).
  *
- * - Mỗi lưới GLB được rút gọn sẵn thành vài mức (meshoptimizer, chạy lúc rảnh, chỉ một lần mỗi mô hình).
- *   Tất cả mức nằm chung một chỉ mục: [gốc | 50% | 25% | bóng 1 | bóng 2], đổi mức chỉ là đổi drawRange.
+ * - Mỗi lưới GLB được rút gọn sẵn thành vài mức (meshoptimizer, chỉ một lần mỗi mô hình) trong một luồng phụ
+ *   (world/lod-worker.ts) nên khung hình không bị giật; nếu không mở được luồng phụ thì rút gọn ngay trên luồng chính
+ *   lúc rảnh. Tất cả mức nằm chung một chỉ mục: [gốc | 50% | 25% | bóng 1 | bóng 2], đổi mức chỉ là đổi drawRange.
  * - Lượt vẽ chính: chọn mức thô nhất mà sai lệch hình học nhìn trên màn hình ≤ 1 điểm ảnh (trông y hệt).
  * - Lượt vẽ bóng: chọn mức ít tam giác nhất mà sai lệch ≤ 1.5 ô bóng (bóng mềm nên không thấy khác),
  *   và bỏ hẳn con thú có bóng không thể rơi vào khung nhìn.
  * - Thêm `?lod=0` vào địa chỉ để tắt (so sánh khi kiểm tra).
  */
-
-interface Level {
-  start: number;
-  count: number;
-  /** Sai lệch hình học lớn nhất (đơn vị cục bộ của lưới). */
-  err: number;
-}
 
 interface LodGeo {
   geo: THREE.BufferGeometry;
@@ -25,8 +20,6 @@ interface LodGeo {
   /** Mức cho lượt vẽ bóng, từ ít tới nhiều tam giác. */
   shadow: Level[];
 }
-
-type Simplifier = (typeof import('meshoptimizer/simplifier'))['MeshoptSimplifier'];
 
 const MAX_PX = 1;
 const MAX_TEXELS = 1.5;
@@ -47,12 +40,122 @@ function simplifier(): Promise<Simplifier | null> {
   return lib;
 }
 
-/** Nhường máy cho khung hình (mỗi lần rút gọn chỉ vài mili giây, chạy lúc rảnh). */
+/** Nhường máy cho khung hình giữa các lần rút gọn trên luồng chính (chạy lúc rảnh). */
 function idle(): Promise<void> {
   return new Promise((r) => {
     if (typeof requestIdleCallback === 'function') requestIdleCallback(() => r(), { timeout: 200 });
     else setTimeout(r, 16);
   });
+}
+
+type WorkerCtor = new (options?: { name?: string }) => Worker;
+
+let ctor: Promise<WorkerCtor | null> | null = null;
+let worker: Worker | null = null;
+/** Luồng phụ không dùng được: từ đó rút gọn trên luồng chính. */
+let broken = typeof Worker === 'undefined';
+const waiting = new Map<number, (r: LodData | null) => void>();
+let seq = 0;
+let timer: ReturnType<typeof setTimeout> | undefined;
+
+/** Tắt luồng phụ (có `why` = vì lỗi); việc đang chờ chuyển sang luồng chính. */
+function stop(why?: unknown): void {
+  if (why !== undefined) {
+    broken = true;
+    console.warn('[lod] luồng phụ lỗi, rút gọn trên luồng chính', why);
+  }
+  clearTimeout(timer);
+  worker?.terminate();
+  worker = null;
+  for (const done of waiting.values()) done(null);
+  waiting.clear();
+}
+
+/** Đang có việc: chờ trả lời tối đa 20 giây; hết việc: tắt luồng phụ sau 8 giây rảnh cho nhẹ máy. */
+function arm(): void {
+  clearTimeout(timer);
+  timer = waiting.size ? setTimeout(() => stop('không trả lời'), 20_000) : setTimeout(() => stop(), 8_000);
+}
+
+function open(Ctor: WorkerCtor): Worker {
+  const w = new Ctor({ name: 'lod' });
+  w.onmessage = (e: MessageEvent<LodReply>) => {
+    const r = e.data;
+    const done = waiting.get(r.id);
+    if (!done) return;
+    waiting.delete(r.id);
+    arm();
+    if ('error' in r) {
+      console.warn('[lod] luồng phụ rút gọn lỗi', r.error);
+      done(null);
+    } else done({ index: r.index, levels: r.levels });
+  };
+  w.onerror = (e) => {
+    e.preventDefault();
+    stop(e.message || 'error');
+  };
+  w.onmessageerror = () => stop('messageerror');
+  return w;
+}
+
+/** Rút gọn trong luồng phụ; null = không được (khi đó rút gọn trên luồng chính). */
+async function inWorker(job: LodJob): Promise<LodData | null> {
+  if (broken) return null;
+  ctor ??= import('./lod-worker?worker&inline').then(
+    (m) => m.default,
+    (e: unknown) => {
+      console.warn('[lod] không tải được luồng phụ', e);
+      return null;
+    },
+  );
+  const Ctor = await ctor;
+  if (!Ctor) broken = true;
+  if (broken || !Ctor) return null;
+  try {
+    worker ??= open(Ctor);
+  } catch (e) {
+    stop(e);
+    return null;
+  }
+  // Gửi bản chép (mảng gốc vẫn đang được vẽ) và chuyển giao luôn bản chép, không chép thêm lần nào.
+  const buffers: ArrayBuffer[] = [];
+  const take = <T extends { buffer: ArrayBuffer }>(a: T): T => {
+    buffers.push(a.buffer);
+    return a;
+  };
+  const copy = (a: RawAttr): RawAttr => ({ ...a, array: take(a.array.slice()) });
+  const id = ++seq;
+  const msg = { id, count: job.count, pos: copy(job.pos), nor: job.nor && copy(job.nor), index: take(job.index.slice()) };
+  const w = worker;
+  return new Promise((resolve) => {
+    waiting.set(id, resolve);
+    try {
+      w.postMessage(msg, buffers);
+      arm();
+    } catch (e) {
+      stop(e);
+    }
+  });
+}
+
+async function onMain(job: LodJob): Promise<LodData | null> {
+  const S = await simplifier();
+  return S ? lodLevels(S, job, idle) : null;
+}
+
+/** Thuộc tính đỉnh → dạng thô gửi được sang luồng phụ (kiểu lạ thì đọc luôn bằng three ra số thực 32 bit). */
+function raw(a: THREE.BufferAttribute | THREE.InterleavedBufferAttribute, n: number): RawAttr {
+  const ib = (a as THREE.InterleavedBufferAttribute).isInterleavedBufferAttribute ? (a as THREE.InterleavedBufferAttribute) : null;
+  if (!(a as { isFloat16BufferAttribute?: boolean }).isFloat16BufferAttribute && KINDS.includes(a.array.constructor)) {
+    return { array: a.array as Numbers, stride: ib ? ib.data.stride : a.itemSize, offset: ib ? ib.offset : 0, normalized: a.normalized };
+  }
+  const f = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    f[i * 3] = a.getX(i);
+    f[i * 3 + 1] = a.getY(i);
+    f[i * 3 + 2] = a.getZ(i);
+  }
+  return { array: f, stride: 3, offset: 0, normalized: false };
 }
 
 const cache = new WeakMap<THREE.BufferGeometry, Promise<LodGeo | null>>();
@@ -69,61 +172,34 @@ function lodFor(src: THREE.BufferGeometry): Promise<LodGeo | null> {
   return p;
 }
 
-async function build(src: THREE.BufferGeometry): Promise<LodGeo | null> {
+/** Việc rút gọn của một lưới (dữ liệu đỉnh thô, chưa chép), hoặc null nếu lưới không hợp. */
+export function lodJob(src: THREE.BufferGeometry): LodJob | null {
   const pos = src.getAttribute('position');
   const index = src.getIndex();
   if (!pos || !index || src.groups.length > 1 || Object.keys(src.morphAttributes).length) return null;
-  const S = await simplifier();
-  if (!S) return null;
-
   const n = pos.count;
-  const P = new Float32Array(n * 3);
-  for (let i = 0; i < n; i++) {
-    P[i * 3] = pos.getX(i);
-    P[i * 3 + 1] = pos.getY(i);
-    P[i * 3 + 2] = pos.getZ(i);
-  }
   const nor = src.getAttribute('normal');
-  let N: Float32Array | null = null;
-  if (nor) {
-    N = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) {
-      N[i * 3] = nor.getX(i);
-      N[i * 3 + 1] = nor.getY(i);
-      N[i * 3 + 2] = nor.getZ(i);
-    }
-  }
-  const I = new Uint32Array(index.count);
-  for (let i = 0; i < I.length; i++) I[i] = index.getX(i);
-  const scale = S.getScale(P, 3);
-  const target = (k: number) => Math.max(3, Math.floor((I.length * k) / 3) * 3);
-  const smooth = (k: number, cap: number) => (N ? S.simplifyWithAttributes(I, P, 3, N, 3, [0.5, 0.5, 0.5], null, target(k), cap) : S.simplify(I, P, 3, target(k), cap));
+  const ia = index.array;
+  return {
+    count: n,
+    pos: raw(pos, n),
+    nor: nor ? raw(nor, n) : null,
+    index: ia instanceof Uint8Array || ia instanceof Uint16Array || ia instanceof Uint32Array ? ia : Uint32Array.from({ length: index.count }, (_, i) => index.getX(i)),
+  };
+}
 
-  const parts: [Uint32Array, number][] = [[I, 0]];
-  await idle();
-  parts.push(smooth(0.5, 0.01));
-  await idle();
-  parts.push(smooth(0.25, 0.02));
-  await idle();
-  parts.push(S.simplifySloppy(I, P, 3, null, 1200 * 3, 1));
-  await idle();
-  parts.push(S.simplifySloppy(I, P, 3, null, 800 * 3, 1));
-
-  const total = parts.reduce((s, [a]) => s + a.length, 0);
-  const all = n < 65536 ? new Uint16Array(total) : new Uint32Array(total);
-  const levels: Level[] = [];
-  let at = 0;
-  for (const [a, e] of parts) {
-    all.set(a, at);
-    levels.push({ start: at, count: a.length, err: e * scale });
-    at += a.length;
-  }
+async function build(src: THREE.BufferGeometry): Promise<LodGeo | null> {
+  const job = lodJob(src);
+  if (!job) return null;
+  const data = (await inWorker(job)) ?? (await onMain(job));
+  if (!data) return null;
+  const { levels } = data;
 
   const geo = new THREE.BufferGeometry();
   for (const [name, attr] of Object.entries(src.attributes)) geo.setAttribute(name, attr);
-  geo.setIndex(new THREE.BufferAttribute(all, 1));
+  geo.setIndex(new THREE.BufferAttribute(data.index, 1));
   // Mặc định (raycast, vẽ khác) luôn là lưới gốc; chỉ đổi trong lúc vẽ.
-  geo.setDrawRange(0, I.length);
+  geo.setDrawRange(0, levels[0].count);
   if (!src.boundingSphere) src.computeBoundingSphere();
   if (!src.boundingBox) src.computeBoundingBox();
   geo.boundingSphere = src.boundingSphere!.clone();
