@@ -198,6 +198,7 @@ function bindHud(): void {
 
 nav.go = (to, spawn) => void goZone(to, spawn ?? 'start');
 nav.mini = (id) => playMini(id);
+nav.title = () => backToTitle();
 
 /** Vào thế giới với hồ sơ đang chọn. */
 export async function enterWorld(o: EnterOpts = {}): Promise<void> {

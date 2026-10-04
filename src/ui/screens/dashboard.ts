@@ -9,13 +9,14 @@ import {
   deleteProfile,
   exportProfile,
   hasProfile,
-  importProfile,
   listProfiles,
+  parseProfileFile,
   profile,
   readProfile,
   resetProfileProgress,
   save,
   setGrade,
+  storeImported,
   type AnswerLog,
   type Goal,
   type Profile,
@@ -24,6 +25,7 @@ import {
   weekKey,
 } from '../../core/state';
 import { goalProgress } from '../../core/goals';
+import { nav } from '../../world/nav';
 
 const TABS = [
   ['overview', 'Tổng quan'],
@@ -100,7 +102,7 @@ function showDashboard(): void {
     return;
   }
   const currentId = hasProfile() ? profile().id : profiles[0].id;
-  activeProfile = readProfile(currentId) ?? readProfile(profiles[0].id);
+  activeProfile = liveProfile(currentId) ?? liveProfile(profiles[0].id);
   activeTab = 'overview';
   headerEl = h('div.dash-header');
   railEl = h('nav.dash-rail');
@@ -131,7 +133,7 @@ function renderHeader(): void {
   if (profiles.length > 1) {
     const select = h<HTMLSelectElement>('select.dash-select', {}, ...profiles.map((p) => h('option', { value: p.id, selected: p.id === activeProfile!.id }, `${p.name} · ${GRADE_NAMES[p.grade]}`)));
     select.addEventListener('change', () => {
-      activeProfile = readProfile(select.value) ?? activeProfile;
+      activeProfile = liveProfile(select.value) ?? activeProfile;
       renderAll();
     });
     picker.append(select);
@@ -254,14 +256,28 @@ function renderManage(p: Profile): HTMLElement {
   fileInput.addEventListener('change', async () => {
     const file = fileInput.files?.[0];
     if (!file) return;
+    let imported: Profile;
     try {
-      const imported = importProfile(await file.text());
-      activeProfile = imported;
-      toast('Đã nhập hồ sơ thành công.', { icon: '✓', tone: 'good' });
-      renderAll();
+      imported = parseProfileFile(await file.text());
     } catch (err) {
       void alertBox('Không nhập được hồ sơ', err instanceof Error ? err.message : 'Tệp không hợp lệ.', '⚠️');
+      return;
+    } finally {
+      // Chọn lại đúng tệp đó (sau khi bấm "Thôi") vẫn phải hỏi lại.
+      fileInput.value = '';
     }
+    if (playing(imported.id)) {
+      const ok = await confirmBox(`Hồ sơ của ${profile().name} đang được chơi. Nhập tệp sẽ thay toàn bộ tiến trình hiện tại bằng bản trong tệp, rồi game về màn hình chính để tải lại hồ sơ.`, { title: 'Nhập hồ sơ', icon: '📥', yes: 'Nhập', no: 'Thôi' });
+      if (!ok) return;
+      storeImported(imported);
+      nav.title();
+      toast('Đã nhập hồ sơ. Chọn hồ sơ để chơi tiếp nhé!', { icon: '✓', tone: 'good' });
+      return;
+    }
+    storeImported(imported);
+    activeProfile = imported;
+    toast('Đã nhập hồ sơ thành công.', { icon: '✓', tone: 'good' });
+    renderAll();
   });
   const changeGrade = async () => {
     const next = Number(gradeSelect.value) as Grade;
@@ -269,9 +285,9 @@ function renderManage(p: Profile): HTMLElement {
     if (!(await confirmBox(`Đổi sang ${GRADE_NAMES[next]}? Các mức thích ứng theo kỹ năng sẽ được đặt lại để phù hợp với lớp mới.`, { title: 'Đổi lớp học', icon: '🎓', yes: 'Đổi lớp' }))) return;
     p.grade = next;
     p.skills = {};
-    if (hasProfile() && profile().id === p.id) setGrade(next);
+    if (playing(p.id)) setGrade(next);
     else writeProfile(p);
-    activeProfile = readProfile(p.id) ?? p;
+    activeProfile = liveProfile(p.id) ?? p;
     renderAll();
   };
   return h(
@@ -398,26 +414,47 @@ function downloadProfile(p: Profile): void {
 }
 
 async function resetProgress(p: Profile): Promise<void> {
-  if (!(await confirmBox(`Đặt lại toàn bộ tiến độ của ${p.name}? Hành động này giữ tên và lớp nhưng xóa XP, tiền, thống kê, mục tiêu và lịch sử.`, { title: 'Đặt lại tiến độ', icon: '⚠️', yes: 'Đặt lại' }))) return;
+  const live = playing(p.id);
+  if (!(await confirmBox(`Đặt lại toàn bộ tiến độ của ${p.name}? Hành động này giữ tên và lớp nhưng xóa XP, tiền, thống kê, mục tiêu và lịch sử.${live ? ' Game sẽ về màn hình chính để tải lại hồ sơ.' : ''}`, { title: 'Đặt lại tiến độ', icon: '⚠️', yes: 'Đặt lại' }))) return;
   resetProfileProgress(p.id);
-  activeProfile = readProfile(p.id);
+  // Khu vực đang chơi còn giữ nhiệm vụ, đồ đã nhặt... của tiến độ cũ – về màn hình chính để tải lại cho khớp.
+  if (live) {
+    nav.title();
+    return;
+  }
+  activeProfile = liveProfile(p.id);
   renderAll();
 }
 
 async function removeProfile(p: Profile): Promise<void> {
-  if (!(await confirmBox(`Xóa vĩnh viễn hồ sơ của ${p.name}? Hãy xuất JSON trước nếu cần sao lưu.`, { title: 'Xóa hồ sơ', icon: '⚠️', yes: 'Xóa hồ sơ' }))) return;
+  const live = playing(p.id);
+  if (!(await confirmBox(`Xóa vĩnh viễn hồ sơ của ${p.name}? Hãy xuất JSON trước nếu cần sao lưu.${live ? ' Game sẽ về màn hình chính.' : ''}`, { title: 'Xóa hồ sơ', icon: '⚠️', yes: 'Xóa hồ sơ' }))) return;
   deleteProfile(p.id);
+  if (live) {
+    nav.title();
+    return;
+  }
   const next = listProfiles()[0];
   if (!next) {
     modal?.close();
     return;
   }
-  activeProfile = readProfile(next.id);
+  activeProfile = liveProfile(next.id);
   renderAll();
 }
 
+/** Hồ sơ đang được chơi (có trong bộ nhớ). */
+function playing(id: string): boolean {
+  return hasProfile() && profile().id === id;
+}
+
+/** Hồ sơ đang chơi → dùng thẳng bản trong bộ nhớ (sửa ở đây là sửa luôn bản đang chơi); hồ sơ khác → đọc từ máy. */
+function liveProfile(id: string): Profile | null {
+  return playing(id) ? profile() : readProfile(id);
+}
+
 function persistActive(p: Profile): void {
-  if (hasProfile() && profile().id === p.id) save();
+  if (playing(p.id)) save();
   else writeProfile(p);
 }
 

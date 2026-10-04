@@ -322,12 +322,23 @@ function writeIndex(p: Profile): void {
   storage.setJSON('profiles', list);
 }
 
-export function saveNow(): void {
-  if (!current) return;
+function cancelSave(): void {
   if (saveTimer !== null) {
     clearTimeout(saveTimer);
     saveTimer = null;
   }
+}
+
+/** Gỡ hồ sơ đang chơi mà KHÔNG lưu – bản trên máy vừa được thay hoặc xóa, bản cũ trong bộ nhớ không được ghi đè lên. */
+function dropProfile(): void {
+  cancelSave();
+  current = null;
+  bus.emit('profile', { id: null });
+}
+
+export function saveNow(): void {
+  if (!current) return;
+  cancelSave();
   current.lastPlayed = Date.now();
   storage.setJSON(`p.${current.id}`, current);
   writeIndex(current);
@@ -341,7 +352,9 @@ export function save(): void {
   }, 400);
 }
 
+/** Bản sao hồ sơ trên máy. Hồ sơ đang chơi được lưu ngay trước khi đọc để bản sao không bị cũ. */
 export function readProfile(id: string): Profile | null {
+  if (current?.id === id) saveNow();
   const p = storage.getJSON<Profile | null>(`p.${id}`, null);
   return p ? migrate(p) : null;
 }
@@ -368,7 +381,7 @@ export function deleteProfile(id: string): void {
     'profiles',
     storage.getJSON<ProfileSummary[]>('profiles', []).filter((s) => s.id !== id),
   );
-  if (current?.id === id) current = null;
+  if (current?.id === id) dropProfile();
 }
 
 export function exportProfile(id: string): string {
@@ -376,13 +389,33 @@ export function exportProfile(id: string): string {
   return JSON.stringify({ app: 'vuong-quoc-toan-hoc', version: SAVE_VERSION, profile: p }, null, 1);
 }
 
-export function importProfile(json: string): Profile {
-  const data = JSON.parse(json) as { app?: string; profile?: Profile };
-  if (data.app !== 'vuong-quoc-toan-hoc' || !data.profile || !data.profile.id) throw new Error('Tệp không đúng định dạng.');
-  const p = migrate(data.profile);
+/** Đọc tệp sao lưu thành hồ sơ (chưa ghi gì xuống máy). Tệp hỏng / không phải của game → báo lỗi. */
+export function parseProfileFile(json: string): Profile {
+  let data: { app?: unknown; profile?: Profile } | null;
+  try {
+    data = JSON.parse(json) as typeof data;
+  } catch {
+    throw new Error('Tệp không đúng định dạng.');
+  }
+  if (!data || typeof data !== 'object' || data.app !== 'vuong-quoc-toan-hoc' || !data.profile || typeof data.profile !== 'object' || !data.profile.id) {
+    throw new Error('Tệp không đúng định dạng.');
+  }
+  return migrate(data.profile);
+}
+
+/**
+ * Ghi hồ sơ vừa nhập xuống máy. Trùng hồ sơ đang chơi thì gỡ hồ sơ đó ra (không lưu) –
+ * nếu không, bản cũ trong bộ nhớ sẽ ghi đè bản vừa nhập ở lần lưu kế tiếp. Người gọi đưa game về màn hình chính.
+ */
+export function storeImported(p: Profile): Profile {
+  if (current?.id === p.id) dropProfile();
   storage.setJSON(`p.${p.id}`, p);
   writeIndex(p);
   return p;
+}
+
+export function importProfile(json: string): Profile {
+  return storeImported(parseProfileFile(json));
 }
 
 export function unloadProfile(): void {

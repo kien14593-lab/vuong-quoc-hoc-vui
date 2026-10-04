@@ -1,18 +1,25 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { SAVE_VERSION } from '../src/config';
+import { bus } from '../src/core/events';
 import { RETIRED_WEAR } from '../src/core/items';
 import { DEFAULT_OUTFIT } from '../src/core/outfits';
 import {
+  addCoins,
+  deleteProfile,
   equip,
   exportProfile,
   guessKid,
+  hasProfile,
   importProfile,
   listProfiles,
   loadProfile,
   newProfile,
+  parseProfileFile,
   profile,
   readProfile,
+  saveNow,
   setKid,
+  storeImported,
   takeRefundNotice,
   unloadProfile,
   type Profile,
@@ -215,6 +222,148 @@ describe('sao lưu (xuất / nhập tệp)', () => {
   it('tệp không đúng định dạng → báo lỗi', () => {
     expect(() => importProfile(JSON.stringify({ app: 'khac', profile: oldSave() }))).toThrow();
     expect(() => importProfile(JSON.stringify({ app: 'vuong-quoc-toan-hoc' }))).toThrow();
+    expect(() => importProfile('{không phải json')).toThrow('Tệp không đúng định dạng.');
+    expect(() => importProfile('null')).toThrow('Tệp không đúng định dạng.');
+  });
+});
+
+/** Tệp sao lưu của một hồ sơ đã lưu trên máy (lấy khi chưa chơi), sửa tùy ý trước khi nhập lại. */
+function backupOf(id: string, edit: (p: Profile) => void = () => {}): string {
+  const data = JSON.parse(exportProfile(id)) as { profile: Profile };
+  edit(data.profile);
+  return JSON.stringify(data);
+}
+
+describe('nhập tệp trùng hồ sơ đang chơi', () => {
+  it('hồ sơ đang chơi được gỡ khỏi bộ nhớ – các lần lưu sau không ghi đè bản vừa nhập', () => {
+    const old = oldSave();
+    store(old);
+    const file = backupOf(old.id, (p) => {
+      p.coins = 999;
+      p.badges = ['cham-chi', 'tram-cau'];
+    });
+    loadProfile(old.id);
+    addCoins(5);
+    saveNow();
+    const seen: (string | null)[] = [];
+    const off = bus.on('profile', (e) => seen.push(e.id));
+    const p = importProfile(file);
+    off();
+    const stillLoaded = hasProfile();
+    expect(p.coins).toBe(999);
+    saveNow();
+    unloadProfile();
+    expect(readProfile(old.id)).toMatchObject({ coins: 999, badges: ['cham-chi', 'tram-cau'] });
+    expect(stillLoaded).toBe(false);
+    expect(seen).toEqual([null]);
+    expect(listProfiles().filter((s) => s.id === old.id)).toHaveLength(1);
+    expect(loadProfile(old.id)!.coins).toBe(999);
+  });
+
+  it('lần lưu đang hẹn giờ (400 ms) bị hủy, không ghi đè bản vừa nhập', () => {
+    vi.useFakeTimers();
+    try {
+      const old = oldSave();
+      store(old);
+      const file = backupOf(old.id, (p) => {
+        p.coins = 999;
+      });
+      loadProfile(old.id);
+      addCoins(5);
+      importProfile(file);
+      vi.advanceTimersByTime(2000);
+      expect(storage.getJSON<Profile | null>(`p.${old.id}`, null)!.coins).toBe(999);
+      expect(hasProfile()).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('nhập hồ sơ khác: hồ sơ đang chơi giữ nguyên, lưu tiếp bình thường', () => {
+    const a = oldSave();
+    const b = oldSave();
+    store(a);
+    store(b);
+    const fileB = backupOf(b.id, (p) => {
+      p.coins = 555;
+    });
+    loadProfile(a.id);
+    const me = profile();
+    addCoins(5);
+    importProfile(fileB);
+    expect(hasProfile()).toBe(true);
+    expect(profile()).toBe(me);
+    expect(me.coins).toBe(37 + 5);
+    saveNow();
+    expect(readProfile(a.id)!.coins).toBe(37 + 5);
+    expect(readProfile(b.id)!.coins).toBe(555);
+  });
+
+  it('tệp xuất từ bản cũ (có áo quần phải mua) của chính hồ sơ đang chơi: trả xu và báo đúng một lần', () => {
+    const old = oldSave({ hair: 2 });
+    store(old);
+    const oldFile = JSON.stringify({ app: 'vuong-quoc-toan-hoc', version: 1, profile: oldSave({ hair: 2, extra: ['shirt_rainbow', 'shoes_rocket'] }) });
+    const fixed = JSON.parse(oldFile) as { profile: Profile };
+    fixed.profile.id = old.id;
+    loadProfile(old.id);
+    expect(takeRefundNotice()).toBe(0);
+    importProfile(JSON.stringify(fixed));
+    expect(hasProfile()).toBe(false);
+    loadProfile(old.id);
+    expect(profile().coins).toBe(37 + 80 + 90);
+    expect(takeRefundNotice()).toBe(80 + 90);
+    expect(takeRefundNotice()).toBe(0);
+    unloadProfile();
+    loadProfile(old.id);
+    expect(profile().coins).toBe(37 + 80 + 90);
+    expect(takeRefundNotice()).toBe(0);
+  });
+
+  it('chỉ đọc tệp (chưa bấm "Nhập"): không ghi gì, hồ sơ đang chơi giữ nguyên', () => {
+    const old = oldSave();
+    store(old);
+    const file = backupOf(old.id, (p) => {
+      p.coins = 999;
+    });
+    loadProfile(old.id);
+    const me = profile();
+    const before = JSON.stringify(storage.getJSON(`p.${old.id}`, null));
+    const parsed = parseProfileFile(file);
+    expect(parsed.id).toBe(old.id);
+    expect(parsed.coins).toBe(999);
+    expect(JSON.stringify(storage.getJSON(`p.${old.id}`, null))).toBe(before);
+    expect(profile()).toBe(me);
+    expect(() => parseProfileFile('{hỏng')).toThrow('Tệp không đúng định dạng.');
+    storeImported(parsed);
+    expect(hasProfile()).toBe(false);
+    expect(readProfile(old.id)!.coins).toBe(999);
+  });
+
+  it('xuất / đọc hồ sơ đang chơi lấy cả thay đổi chưa kịp lưu', () => {
+    const old = oldSave();
+    store(old);
+    loadProfile(old.id);
+    addCoins(7);
+    expect(readProfile(old.id)!.coins).toBe(37 + 7);
+    addCoins(1);
+    expect((JSON.parse(exportProfile(old.id)) as { profile: Profile }).profile.coins).toBe(37 + 8);
+  });
+
+  it('xóa hồ sơ đang chơi: hủy lần lưu đang hẹn giờ, hồ sơ không "sống lại"', () => {
+    vi.useFakeTimers();
+    try {
+      const old = oldSave();
+      store(old);
+      loadProfile(old.id);
+      addCoins(5);
+      deleteProfile(old.id);
+      vi.advanceTimersByTime(2000);
+      expect(hasProfile()).toBe(false);
+      expect(storage.getJSON(`p.${old.id}`, null)).toBeNull();
+      expect(listProfiles().some((s) => s.id === old.id)).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

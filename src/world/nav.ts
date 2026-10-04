@@ -12,4 +12,6 @@ export const nav = {
   mini(_id: string): Promise<MiniResult | null> {
     return Promise.resolve(null);
   },
+  /** Lưu (nếu còn hồ sơ đang chơi) rồi về màn hình tiêu đề. */
+  title(): void {},
 };
