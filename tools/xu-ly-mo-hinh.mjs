@@ -17,7 +17,8 @@
  * Bé (nhân vật chính): be-trai.glb, be-gai.glb (mặc đồ thường ngày); bộ đồ: be-trai-<bộ đồ>.glb, be-gai-<bộ đồ>.glb
  * (vd. be-trai-the-thao.glb → player_trai__the_thao). Tên, giá, biểu tượng của bộ đồ ghi trong mục "bo-do" của
  * cau-hinh.json (không ghi thì dùng mặc định). Bé được dò xương sẵn (tools/xuong-tu-dong.mjs) để đi bằng chân;
- * kết luận "đi bằng chân" hay "nhún" in ra ngay khi xử lý.
+ * kết luận "đi bằng chân" hay "nhún" in ra ngay khi xử lý. Bé còn được làm sẵn lưới bóng (tools/luoi-bong.mjs): lưới
+ * thưa hơn, lệch không quá 1 cm, chỉ dùng để vẽ bóng đổ và hình bóng khi bị che – trò chơi chạy nhẹ hơn.
  *
  * Chỉ nhân vật CÓ tệp gốc trong mo-hinh-ai/ lần này mới được làm lại (tệp cũ của nhân vật đó không còn dùng thì xóa).
  * Nhân vật đã lắp từ trước mà tệp gốc không còn ở đây (vd. lắp trên máy khác) được GIỮ NGUYÊN. Muốn gỡ hẳn: --go <tên>.
@@ -35,6 +36,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ghiDuoc, ghiTrongSo, luoiDeDo, napTs, napXuong } from './xuong-tu-dong.mjs';
+import { boLuoiBong, coLuoiBong, laLuoiBong, lamLuoiBong } from './luoi-bong.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
@@ -394,7 +396,7 @@ const stripEmoji = (text) => {
 const okIcon = (s) => /\p{Extended_Pictographic}/u.test(s) && Array.from(s).length <= 4 && !emojiIssues(s).length;
 
 /** Dò xương cho bé (tư thế chữ A) ngay trong công cụ: ghi trọng số da vào lưới, in kết luận đi bằng chân hay nhún. */
-async function bakeKid(doc, rotY) {
+async function bakeKid(doc, rotY, key) {
   const rig = await napXuong();
   const ds = luoiDeDo(doc, rotY);
   if (!ghiDuoc(ds)) {
@@ -408,8 +410,18 @@ async function bakeKid(doc, rotY) {
   else if (verdict.walk) console.log('  🚶 Dáng đi: ĐI BẰNG CHÂN (xương tự dựng) – nhưng có điều nên xem lại:');
   else console.log('  ⚠ Dáng đi: NHÚN NHẢY – bé vẫn chơi được nhưng không bước chân, vì:');
   for (const l of verdict.lines) console.log(`     • ${l}`);
-  if (verdict.lines.length) console.log('     (Xem hình: node tools/kiem-tra-xuong.mjs <tệp>.glb – hoặc tạo lại ảnh theo hướng dẫn tư thế chữ A.)');
+  if (verdict.lines.length) console.log(`     (Xem xương trên hình: npm run dev rồi mở trang /dev/rig.html?key=${key} – hoặc tạo lại ảnh theo hướng dẫn tư thế chữ A.)`);
   return rig.bakeRig(res, rotY);
+}
+/** Làm lưới bóng cho bé, bộ đồ (sau meshopt) và in kết quả. true nếu đã làm. */
+async function bakeProxy(doc, height) {
+  const r = await lamLuoiBong(doc, height);
+  if (!r) {
+    console.log('  ℹ Lưới bóng: không làm được – bóng đổ vẽ bằng lưới thật (như cũ).');
+    return false;
+  }
+  console.log(`  🌓 Lưới bóng (vẽ bóng đổ, hình bóng khi bị che): ${num(r.tris)} tam giác thay cho ${num(r.trisGoc)} – lệch tối đa ${(r.lech * 1000).toFixed(1).replace('.', ',')} mm.`);
+  return true;
 }
 /** Khóa nhân vật của một tệp kết quả: npc_bear.glb, npc_bear@walk.glb → npc_bear. */
 const outKey = (file) => file.replace(/\.glb$/i, '').split('@')[0];
@@ -427,7 +439,7 @@ function triangles(doc) {
     for (const p of mesh.listPrimitives()) {
       const idx = p.getIndices();
       const pos = p.getAttribute('POSITION');
-      if (p.getMode() !== 4) continue;
+      if (p.getMode() !== 4 || laLuoiBong(p)) continue;
       t += idx ? idx.getCount() / 3 : pos ? pos.getCount() / 3 : 0;
     }
   }
@@ -860,6 +872,8 @@ async function main() {
     try {
       doc = await io.read(srcPath);
       doc.setLogger(quiet);
+      // Tệp gốc là tệp đã xử lý (chép ngược từ trò chơi): bỏ lưới bóng cũ, làm lại sau khi nén.
+      boLuoiBong(doc);
     } catch (err) {
       console.log(`  ✖ Không đọc được ${e.main}: ${err.message}`);
       bad++;
@@ -900,7 +914,7 @@ async function main() {
     if (seamOn && reduce) await padUvGaps(doc, { quiet: true });
     // Bé, bộ đồ: dò xương trên lưới đã giảm (trước khi nén), ghi trọng số vào tệp.
     if (isKidKey(key) && !skins) {
-      const r = await bakeKid(doc, cfgFor(key).rotY ?? 0);
+      const r = await bakeKid(doc, cfgFor(key).rotY ?? 0, key);
       if (r) rigs.set(key, r);
     }
     // Bộ đồ dùng cỡ ảnh của bé nếu không ghi riêng.
@@ -910,6 +924,8 @@ async function main() {
       textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [texSize, texSize] }),
       meshopt({ encoder: MeshoptEncoder, level: 'medium', quantizeNormal: 8 }),
     );
+    // Lưới bóng: làm sau meshopt (meshopt sắp xếp lại và nén đỉnh; lưới bóng dùng chung đỉnh với lưới thật).
+    if (isKidKey(key) && !skins) await bakeProxy(doc, cfgFor(key).height ?? 1.7);
     const trisAfter = triangles(doc);
     const outName = `${key}.glb`;
     const outPath = path.join(OUT_DIR, outName);
@@ -1006,15 +1022,14 @@ async function main() {
   }
 
   // Bé, bộ đồ giữ nguyên (không có tệp gốc lần này): dùng lại xương đã dò; dò lại khi đổi góc xoay hay cách dò mới.
+  // Tệp chưa có lưới bóng (lắp trước khi có lưới bóng, hay có cách làm mới) thì làm thêm.
   for (const [key, files] of kept) {
     if (!isKidKey(key)) continue;
     const rotY = cfgFor(key).rotY ?? 0;
     const prev = prevCfg[key]?.rig;
     const { RIG_VERSION } = await napXuong();
-    if (prev && prev.v === RIG_VERSION && (prev.rotY ?? 0) === rotY) {
-      rigs.set(key, prev);
-      continue;
-    }
+    const rigOk = prev && prev.v === RIG_VERSION && (prev.rotY ?? 0) === rotY;
+    if (rigOk) rigs.set(key, prev);
     const main = files.find((f) => !f.includes('@'));
     if (!main) continue;
     const p = path.join(OUT_DIR, main);
@@ -1022,16 +1037,27 @@ async function main() {
       const d = await io.read(p);
       d.setLogger(quiet);
       if (d.getRoot().listSkins().length) continue;
-      console.log('');
-      console.log(`▶ ${label(key)}: ${!prev ? 'chưa dò xương' : prev.v !== RIG_VERSION ? 'có cách dò xương mới' : 'đổi góc xoay'} – dò lại trên ${main}.`);
-      const r = await bakeKid(d, rotY);
-      if (r) rigs.set(key, r);
-      if (r && !DRY) {
+      let changed = false;
+      if (!rigOk) {
+        console.log('');
+        console.log(`▶ ${label(key)}: ${!prev ? 'chưa dò xương' : prev.v !== RIG_VERSION ? 'có cách dò xương mới' : 'đổi góc xoay'} – dò lại trên ${main}.`);
+        const r = await bakeKid(d, rotY, key);
+        if (r) {
+          rigs.set(key, r);
+          changed = true;
+        }
+      }
+      if (!coLuoiBong(d)) {
+        console.log('');
+        console.log(`▶ ${label(key)}: chưa có lưới bóng – làm thêm cho ${main}.`);
+        if (await bakeProxy(d, cfgFor(key).height ?? 1.7)) changed = true;
+      }
+      if (changed && !DRY) {
         await io.write(p, d);
         writtenCount++;
       }
     } catch (err) {
-      console.log(`  ✖ Không dò lại được xương của ${main}: ${err.message} – trò chơi sẽ tự dò khi nạp.`);
+      console.log(`  ✖ Không cập nhật được ${main}: ${err.message} – giữ nguyên tệp cũ (trò chơi tự dò xương, vẽ bóng bằng lưới thật).`);
     }
   }
 

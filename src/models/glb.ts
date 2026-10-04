@@ -3,6 +3,7 @@ import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { box } from '../engine/kit';
+import { SHADOW_LAYER } from '../engine/layers';
 import { autoRig, placeRig, RIG_VERSION, rigReport, type AutoRigAnchors, type AutoRigResult, type BakedRig, type V3 } from './autorig';
 import { overrideModel, type Collider, type ModelDef } from './registry';
 import { animateRig, type AnimState, type Rig, type RigKind } from './rig';
@@ -151,8 +152,8 @@ interface AutoData {
   armAngle: [number, number];
   /** true = đi bằng chân (xương tự dựng); false = nhún nhảy như các nhân vật AI khác, chỉ dùng điểm neo để gắn đồ. */
   walk: boolean;
-  /** Theo thứ tự duyệt cây mẫu: hình học có trọng số da (dùng chung) & ma trận gắn (lưới → hệ gốc mô hình). */
-  meshes: { geo: THREE.BufferGeometry; bind: THREE.Matrix4 }[];
+  /** Theo thứ tự duyệt cây mẫu: hình học có trọng số da (dùng chung), lưới bóng của nó (nếu tệp có) & ma trận gắn (lưới → hệ gốc mô hình). */
+  meshes: { geo: THREE.BufferGeometry; proxy?: THREE.BufferGeometry; bind: THREE.Matrix4 }[];
   /** Nghịch đảo tư thế gốc của từng xương (thứ tự AUTO_BONES). */
   inverses: THREE.Matrix4[];
   /** Lấy từ config.json (công cụ đã dò sẵn) thay vì dò lúc chạy. */
@@ -895,6 +896,116 @@ function liftOf(entry: Entry, look: GlbLook): number {
   return look.offset?.[1] ?? entry.base?.hover?.gap ?? 0;
 }
 
+/* ------------------------------------------------------------------ */
+/* Lưới bóng (bé AI)                                                   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Công cụ (tools/luoi-bong.mjs) kèm trong tệp GLB của bé một phần lưới thứ hai: cùng đỉnh với lưới thật nhưng ít
+ * tam giác hơn nhiều (lệch dưới 1 cm), có extras.proxy. Lúc nạp, phần này được tách khỏi mẫu; mỗi bản sao gắn
+ * một lưới bóng vào lưới thật – nằm ở lớp SHADOW_LAYER nên chỉ được vẽ vào bản đồ bóng – còn lưới thật thôi đổ
+ * bóng. Hình bóng xuyên tường (world/player.ts) cũng vẽ bằng lưới bóng.
+ * Hình học gốc (của tệp GLB) → chỉ số tam giác của lưới bóng.
+ */
+const proxyIdx = new WeakMap<THREE.BufferGeometry, THREE.BufferAttribute>();
+/** Hình học lưới bóng của mô hình không xương, dùng chung cho mọi bản sao (theo hình học gốc). */
+const rigidProxies = new WeakMap<THREE.BufferGeometry, THREE.BufferGeometry>();
+const shadowMats = new Map<string, THREE.MeshBasicMaterial>();
+
+/**
+ * Phần lưới bóng: extras.proxy (nằm ở userData của hình học). Phòng khi GLTFLoader dùng chung một hình học cho
+ * hai phần cùng thuộc tính & chỉ số: phần mang vật liệu 'bong' dùng chung hình học với phần bên cạnh.
+ */
+function isShadowProxy(mesh: THREE.Mesh): boolean {
+  if (mesh.geometry.userData.proxy) return true;
+  return (
+    !Array.isArray(mesh.material) &&
+    mesh.material.name === 'bong' &&
+    !!mesh.parent?.children.some((c) => c !== mesh && (c as THREE.Mesh).geometry === mesh.geometry)
+  );
+}
+
+/** Tách lưới bóng khỏi mẫu; nhớ chỉ số tam giác của nó theo lưới thật bên cạnh (cùng thuộc tính vị trí). */
+function linkProxies(proxies: THREE.Mesh[]): void {
+  for (const px of proxies) {
+    const pos = px.geometry.getAttribute('position');
+    const vis = px.parent?.children.find((c) => {
+      const m = c as THREE.Mesh;
+      return m.isMesh && !proxies.includes(m) && m.geometry.getAttribute('position') === pos;
+    }) as THREE.Mesh | undefined;
+    px.removeFromParent();
+    // Mô hình có xương sẵn (hoạt cảnh trong tệp) không dùng lưới bóng.
+    if (!vis || !px.geometry.index || (vis as THREE.SkinnedMesh).isSkinnedMesh) continue;
+    // Lưới thủng theo ảnh (alphaTest): bóng phải thủng theo – để lưới thật đổ bóng.
+    const mats = Array.isArray(vis.material) ? vis.material : [vis.material];
+    if (mats.some((m) => m.alphaTest > 0)) continue;
+    proxyIdx.set(vis.geometry, px.geometry.index);
+  }
+}
+
+/** Hình học lưới bóng: dùng chung mọi thuộc tính (vị trí, trọng số da...) với `src`, chỉ khác danh sách tam giác. */
+function proxyGeometry(src: THREE.BufferGeometry, index: THREE.BufferAttribute): THREE.BufferGeometry {
+  const g = new THREE.BufferGeometry();
+  for (const [name, attr] of Object.entries(src.attributes)) g.setAttribute(name, attr);
+  g.setIndex(index);
+  g.boundingBox = src.boundingBox?.clone() ?? null;
+  g.boundingSphere = src.boundingSphere?.clone() ?? null;
+  g.userData.shared = true;
+  return g;
+}
+
+/** Vật liệu lưới bóng: không vẽ màu, không ghi chiều sâu (phòng khi lọt vào lượt vẽ thường); mặt đổ bóng như lưới thật. */
+function shadowMat(src: THREE.Material): THREE.MeshBasicMaterial {
+  const k = `${src.side}|${src.shadowSide}`;
+  let m = shadowMats.get(k);
+  if (!m) {
+    m = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, side: src.side });
+    m.shadowSide = src.shadowSide;
+    m.name = 'bong';
+    m.userData.shared = true;
+    shadowMats.set(k, m);
+  }
+  return m;
+}
+
+/** Gắn lưới bóng (hình học `geo`, cùng bộ xương nếu có) vào lưới thật `vis`; lưới thật thôi đổ bóng. */
+function addShadowProxy(vis: THREE.Mesh, geo: THREE.BufferGeometry): void {
+  const mat = shadowMat(Array.isArray(vis.material) ? vis.material[0] : vis.material);
+  const sv = vis as THREE.SkinnedMesh;
+  let px: THREE.Mesh;
+  if (sv.isSkinnedMesh) {
+    const ps = new THREE.SkinnedMesh(geo, mat);
+    ps.bind(sv.skeleton, sv.bindMatrix);
+    ps.frustumCulled = false;
+    px = ps;
+  } else px = new THREE.Mesh(geo, mat);
+  px.name = 'bong';
+  px.layers.set(SHADOW_LAYER);
+  px.castShadow = true;
+  px.receiveShadow = false;
+  px.raycast = () => {};
+  px.userData.shadowProxy = true;
+  vis.castShadow = false;
+  // Trò chơi nhỏ bật đổ bóng cho mọi lưới, trừ lưới có cờ này (minigames/base.ts).
+  vis.userData.noShadow = true;
+  vis.add(px);
+}
+
+/** Mô hình không xương tự dựng: gắn lưới bóng cho các lưới mà tệp có lưới bóng. */
+function addRigidProxies(model: THREE.Object3D): void {
+  const meshes: THREE.Mesh[] = [];
+  model.traverse((x) => {
+    if ((x as THREE.Mesh).isMesh) meshes.push(x as THREE.Mesh);
+  });
+  for (const mesh of meshes) {
+    const idx = proxyIdx.get(mesh.geometry);
+    if (!idx) continue;
+    let g = rigidProxies.get(mesh.geometry);
+    if (!g) rigidProxies.set(mesh.geometry, (g = proxyGeometry(mesh.geometry, idx)));
+    addShadowProxy(mesh, g);
+  }
+}
+
 function prepare(entry: Entry, vi: number, o: Record<string, unknown>): Prepared | null {
   if (entry.prepared.has(vi)) return entry.prepared.get(vi) ?? null;
   const look = lookOf(entry, vi);
@@ -910,9 +1021,14 @@ function prepare(entry: Entry, vi: number, o: Record<string, unknown>): Prepared
   if (look.node) tpl.position.set(0, 0, 0);
 
   const drop: THREE.Object3D[] = [];
+  const proxies: THREE.Mesh[] = [];
   tpl.traverse((obj) => {
     const mesh = obj as THREE.Mesh;
     if (!mesh.isMesh) return;
+    if (isShadowProxy(mesh)) {
+      proxies.push(mesh);
+      return;
+    }
     if ((look.hide && matchName(mesh.name, look.hide)) || (look.only && !matchName(mesh.name, look.only))) {
       drop.push(mesh);
       return;
@@ -926,6 +1042,7 @@ function prepare(entry: Entry, vi: number, o: Record<string, unknown>): Prepared
     if ((mesh as THREE.SkinnedMesh).isSkinnedMesh) mesh.frustumCulled = false;
   });
   for (const d of drop) d.removeFromParent();
+  linkProxies(proxies);
 
   // Hoạt cảnh
   const rootBone = look.inPlace === false ? undefined : findRootBone(tpl);
@@ -1155,7 +1272,8 @@ function autoData(entry: Entry, prep: Prepared, look: GlbLook, off: number[]): A
         geo.setAttribute('skinIndex', skin[i][0]);
         geo.setAttribute('skinWeight', skin[i][1]);
         geo.userData.shared = true;
-        return { geo, bind };
+        const idx = proxyIdx.get(src);
+        return { geo, proxy: idx ? proxyGeometry(geo, idx) : undefined, bind };
       })
     : [];
   const J = placed.joints;
@@ -1207,6 +1325,8 @@ function buildRigged(entry: Entry, prep: Prepared, rg: AutoData, inner: THREE.Gr
     sm.castShadow = true;
     sm.frustumCulled = false;
     sm.bind(skel, rg.meshes[i].bind);
+    const proxy = rg.meshes[i].proxy;
+    if (proxy) addShadowProxy(sm, proxy);
     const parent = mesh.parent!;
     parent.add(sm);
     parent.remove(mesh);
@@ -1286,6 +1406,7 @@ function buildGlb(entry: Entry, o: Record<string, unknown>): THREE.Object3D {
   const wantRig = (o.autoRig as boolean | undefined) ?? look.autoRig;
   const auto = wantRig && !prep.roles.size ? autoData(entry, prep, look, off) : null;
   if (auto?.walk) return buildRigged(entry, prep, auto, inner, model, off);
+  addRigidProxies(model);
 
   const root = new THREE.Group();
   root.name = entry.key;

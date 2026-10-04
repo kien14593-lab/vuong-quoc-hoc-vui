@@ -1,6 +1,7 @@
 import '@fontsource/nunito/vietnamese-800.css';
 import '@fontsource/nunito/latin-800.css';
 import * as THREE from 'three';
+import { useShadowProxies } from '../src/engine/layers';
 import { setupLights } from '../src/engine/lighting';
 import { disposeTree } from '../src/engine/merge';
 import type { AutoRigResult, V3 } from '../src/models/autorig';
@@ -14,6 +15,7 @@ import { animateRig, rigOf, type AnimState, type Rig } from '../src/models/rig';
  *  mode=weights    tô màu theo trọng số da + lưới nhãn 2D + khớp   (anim=walk... yaw=30 t=1.3 rig=1|0)
  *  mode=strip      dải khung hình   rig=both|1|0  dist=close|game  yaw=30  anims=walk,run,wave,air,happy,ride  frames=8
  *                  dyaw=0.5 (quay camera thêm mỗi khung)  still=1 (giữ nguyên tư thế)
+ *                  bong=0 (bỏ lưới bóng: lưới thật tự đổ bóng như trước – để so sánh bóng)
  *  mode=perf       đo thời gian dò xương, dựng mô hình, mỗi khung hình (n=20)
  * Xong thì window.__done = true (để công cụ chụp ảnh chờ).
  */
@@ -63,6 +65,16 @@ interface Puppet {
 function puppet(rigged: boolean, ride: boolean): Puppet {
   const root = new THREE.Group();
   const model = buildModel(KEY, { autoRig: rigged });
+  if (q.get('bong') === '0') {
+    const px: THREE.Object3D[] = [];
+    model.traverse((o) => {
+      if (o.userData.shadowProxy) px.push(o);
+    });
+    for (const p of px) {
+      p.parent!.castShadow = true;
+      p.removeFromParent();
+    }
+  }
   root.add(model);
   if (ride) {
     const b = buildModel('board_skate', {});
@@ -90,6 +102,7 @@ function renderer(width: number, height: number): THREE.WebGLRenderer {
   r.toneMappingExposure = 1;
   r.shadowMap.enabled = true;
   r.shadowMap.type = THREE.PCFShadowMap;
+  useShadowProxies(r);
   r.setPixelRatio(1);
   r.setSize(width, height, false);
   return r;

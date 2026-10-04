@@ -34,12 +34,15 @@ const xrayMat = new THREE.MeshBasicMaterial({
 });
 xrayMat.userData.shared = true;
 
-/** Đánh dấu stencil cho các lưới nhân vật + thêm lớp hình bóng vẽ khi bị che. */
+/**
+ * Đánh dấu stencil cho các lưới nhân vật + thêm lớp hình bóng vẽ khi bị che.
+ * Bé AI có lưới bóng (bản rút gọn, glb.ts): hình bóng vẽ bằng lưới bóng cho nhẹ (chỉ là bóng mờ, lệch dưới 1 cm).
+ */
 function addXray(root: THREE.Object3D): void {
   const meshes: THREE.Mesh[] = [];
   root.traverse((o) => {
     const m = o as THREE.Mesh;
-    if (m.isMesh && !m.userData.xray) meshes.push(m);
+    if (m.isMesh && !m.userData.xray && !m.userData.shadowProxy) meshes.push(m);
   });
   const cloned = new Map<THREE.Material, THREE.Material>();
   for (const m of meshes) {
@@ -58,15 +61,17 @@ function addXray(root: THREE.Object3D): void {
       return c;
     });
     m.material = Array.isArray(m.material) ? next : next[0];
+    const proxy = m.children.find((c) => c.userData.shadowProxy) as THREE.Mesh | undefined;
+    const geo = proxy?.geometry ?? m.geometry;
     const sm = m as THREE.SkinnedMesh;
     let x: THREE.Mesh;
     if (sm.isSkinnedMesh) {
       // Bé AI có xương: hình bóng cũng uốn theo xương (cùng bộ xương, cùng ma trận gắn).
-      const xs = new THREE.SkinnedMesh(sm.geometry, xrayMat);
+      const xs = new THREE.SkinnedMesh(geo, xrayMat);
       xs.bind(sm.skeleton, sm.bindMatrix);
       xs.frustumCulled = false;
       x = xs;
-    } else x = new THREE.Mesh(m.geometry, xrayMat);
+    } else x = new THREE.Mesh(geo, xrayMat);
     x.userData.xray = true;
     x.renderOrder = 50;
     x.castShadow = false;

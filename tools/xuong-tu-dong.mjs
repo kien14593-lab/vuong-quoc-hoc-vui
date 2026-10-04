@@ -10,6 +10,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { laLuoiBong } from './luoi-bong.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(ROOT, 'src', 'models', 'autorig.ts');
@@ -56,7 +57,7 @@ export function luoiDeDo(doc, xoay = 0) {
     if (!mesh) return;
     const m = node.getWorldMatrix();
     for (const prim of mesh.listPrimitives()) {
-      if (prim.getMode() !== TRIANGLES) continue;
+      if (prim.getMode() !== TRIANGLES || laLuoiBong(prim)) continue;
       const pa = prim.getAttribute('POSITION');
       if (!pa) continue;
       const n = pa.getCount();

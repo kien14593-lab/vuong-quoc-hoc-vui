@@ -76,7 +76,14 @@ export function renderPortrait(obj: THREE.Object3D, o: PortraitOpts = {}): strin
   holder.rotation.y = ((o.yaw ?? 0) * Math.PI) / 180;
   scene.add(holder);
   holder.updateMatrixWorld(true);
+  // Lưới bóng (glb.ts) dùng chung đỉnh với lưới thật: đo không cần nó (đỡ một lượt tính đỉnh theo xương).
+  const proxies: [THREE.Object3D, THREE.Object3D][] = [];
+  obj.traverse((x) => {
+    if (x.userData.shadowProxy && x.parent) proxies.push([x, x.parent]);
+  });
+  for (const [x] of proxies) x.removeFromParent();
   box.setFromObject(obj, true);
+  for (const [x, parent] of proxies) parent.add(x);
   if (box.isEmpty()) box.set(new THREE.Vector3(-0.5, 0, -0.5), new THREE.Vector3(0.5, 1, 0.5));
   box.getSize(size3);
   box.getCenter(center);

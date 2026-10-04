@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { useShadowProxies } from './layers';
 
 /** Một "sân khấu" 3D: khu vực trong thế giới, màn hình tiêu đề hoặc mini-game. */
 export interface Stage {
@@ -43,6 +44,7 @@ class Engine {
     r.toneMappingExposure = 1.0;
     r.shadowMap.enabled = true;
     r.shadowMap.type = THREE.PCFShadowMap;
+    useShadowProxies(r);
     this.renderer = r;
     this.canvas = r.domElement;
     this.canvas.id = 'scene3d';

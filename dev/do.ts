@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { ITEMS, type ItemCat } from '../src/core/items';
 import { isKid, kidKey, playerKey, type Kid } from '../src/core/outfits';
 import type { Equipped } from '../src/core/state';
+import { useShadowProxies } from '../src/engine/layers';
 import { setupLights } from '../src/engine/lighting';
 import { disposeTree } from '../src/engine/merge';
 import { glbSpec, preloadGlb, setGlbEnabled, type GlbSpec } from '../src/models/glb';
@@ -121,6 +122,7 @@ function renderer(width: number, height: number): THREE.WebGLRenderer {
   r.toneMappingExposure = 1;
   r.shadowMap.enabled = true;
   r.shadowMap.type = THREE.PCFShadowMap;
+  useShadowProxies(r);
   r.setPixelRatio(1);
   r.setSize(width, height, false);
   return r;
