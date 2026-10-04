@@ -94,9 +94,11 @@ Nhân vật chính (bé) được dựng bằng code để **thay quần áo, m�
 Nhấp đúp `CapNhatMoHinh.bat`. Công cụ sẽ:
 
 - nhận tên nhân vật/động tác, báo lỗi nếu tên tệp sai;
-- **tối ưu**: thu nhỏ ảnh (WebP 1024 px), nén lưới; mô hình quá nặng (> 60.000 tam giác, vd. 1,5 triệu mặt của
-  HY 3D) được **tự giảm** còn khoảng 60.000 tam giác mà vẫn giữ dáng và độ mịn (tệp 80 MB → dưới 1 MB; đổi riêng
-  từng nhân vật bằng `tam-giac`, mục 4);
+- **tối ưu**: thu nhỏ ảnh (WebP 1024 px; đổi riêng từng nhân vật bằng `anh`, mục 4), nén lưới; mô hình quá nặng
+  (> 60.000 tam giác, vd. 1,5 triệu mặt của HY 3D) được **tự giảm** còn khoảng 60.000 tam giác mà vẫn giữ dáng và độ
+  mịn (tệp 80 MB → dưới 1 MB; đổi riêng từng nhân vật bằng `tam-giac`, mục 4);
+- **sửa vệt nứt**: tô kín khe giữa các mảnh ảnh để mô hình không có những vệt lưới xám mảnh (thông báo
+  *ℹ Sửa vệt nứt*; tắt riêng bằng `sua-vet-nut`, mục 4);
 - tệp động tác chỉ giữ phần chuyển động (nhẹ hơn nhiều);
 - chép kết quả vào `src\assets\models\ai\` và tạo bảng ghi công `GHI-CONG.md`;
 - **chỉ làm lại nhân vật có tệp trong `mo-hinh-ai`**: nhân vật đã lắp từ trước (kể cả lắp trên máy khác) được **giữ
@@ -134,6 +136,8 @@ Nếu nhân vật quá to/nhỏ, quay lưng lại, hay màu bị lạ: mở **`m
 | `xoay` | Xoay thêm (độ) nếu nhân vật quay lưng/quay ngang: thử `180`, `90`, `-90`. |
 | `vat-lieu` | `mem` (mặc định – mịn, không bóng, hợp phong cách pastel), `hoat-hinh` (tô bóng kiểu hoạt hình), `goc` (giữ nguyên vật liệu gốc). |
 | `tam-giac` | Số tam giác tối đa khi tự giảm lưới (bỏ trống = 60000). Số nhỏ hơn → tệp nhẹ hơn, trò chơi mượt hơn ở cảnh có nhiều nhân vật AI (vd. Hiệp Sĩ Thỏ dùng `40000` vì Lâu Đài có 3 hiệp sĩ và Nhà Vua; Ông Rùa dùng `30000` để Rừng và Mê Cung tải nhanh hơn). **Chỉ có tác dụng khi `mo-hinh-ai` có tệp gốc** của nhân vật đó. |
+| `anh` | Cỡ ảnh tối đa (điểm ảnh, bỏ trống = 1024). Nhân vật nhỏ như thú cưng có thể dùng `512`: tệp nhẹ hơn mà nhìn trong game vẫn y hệt. Nếu gõ `--anh` khi chạy công cụ thì `--anh` được ưu tiên. **Chỉ có tác dụng khi `mo-hinh-ai` có tệp gốc**. |
+| `sua-vet-nut` | Sửa những **vệt lưới xám mảnh** (như đường chỉ khâu) trên mô hình HY 3D – **bật sẵn**: công cụ tô kín khe giữa các mảnh ảnh bằng màu ngay bên cạnh, phần hình vẽ giữ nguyên (tệp nặng thêm khoảng 6%). Ghi `false` để tắt cho riêng nhân vật đó. **Chỉ có tác dụng khi `mo-hinh-ai` có tệp gốc**. |
 | `nang-len` / `ha-xuong` | Nâng/hạ nhân vật (mét) nếu bị lơ lửng hoặc lún. Riêng Robot Bíp: `nang-len` là độ cao bay (bỏ trống = 0.42 như robot có sẵn), còn `chieu-cao` chỉ tính thân robot. |
 | `toc-do-di`, `toc-do-chay` | Tốc độ phát động tác đi/chạy (1 = bình thường; 1.3 = nhanh hơn). |
 | `an` | Ẩn bớt chi tiết theo tên lưới, vd. `["Sword"]`. |

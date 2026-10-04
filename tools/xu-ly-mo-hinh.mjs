@@ -6,9 +6,10 @@
  *
  * 1. Đọc mọi tệp .glb trong thư mục mo-hinh-ai/  (vd. gau.glb, gau-di.glb, gau@vay-tay.glb)
  * 2. Nhận tên nhân vật + động tác theo bảng src/assets/models/ai-names.json (tiếng Việt không dấu cũng được)
- * 3. Tối ưu: thu nhỏ ảnh (webp 1024), lưới quá dày (> 60.000 tam giác, vd. 1,5 triệu của HY 3D) tự giảm còn
- *    ~60.000 tam giác (riêng từng nhân vật: "tam-giac" trong cau-hinh.json), nén lưới (meshopt), bỏ dữ liệu thừa;
- *    tệp động tác chỉ giữ phần chuyển động
+ * 3. Tối ưu: thu nhỏ ảnh (webp 1024; riêng từng nhân vật: "anh"), lưới quá dày (> 60.000 tam giác, vd. 1,5 triệu
+ *    của HY 3D) tự giảm còn ~60.000 tam giác (riêng từng nhân vật: "tam-giac" trong cau-hinh.json), nén lưới
+ *    (meshopt), bỏ dữ liệu thừa; tô kín khe giữa các mảnh ảnh trước khi giảm (hết vệt lưới xám mảnh trên mô hình
+ *    HY 3D; tắt riêng: "sua-vet-nut": false); tệp động tác chỉ giữ phần chuyển động
  * 4. Ghi vào src/assets/models/ai/<khóa>.glb, <khóa>@<động tác>.glb  +  config.json (từ mo-hinh-ai/cau-hinh.json),
  *    GHI-CONG.md (bảng ghi công) và .tao-tu-dong.txt (danh sách tệp do công cụ tạo)
  *
@@ -81,6 +82,8 @@ const KEY_VI = {
 /* Tham số dòng lệnh                                                    */
 /* ------------------------------------------------------------------ */
 const TEX_SIZE = Number(arg('anh', 1024)) || 1024;
+/** --anh trên dòng lệnh thắng "anh" riêng trong cau-hinh.json (như --giam thắng "tam-giac"). */
+const TEX_CLI = arg('anh', null) !== null;
 const REDUCE = arg('giam', null) === null ? null : Number(arg('giam'));
 const DRY = arg('xem', false) === true;
 const GO = argAll('go');
@@ -152,6 +155,9 @@ function convertConfig(raw) {
   const out = {};
   /** Khóa → số tam giác tối đa riêng ("tam-giac"). Chỉ dùng lúc giảm lưới, không ghi vào config.json của game. */
   const tris = {};
+  /** Khóa → cỡ ảnh tối đa riêng ("anh", px) và tắt sửa vệt nứt ("sua-vet-nut": false). Chỉ dùng lúc xử lý, không ghi vào config.json. */
+  const texs = {};
+  const seams = {};
   const warn = [];
   for (const [name, c] of Object.entries(raw ?? {})) {
     if (name.startsWith('_')) continue;
@@ -176,6 +182,13 @@ function convertConfig(raw) {
         const n = Math.round(Number(v));
         if (n >= 1000) tris[key] = n;
         else warn.push(`cau-hinh.json: "${name}" – "tam-giac" phải là số từ 1000 trở lên (vd. 40000) – bỏ qua.`);
+      } else if (sk === 'anh' || k === 'texture') {
+        const n = Math.round(Number(v));
+        if (n >= 64 && n <= 8192) texs[key] = n;
+        else warn.push(`cau-hinh.json: "${name}" – "anh" phải là cỡ ảnh từ 64 đến 8192 (vd. 512) – bỏ qua.`);
+      } else if (sk === 'sua-vet-nut' || k === 'fixSeams') {
+        if (typeof v === 'boolean') seams[key] = v;
+        else warn.push(`cau-hinh.json: "${name}" – "sua-vet-nut" chỉ nhận true hoặc false – bỏ qua.`);
       } else if (sk === 'di-tai-cho' || k === 'inPlace') o.inPlace = Boolean(v);
       else if (sk === 'toc-do-di' || k === 'walkRate') o.walkRate = Number(v);
       else if (sk === 'toc-do-chay' || k === 'runRate') o.runRate = Number(v);
@@ -193,7 +206,7 @@ function convertConfig(raw) {
     }
     out[key] = { ...out[key], ...o };
   }
-  return { out, tris, warn };
+  return { out, tris, texs, seams, warn };
 }
 
 /* ------------------------------------------------------------------ */
@@ -254,6 +267,145 @@ function simplifyMesh(ratio) {
   };
 }
 
+/**
+ * Sửa vệt nứt ("sua-vet-nut", bật sẵn): ảnh của HY 3D có khe tối/mờ giữa các mảnh ảnh (đảo UV); sau khi giảm lưới
+ * và thu nhỏ ảnh, mép mảnh lấy nhầm màu khe → vệt lưới xám mảnh trên mô hình. Mọi điểm ảnh nằm ngoài tất cả tam giác
+ * UV (của mọi lưới dùng ảnh đó) được tô bằng màu của điểm ảnh gần nhất nằm trong mảnh; điểm ảnh trong mảnh giữ
+ * nguyên từng byte. Chạy trên ảnh gốc và ghi lại PNG (không mất dữ liệu). Trả về số ảnh đã sửa.
+ */
+async function padUvGaps(doc) {
+  const users = new Map(); // ảnh → [{ prim, tc }]
+  const why = new Map(); // ảnh → lý do không sửa được an toàn
+  for (const mesh of doc.getRoot().listMeshes()) {
+    for (const prim of mesh.listPrimitives()) {
+      const mat = prim.getMaterial();
+      if (!mat) continue;
+      const slots = [
+        [mat.getBaseColorTexture(), mat.getBaseColorTextureInfo()],
+        [mat.getNormalTexture(), mat.getNormalTextureInfo()],
+        [mat.getMetallicRoughnessTexture(), mat.getMetallicRoughnessTextureInfo()],
+        [mat.getOcclusionTexture(), mat.getOcclusionTextureInfo()],
+        [mat.getEmissiveTexture(), mat.getEmissiveTextureInfo()],
+      ];
+      for (const [tex, info] of slots) {
+        if (!tex) continue;
+        if (!users.has(tex)) users.set(tex, []);
+        users.get(tex).push({ prim, tc: info?.getTexCoord() ?? 0 });
+        if (info?.getExtension('KHR_texture_transform')) why.set(tex, 'có KHR_texture_transform');
+        else if (prim.getMode() !== 4) why.set(tex, 'lưới không phải tam giác');
+      }
+    }
+  }
+  // Điểm ảnh có ô vuông chạm ít nhất một tam giác UV (tọa độ tâm điểm ảnh); null = có UV ngoài 0..1 (ảnh lặp).
+  const coverage = (list, W, H) => {
+    const mask = new Uint8Array(W * H);
+    for (const { prim, tc } of list) {
+      const a = prim.getAttribute(`TEXCOORD_${tc}`);
+      if (!a) continue;
+      const uv = new Float64Array(a.getCount() * 2);
+      const el = [];
+      for (let i = 0; i < a.getCount(); i++) {
+        a.getElement(i, el);
+        if (!(el[0] >= -1e-3 && el[0] <= 1 + 1e-3 && el[1] >= -1e-3 && el[1] <= 1 + 1e-3)) return null;
+        uv[2 * i] = el[0] * W - 0.5;
+        uv[2 * i + 1] = el[1] * H - 0.5;
+      }
+      const idx = prim.getIndices()?.getArray();
+      const n = idx ? idx.length : a.getCount();
+      for (let t = 0; t + 2 < n; t += 3) {
+        const i0 = 2 * (idx ? idx[t] : t);
+        const i1 = 2 * (idx ? idx[t + 1] : t + 1);
+        const i2 = 2 * (idx ? idx[t + 2] : t + 2);
+        const x0 = uv[i0];
+        const y0 = uv[i0 + 1];
+        const x1 = uv[i1];
+        const y1 = uv[i1 + 1];
+        const x2 = uv[i2];
+        const y2 = uv[i2 + 1];
+        const s = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0) >= 0 ? 1 : -1;
+        // Nới mỗi cạnh nửa ô điểm ảnh (chuẩn L1) để nhận cả điểm ảnh chỉ chạm mép tam giác.
+        const m0 = 0.5 * (Math.abs(x1 - x0) + Math.abs(y1 - y0));
+        const m1 = 0.5 * (Math.abs(x2 - x1) + Math.abs(y2 - y1));
+        const m2 = 0.5 * (Math.abs(x0 - x2) + Math.abs(y0 - y2));
+        const maxX = Math.min(W - 1, Math.ceil(Math.max(x0, x1, x2) + 0.5));
+        const maxY = Math.min(H - 1, Math.ceil(Math.max(y0, y1, y2) + 0.5));
+        for (let y = Math.max(0, Math.floor(Math.min(y0, y1, y2) - 0.5)); y <= maxY; y++) {
+          for (let x = Math.max(0, Math.floor(Math.min(x0, x1, x2) - 0.5)); x <= maxX; x++) {
+            if (s * ((x1 - x0) * (y - y0) - (y1 - y0) * (x - x0)) < -m0) continue;
+            if (s * ((x2 - x1) * (y - y1) - (y2 - y1) * (x - x1)) < -m1) continue;
+            if (s * ((x0 - x2) * (y - y2) - (y0 - y2) * (x - x2)) < -m2) continue;
+            mask[y * W + x] = 1;
+          }
+        }
+      }
+    }
+    return mask;
+  };
+  const ids = new Map(); // lưới → số thứ tự: bộ nhớ đệm theo đúng đối tượng lưới + bộ UV + cỡ ảnh, không theo tên
+  const masks = new Map();
+  let fixed = 0;
+  for (const [tex, list] of users) {
+    const name = tex.getName() || tex.getURI() || `ảnh số ${doc.getRoot().listTextures().indexOf(tex) + 1}`;
+    const skip = (reason) => console.log(`  ⚠ Sửa vệt nứt: bỏ qua ${name} (${reason}).`);
+    if (why.has(tex)) {
+      skip(why.get(tex));
+      continue;
+    }
+    if (tex.listParents().some((p) => p.propertyType !== 'Root' && p.propertyType !== 'Material')) {
+      skip('ảnh còn dùng ở phần mở rộng của vật liệu');
+      continue;
+    }
+    let img;
+    try {
+      img = await sharp(Buffer.from(tex.getImage())).raw().toBuffer({ resolveWithObject: true });
+    } catch {
+      skip('không đọc được ảnh');
+      continue;
+    }
+    const { data, info } = img;
+    const W = info.width;
+    const H = info.height;
+    const ch = info.channels;
+    for (const u of list) if (!ids.has(u.prim)) ids.set(u.prim, ids.size);
+    const mk = `${W}x${H}|${list.map((u) => `${ids.get(u.prim)}:${u.tc}`).join(',')}`;
+    if (!masks.has(mk)) masks.set(mk, coverage(list, W, H));
+    const mask = masks.get(mk);
+    if (!mask) {
+      skip('UV nằm ngoài 0..1');
+      continue;
+    }
+    // Loang từ mọi điểm ảnh trong mảnh ra ngoài (theo 4 hướng): điểm ảnh ngoài nhận màu điểm gần nhất.
+    const N = W * H;
+    const seen = new Uint8Array(N);
+    const q = new Int32Array(N);
+    let qt = 0;
+    for (let i = 0; i < N; i++) {
+      if (!mask[i]) continue;
+      seen[i] = 1;
+      q[qt++] = i;
+    }
+    if (!qt || qt === N) continue;
+    const go = (k, j) => {
+      if (seen[k]) return;
+      seen[k] = 1;
+      data.copyWithin(k * ch, j * ch, j * ch + ch);
+      q[qt++] = k;
+    };
+    for (let qh = 0; qh < qt; qh++) {
+      const j = q[qh];
+      const x = j % W;
+      if (x > 0) go(j - 1, j);
+      if (x < W - 1) go(j + 1, j);
+      if (j >= W) go(j - W, j);
+      if (j < N - W) go(j + W, j);
+    }
+    const png = await sharp(data, { raw: { width: W, height: H, channels: ch } }).png({ compressionLevel: 3 }).toBuffer();
+    tex.setImage(new Uint8Array(png)).setMimeType('image/png');
+    fixed++;
+  }
+  return fixed;
+}
+
 async function main() {
   await MeshoptDecoder.ready;
   await MeshoptEncoder.ready;
@@ -303,7 +455,7 @@ async function main() {
       process.exitCode = 1;
     }
   }
-  const { out: config, tris: triLimits, warn: cfgWarn } = convertConfig(cfgRaw);
+  const { out: config, tris: triLimits, texs: texSizes, seams: seamFix, warn: cfgWarn } = convertConfig(cfgRaw);
   cfgWarn.forEach((w) => console.log('  ⚠ ' + w));
 
   // Gom theo nhân vật
@@ -420,13 +572,18 @@ async function main() {
       doc.getRoot().listAnimations()[0].setName('idle');
       clips[0] = `${clips[0]} → đứng yên`;
     }
+    if (seamFix[key] !== false) {
+      const n = await padUvGaps(doc);
+      if (n) console.log(`  ℹ Sửa vệt nứt: tô kín khe giữa các mảnh ảnh (${n} ảnh).`);
+    }
     const steps = [dedup(), prune({ keepLeaves: true }), resample()];
     let ratio = REDUCE;
     const triLimit = triLimits[key] ?? AUTO_TRI_LIMIT;
     if (!ratio && tris > triLimit) ratio = triLimit / tris;
     const reduce = Boolean(ratio && ratio < 1);
     if (reduce) steps.push(dequantize(), weld(), simplifyMesh(ratio));
-    steps.push(textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [TEX_SIZE, TEX_SIZE] }), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
+    const texSize = (!TEX_CLI && texSizes[key]) || TEX_SIZE;
+    steps.push(textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [texSize, texSize] }), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
     await doc.transform(...steps);
     const trisAfter = triangles(doc);
     const outName = `${key}.glb`;
