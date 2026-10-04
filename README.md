@@ -7,7 +7,7 @@ Câu hỏi tự điều chỉnh độ khó theo lớp và theo kết quả làm 
 
 ## ▶️ Chơi ngay
 
-- **Chơi trên web:** <https://kien14593-lab.github.io/vuong-quoc-toan-hoc/> – mở bằng Chrome / Edge / Safari trên
+- **Chơi trên web:** <https://kien14593-lab.github.io/vuong-quoc-hoc-vui/> – mở bằng Chrome / Edge / Safari trên
   máy tính, máy tính bảng hoặc điện thoại, không cần cài đặt. Bản web tự cập nhật mỗi khi mã nguồn mới được đưa lên GitHub.
 - **Chơi offline:** mở tệp **`ban-phat-hanh\VuongQuocHocVui.html`** bằng Chrome / Edge (nhấp đúp).
 - Chưa có tệp này (hoặc vừa sửa code)? Nhấp đúp **`DongGoi.bat`** để đóng gói lại (khoảng 30 giây).
