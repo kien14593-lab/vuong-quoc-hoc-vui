@@ -33,7 +33,8 @@ bằng mô hình 3D tạo bằng AI (Tencent HY 3D, Meshy, Tripo...) mà **khôn
 - Trò chơi chỉ tải trước nhân vật của **màn hình tiêu đề**; nhân vật ở các khu vực khác được tải dần sau đó (hoặc lúc
   chuyển cảnh vào khu vực) – nên **thêm nhiều nhân vật không làm bản chơi trên web mở chậm hơn**.
 - Mô hình **không có khung xương** – trò chơi tự cho nhân vật nhún nhảy, "thở", lắc lư. Nút gắn xương tự động
-  (*Auto-Rigging*) của HY 3D **tốn điểm** – không bắt buộc.
+  (*Auto-Rigging*) của HY 3D **tốn điểm** – không bắt buộc. Riêng **bé** (nhân vật chính): trò chơi tự dựng xương từ
+  dáng đứng chữ A nên bé đi, chạy, vẫy tay thật (mục 2).
 
 **Cách khác – Meshy.ai** (<https://www.meshy.ai>): gắn xương được và có khoảng 20 động tác miễn phí (đi, chạy, vẫy
 tay…), nhưng gói miễn phí chỉ tải được mô hình **Meshy 6 Lite** (tối đa 10 lần/tháng) – và tài khoản của cô **bị chặn
@@ -87,7 +88,26 @@ Cách viết khác cũng được: `gau@di.glb`, `gau-walk.glb`. Nếu chỉ có
 công cụ lấy tệp "đứng yên" làm mô hình chính. Tệp gộp nhiều động tác (tải bằng *Tất cả đã được thêm vào*) chỉ cần
 đặt tên `gau.glb`; tên động tác lạ thì khai báo trong `cau-hinh.json` (mục 4).
 
-Nhân vật chính (bé) được dựng bằng code để **thay quần áo, mũ, phụ kiện** trong túi đồ – nên không thay bằng mô hình AI.
+**Bé (nhân vật chính) và bộ đồ** – câu lệnh, dáng ảnh mẫu, các bước: mục 8 của
+[CAU-LENH-TAO-NHAN-VAT.md](CAU-LENH-TAO-NHAN-VAT.md).
+
+| Tệp | Là |
+|---|---|
+| `be-trai.glb` (hoặc `ban-trai.glb`, `be-nam.glb`) | Bé trai mặc **Đồ thường ngày** (miễn phí, ai cũng có) |
+| `be-gai.glb` (hoặc `ban-gai.glb`, `be-nu.glb`) | Bé gái mặc **Đồ thường ngày** |
+| `be-trai-<bộ đồ>.glb`, `be-gai-<bộ đồ>.glb` | Bé trai / bé gái mặc bộ đồ đó (vd. `be-trai-the-thao.glb`, `be-gai-vay-cong-chua.glb`) – tự có trong **Cửa hàng** |
+
+- Phần sau tên bé luôn là **tên bộ đồ** (không phải động tác): bé không cần tệp động tác – trò chơi tự dựng xương
+  để bé đi, chạy, nhảy, vẫy tay.
+- Cùng một bộ đồ cho hai bé thì đặt cùng tên (`be-trai-the-thao.glb`, `be-gai-the-thao.glb`) – trong cửa hàng là một
+  món. Bộ đồ chỉ có tệp cho một bé thì chỉ bán cho bé đó.
+- Tên bộ đồ viết **có dấu** thì cửa hàng dùng luôn (vd. `be-gai-đồ-mùa-hè.glb` → *Đồ mùa hè*). Viết không dấu thì
+  đặt tên trong `cau-hinh.json`, mục `"bo-do"` (mục 4) – riêng `the-thao`, `phi-hanh-gia`, `hiep-si-nho`,
+  `vay-cong-chua` đã có sẵn tên và biểu tượng.
+- Bộ đồ có **quần dài, quần soóc** hoặc **váy ngắn trên đầu gối** thì bé bước chân đẹp nhất. **Váy dài**, áo choàng
+  che kín chân vẫn dùng được nhưng bé chỉ **nhún nhảy** (không bước chân) – công cụ báo rõ bé dùng cách nào (dòng
+  *Dáng đi*, mục 3).
+- Chưa có `be-trai.glb` / `be-gai.glb` (hoặc tệp bị lỗi) thì trò chơi dùng bé dựng bằng code – vẫn chơi được.
 
 ## 3. Chạy công cụ `CapNhatMoHinh.bat`
 
@@ -100,6 +120,8 @@ Nhấp đúp `CapNhatMoHinh.bat`. Công cụ sẽ:
 - **sửa vệt nứt**: tô kín khe giữa các mảnh ảnh để mô hình không có những vệt lưới xám mảnh (thông báo
   *ℹ Sửa vệt nứt*; tắt riêng bằng `sua-vet-nut`, mục 4);
 - tệp động tác chỉ giữ phần chuyển động (nhẹ hơn nhiều);
+- với **bé** và bộ đồ: dựng xương từ dáng chữ A rồi báo **🚶 Dáng đi: ĐI BẰNG CHÂN** (tốt) hoặc **⚠ Dáng đi: NHÚN
+  NHẢY** kèm lý do (mục 5);
 - chép kết quả vào `src\assets\models\ai\` và tạo bảng ghi công `GHI-CONG.md`;
 - **chỉ làm lại nhân vật có tệp trong `mo-hinh-ai`**: nhân vật đã lắp từ trước (kể cả lắp trên máy khác) được **giữ
   nguyên** – trong `mo-hinh-ai` chỉ cần để tệp của nhân vật mới;
@@ -137,14 +159,41 @@ Nếu nhân vật quá to/nhỏ, quay lưng lại, hay màu bị lạ: mở **`m
 | `vat-lieu` | `mem` (mặc định – mịn, không bóng, hợp phong cách pastel), `hoat-hinh` (tô bóng kiểu hoạt hình), `goc` (giữ nguyên vật liệu gốc). |
 | `tam-giac` | Số tam giác tối đa khi tự giảm lưới (bỏ trống = 60000). Số nhỏ hơn → tệp nhẹ hơn, trò chơi mượt hơn ở cảnh có nhiều nhân vật AI (vd. Hiệp Sĩ Thỏ dùng `40000` vì Lâu Đài có 3 hiệp sĩ và Nhà Vua; Ông Rùa và Bạn Nai dùng `30000` để Rừng, Mê Cung và Sở Thú tải nhanh hơn). **Chỉ có tác dụng khi `mo-hinh-ai` có tệp gốc** của nhân vật đó. |
 | `anh` | Cỡ ảnh tối đa (điểm ảnh, bỏ trống = 1024). Nhân vật nhỏ như thú cưng có thể dùng `512`: tệp nhẹ hơn mà nhìn trong game vẫn y hệt. Nếu gõ `--anh` khi chạy công cụ thì `--anh` được ưu tiên. **Chỉ có tác dụng khi `mo-hinh-ai` có tệp gốc**. |
-| `sua-vet-nut` | Sửa những **vệt lưới xám mảnh** (như đường chỉ khâu) trên mô hình HY 3D – **bật sẵn**: công cụ tô kín khe giữa các mảnh ảnh bằng màu ngay bên cạnh, phần hình vẽ giữ nguyên (tệp nặng thêm khoảng 6%). Ghi `false` để tắt cho riêng nhân vật đó. **Chỉ có tác dụng khi `mo-hinh-ai` có tệp gốc**. |
+| `sua-vet-nut` | Sửa những **vệt lưới xám mảnh** (như đường chỉ khâu) trên mô hình HY 3D – **bật sẵn**: công cụ tô kín khe giữa các mảnh ảnh bằng màu ngay bên cạnh, phần hình vẽ giữ nguyên (tệp nặng thêm khoảng 6%). Mô hình được tự giảm lưới thì công cụ tô thêm **lần 2** sau khi giảm (hết chấm màu lạ khi nhìn từ xa) – vì vậy **xử lý lại** một nhân vật đã lắp từ trước sẽ cho ảnh hơi khác bản cũ một chút, sạch vệt hơn: đó là bình thường. Ghi `false` để tắt cho riêng nhân vật đó. **Chỉ có tác dụng khi `mo-hinh-ai` có tệp gốc**. |
 | `nang-len` / `ha-xuong` | Nâng/hạ nhân vật (mét) nếu bị lơ lửng hoặc lún. Riêng Robot Bíp: `nang-len` là độ cao bay (bỏ trống = 0.42 như robot có sẵn), còn `chieu-cao` chỉ tính thân robot. |
 | `toc-do-di`, `toc-do-chay` | Tốc độ phát động tác đi/chạy (1 = bình thường; 1.3 = nhanh hơn). |
 | `an` | Ẩn bớt chi tiết theo tên lưới, vd. `["Sword"]`. |
 | `dong-tac` | Chỉ rõ động tác nào dùng vào việc gì khi trò chơi nhận nhầm (tên các động tác được in ra lúc chạy công cụ), vd. `{ "vui": "FunnyDancing_01", "dung": "Idle_02" }`. Tên việc: `dung`, `di`, `chay`, `nhay`, `vay-tay`, `noi`, `vui`, `ngoi`, `an`. |
+| `gan-do` | Chỉ dùng cho **bé**, khi đồ đeo bị lệch: dời chỗ đội mũ, đeo kính (`"dau"`) hoặc chỗ đeo balo, khăn, áo choàng (`"than"`) theo `[dịch ngang, lên, ra trước (mét), phóng to]`, vd. `"gan-do": { "dau": [0, 0.02, 0, 1.05] }` (mũ cao thêm 2 cm, to thêm 5%). Thường không cần – trò chơi tự đo đầu và lưng của bé. |
 | `nguon` | Nguồn & giấy phép – ghi vào bảng ghi công. |
 
 Lưu ý: tệp JSON dùng dấu ngoặc kép `"`, các mục cách nhau bằng dấu phẩy, không có dấu phẩy sau mục cuối.
+
+**Bé và bộ đồ.** Mỗi bộ đồ tự dùng cài đặt của bé (`be-trai` hoặc `be-gai`): `chieu-cao`, `xoay`, `vat-lieu`,
+`nang-len`/`ha-xuong`, `gan-do`, `tam-giac`, `anh`, `sua-vet-nut`, `nguon` – không cần ghi lại; muốn
+chỉnh riêng một bộ đồ thì ghi mục theo tên tệp, vd. `"be-trai-the-thao": { "xoay": 180 }`. Tên, giá, biểu tượng của
+bộ đồ trong **Cửa hàng** ghi ở mục `"bo-do"` – dùng chung cho cả bé trai và bé gái, không bắt buộc:
+
+```json
+{
+  "be-trai": { "chieu-cao": 1.7, "tam-giac": 40000 },
+  "be-gai": { "chieu-cao": 1.62, "tam-giac": 40000 },
+  "bo-do": {
+    "the-thao": { "ten": "Đồ thể thao", "gia": 60, "bieu-tuong": "⚽" },
+    "vay-cong-chua": { "ten": "Váy công chúa", "gia": 120, "bieu-tuong": "👑", "cap": 3 }
+  }
+}
+```
+
+| Mục trong `"bo-do"` | Ý nghĩa |
+|---|---|
+| `ten` | Tên trong cửa hàng. Bỏ trống = lấy theo tên tệp có dấu hoặc tên có sẵn (mục 2). |
+| `gia` | Giá (xu). Bỏ trống = 60. |
+| `bieu-tuong` | Một emoji trên thẻ cửa hàng, vd. `"⚽"`. Bỏ trống = 👕. |
+| `cap` | Cấp cần đạt mới mua được. Bỏ trống = 1. |
+
+"Đồ thường ngày" luôn miễn phí, không cần ghi. Ghi tên mà chưa có tệp bộ đồ thì công cụ chỉ nhắc *chưa bán trong
+cửa hàng* – thêm tệp sau cũng được.
 
 ## 5. Lỗi thường gặp
 
@@ -153,6 +202,9 @@ Lưu ý: tệp JSON dùng dấu ngoặc kép `"`, các mục cách nhau bằng d
 | *không nhận ra nhân vật* | Đổi tên tệp theo bảng ở mục 2 (vd. `gau.glb`). |
 | *game chỉ dùng định dạng GLB* | Tải lại ở dạng `.glb` (không dùng `.fbx`, `.obj`); nếu là `.zip` thì giải nén. |
 | *chưa có khung xương* | Bình thường (HY 3D không có khung xương) – trò chơi tự cho nhân vật nhún nhảy. Muốn cử động thật: gắn xương (Meshy Rig/Animate, HY 3D Auto-Rigging – tốn điểm) rồi tải lại. Không bắt buộc. |
+| *Dáng đi: NHÚN NHẢY* (bé, bộ đồ) | Bé vẫn chơi được nhưng chỉ nhún nhảy, không bước chân. Đọc lý do và cách sửa in ngay bên dưới (vd. không thấy khe hở dưới tay, giữa hai chân, váy dài) rồi tạo lại ảnh đúng tư thế chữ A – mục 8 của [CAU-LENH-TAO-NHAN-VAT.md](CAU-LENH-TAO-NHAN-VAT.md). |
+| *Bộ đồ "…" chưa có tên tiếng Việt* | Ghi tên trong mục `"bo-do"` của `cau-hinh.json` (mục 4), hoặc đặt tên tệp có dấu (vd. `be-gai-đồ-mùa-hè.glb`). |
+| *Có bộ đồ của Bé trai nhưng chưa có be-trai.glb* | Thêm `be-trai.glb` (bé mặc đồ thường ngày) – thiếu tệp này thì lúc mặc đồ thường ngày trò chơi dùng bé dựng bằng code. Bé gái: `be-gai.glb`. |
 | *không có tệp gốc trong mo-hinh-ai – giữ nguyên mô hình đã lắp* | Bình thường – nhân vật đã lắp được giữ. Muốn gỡ: `--go <tên>` (mục 3). |
 | *tệp không có động tác nào* | Khi tải tệp động tác, chọn kèm Animation. |
 | Mạng rất chậm: nhân vật AI tạm hiện thành nhân vật có sẵn | Bình thường – chờ quá 15 giây thì trò chơi tạm dùng nhân vật có sẵn để bé chơi tiếp; ra rồi vào lại khu vực là có mô hình AI. |

@@ -57,6 +57,10 @@ Chơi tại các điểm trong thế giới hoặc từ nút **Trò chơi** (m�
 diện tích, phân số, số thập phân, tỉ số – phần trăm, toán có lời văn) với mức khởi đầu theo lớp 1–5 và tự
 tăng / giảm độ khó theo kết quả. Câu hỏi có thể được đọc to (giọng đọc của trình duyệt).
 
+**Nhân vật chính:** khi tạo hồ sơ, học sinh chọn **Bé trai** hoặc **Bé gái** (nhân vật 3D tạo bằng AI, biết đi, chạy,
+vẫy tay) và đổi lại được trong **Túi đồ**. **Bộ đồ** mua ở cửa hàng của Cô Mèo; mũ, balo, phụ kiện, thú cưng và ván
+trượt dùng được cho cả hai bé.
+
 **14 huy hiệu**, sao, vé, xu, XP và cấp độ; cửa hàng, túi đồ, trang trí nhà.
 
 ## 🧸 Thay nhân vật bằng mô hình AI
@@ -65,6 +69,8 @@ Chép tệp `.glb` (tạo bằng Tencent HY 3D, Meshy, Tripo…) vào thư mục
 
 - **[CAU-LENH-TAO-NHAN-VAT.md](CAU-LENH-TAO-NHAN-VAT.md)** – trang tạo mô hình nên dùng (Tencent HY 3D, miễn phí), câu lệnh soạn sẵn cho từng nhân vật, thứ tự nên làm.
 - **[HUONG-DAN-MO-HINH-AI.md](HUONG-DAN-MO-HINH-AI.md)** – đặt tên tệp, tinh chỉnh, xử lý lỗi, ghi công.
+- **Bé và bộ đồ:** `be-trai.glb`, `be-gai.glb` (đồ thường ngày) và `be-trai-<bộ đồ>.glb`, `be-gai-<bộ đồ>.glb` – bộ đồ
+  mới tự có trong cửa hàng, không cần sửa code (mục 8 của CAU-LENH-TAO-NHAN-VAT.md).
 
 ## 🛠️ Dành cho lập trình viên
 
@@ -74,11 +80,16 @@ Công nghệ: **Three.js** (3D), **TypeScript**, **Vite**, **Vitest**. Mọi mô
 chuyển cảnh (quá 15 giây thì dùng bản dựng bằng code), phần còn lại tải dần ở chế độ nền. Danh sách nằm trong
 `src/game/needs.ts`; `tests/needs.test.ts` báo lỗi nếu một cảnh dùng nhân vật chưa có trong danh sách.
 
+Bé (nhân vật chính) là mô hình AI theo hồ sơ: `player_trai`, `player_gai` (đồ thường ngày) và `player_<bé>__<bộ đồ>`
+(vd. `player_gai__the_thao`). Danh mục bộ đồ dựng từ các tệp có trong `src/assets/models/ai/` (`src/core/outfits.ts`);
+xương tự dựng lúc nạp từ dáng chữ A (`src/models/autorig.ts`), mũ/balo/phụ kiện gắn theo chỗ đo được trên mô hình
+(`src/models/kid.ts`). Thiếu tệp hoặc tệp lỗi thì dùng bé dựng bằng code.
+
 ```bash
 npm install
 npm run dev          # chạy thử tại http://localhost:5173
 npm run typecheck    # kiểm tra kiểu TypeScript
-npm test             # chạy kiểm thử (bộ sinh câu hỏi toán, danh sách mô hình theo cảnh)
+npm test             # chạy kiểm thử (bộ sinh câu hỏi toán, danh sách mô hình theo cảnh, hồ sơ cũ, bộ đồ)
 npm run build        # bản web vào dist/
 npm run build:single # bản 1 tệp HTML vào dist-single/ (DongGoi.bat dùng lệnh này)
 ```
@@ -92,6 +103,8 @@ Trang thử nghiệm khi chạy `npm run dev`:
   `tickets`, `coins`, `xp`…); bảng điều khiển gỡ lỗi qua `window.__vq`.
 - `/dev/mini.html` – chơi thử từng mini-game · `/dev/gallery.html` – thư viện mô hình 3D ·
   `/dev/dashboard.html` – Góc phụ huynh với dữ liệu mẫu.
+- `/dev/do.html?kids=trai,gai&items=hat` – thử mũ, balo, phụ kiện trên bé AI (trước / nghiêng / sau; `anim`,
+  `outfit`, `mat`) · `/dev/rig.html?key=player_trai&mode=strip` – xương tự dựng (`mode=weights|strip|perf`).
 
 ### Cấu trúc thư mục
 

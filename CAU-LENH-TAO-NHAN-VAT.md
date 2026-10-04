@@ -1,6 +1,7 @@
 # Câu lệnh tạo nhân vật 3D bằng AI
 
-Tệp này có sẵn **câu mô tả tiếng Anh** cho từng nhân vật của trò chơi (mục 5, 6). Cách làm khuyên dùng – **miễn phí**:
+Tệp này có sẵn **câu mô tả tiếng Anh** cho từng nhân vật của trò chơi (mục 5, 6; **bé trai, bé gái và bộ đồ** của
+bé: mục 8). Cách làm khuyên dùng – **miễn phí**:
 
 1. Dán câu lệnh vào trang AI vẽ tranh miễn phí (**Microsoft Copilot** hoặc **Google Gemini**) để có **ảnh mẫu**.
 2. Đưa ảnh mẫu vào **Tencent HY 3D** (*Image-to-3D*) → tải mô hình **GLB** về.
@@ -156,12 +157,13 @@ xương và động tác thật** (đi, chạy, vẫy tay…).
 1. **Chú Gấu** ✅, **Thỏ Bông** ✅, **Cô Mèo** ✅, **Bác Cú** ✅ (đã xong – Tencent HY 3D).
 2. **Robot Bíp** ✅, **Chú Hề Bibo** ✅, **Bác Voi** ✅, **Nhà Vua** ✅, **Hiệp Sĩ Thỏ** ✅ (đã xong – Tencent HY 3D).
 3. Cô Sóc, **Ông Rùa** ✅, **Bạn Nai** ✅ (đã xong – Tencent HY 3D), thêm thú Sở Thú nếu muốn.
+4. **Bé trai** ✅, **Bé gái** ✅ (nhân vật chính, đã xong – Tencent HY 3D), rồi thêm **bộ đồ** cho bé dần dần, mỗi lần
+   một bộ (mục 8).
 
 **Không nên thay:**
 
 - **Dân làng** – một tệp `dan-lang.glb` sẽ thay **cả 6 loài** (heo, vịt, cún, chuột hamster, ếch, gà con) thành một
   nhân vật giống hệt nhau → làng mất đa dạng.
-- **Bé** (nhân vật chính) – được dựng bằng code để thay quần áo, mũ, phụ kiện trong túi đồ.
 - **Thú cưng 4 chân** – mô hình không có khung xương (HY 3D) hoặc thiếu động tác đi bằng 4 chân (Meshy) thì thú cưng
   chỉ nhún nhảy khi chạy theo bé (không bước chân). Muốn thì thử một con trước xem có ưng không.
 
@@ -364,3 +366,103 @@ nhún nhảy, lắc lư. (Meshy gắn xương được thú 4 chân nhưng ít �
 Câu lệnh trên dùng được cho mọi trang tạo mô hình 3D. Ví dụ **Tripo3D** (<https://www.tripo3d.ai>) cũng có gói miễn phí
 và tải được **GLB**, nhưng **hãy đọc kỹ điều khoản**: gói miễn phí của một số trang chỉ cho dùng **phi thương mại**
 và để mô hình ở chế độ **công khai**. Ghi đúng nguồn vào mục `"nguon"` (vd. `"Tripo3D – CC BY 4.0"`).
+
+## 8. Bé (nhân vật chính) và bộ đồ
+
+**Bé trai** và **bé gái** là mô hình AI (Tencent HY 3D) ✅ đã có. Học sinh chọn bé trai hoặc bé gái khi tạo hồ sơ (đổi
+lại được trong **Túi đồ**). Trò chơi **tự dựng xương** cho bé từ dáng đứng chữ A, nên bé đi, chạy, nhảy, vẫy tay thật
+– không cần gắn xương trên trang AI. Mũ, ba lô, phụ kiện, thú cưng và ván trượt vẫn là đồ riêng, trò chơi tự gắn lên bé.
+
+**Bộ đồ** (bán ở **Cửa hàng** của Cô Mèo, mặc trong **Túi đồ**): mỗi bộ đồ là **một tệp riêng cho từng bé** – bé trai
+mặc đồ thể thao là một tệp, bé gái mặc đồ thể thao là một tệp khác. Thêm bộ đồ **không cần sửa code**: tạo mô hình,
+đặt tên tệp đúng, chạy `CapNhatMoHinh.bat` (hoặc gửi tệp cho Copilot) là cửa hàng có bộ đồ mới.
+
+| Tên tệp | Là |
+|---|---|
+| `be-trai.glb` | Bé trai mặc **Đồ thường ngày** (bộ đồ có sẵn, miễn phí cho mọi học sinh) |
+| `be-gai.glb` | Bé gái mặc **Đồ thường ngày** |
+| `be-trai-<bộ đồ>.glb` | Bé trai mặc bộ đồ đó, vd. `be-trai-the-thao.glb`, `be-trai-phi-hanh-gia.glb` |
+| `be-gai-<bộ đồ>.glb` | Bé gái mặc bộ đồ đó, vd. `be-gai-the-thao.glb`, `be-gai-vay-cong-chua.glb` |
+
+- Cùng một bộ đồ thì đặt **cùng tên** cho hai bé (`be-trai-the-thao.glb`, `be-gai-the-thao.glb`): cửa hàng coi là
+  **một món** – học sinh đổi sang bé kia vẫn mặc được bộ đã mua.
+- Bộ đồ có thể **chỉ có cho một bé** (vd. váy công chúa chỉ cho bé gái): cửa hàng chỉ bày bộ đồ có tệp cho bé đang chơi.
+- **Tên, giá, biểu tượng**: không ghi gì thì công cụ tự đặt tên theo tên tệp (vd. `the-thao` → *Đồ thể thao*), giá
+  **60 xu**, biểu tượng 👕. Muốn đổi: mục `"bo-do"` trong `mo-hinh-ai\cau-hinh.json` (mục 4 của
+  [HUONG-DAN-MO-HINH-AI.md](HUONG-DAN-MO-HINH-AI.md)).
+- Cài đặt của bộ đồ **lấy theo bé** (`be-trai`, `be-gai` trong `cau-hinh.json`): chiều cao, hướng, vật liệu, cỡ ảnh
+  (`anh`), sửa vệt nứt (`sua-vet-nut`), chỗ gắn mũ/balo (`gan-do`)… – không cần ghi lại.
+
+**Ảnh mẫu phải đúng dáng** (để trò chơi dựng được xương cho bé):
+
+- Đứng **dáng chữ A**: hai tay dang chéo xuống khoảng **45°**, **hở rõ dưới mỗi nách**; hai chân tách, **hở rõ giữa
+  hai chân**; nhìn thẳng; **tay để trống**.
+- **Không** mũ, kính, ba lô, khăn quàng (đó là đồ riêng trong túi đồ, trò chơi tự gắn); nền **xám nhạt trơn** (câu
+  lệnh bên dưới đã ghi sẵn – không cần thêm gì vào cuối).
+- **Quần dài, quần soóc**: bé bước chân đẹp nhất. **Váy ngắn trên đầu gối** vẫn bước được (vạt váy kéo giãn theo chân
+  nên kém gọn hơn quần một chút). **Váy dài**, áo choàng che kín chân vẫn dùng được, nhưng bé chỉ **nhún nhảy** như
+  các bạn thú (không bước chân) – công cụ báo rõ bé dùng cách nào (dòng *Dáng đi* dưới đây).
+- Khi chạy công cụ, mỗi tệp của bé có một dòng **Dáng đi**: *🚶 ĐI BẰNG CHÂN* là tốt; *⚠ NHÚN NHẢY* thì ngay bên dưới
+  có lý do và cách sửa (thường là vẽ lại ảnh mẫu cho hở nách, hở chân rõ hơn).
+
+**Các bước** (dùng **Google Gemini** vì cần đính kèm ảnh mẫu):
+
+1. **Bé trai**: đính kèm ảnh mẫu của Gấu `gau-anh-mau-3.png`, dán câu lệnh 8.1. Ảnh ưng nhất lưu thành
+   **`be-trai-anh-mau.png`**.
+2. **Bé gái**: đính kèm `be-trai-anh-mau.png` (để hai bé cùng một phong cách), dán câu lệnh 8.2. Ảnh ưng nhất lưu
+   thành **`be-gai-anh-mau.png`**.
+3. **Bộ đồ**: đính kèm ảnh mẫu của **đúng bé đó** (`be-trai-anh-mau.png` hoặc `be-gai-anh-mau.png`), dán câu lệnh 8.3.
+   Bộ đồ cho cả hai bé thì làm hai lần: mỗi bé một ảnh mẫu, một mô hình.
+4. Tạo mô hình trên **Tencent HY 3D** như mục 2 → tải **GLB** → nhắn Copilot (vd. *"xong bé gái đồ thể thao"*), hoặc
+   đổi tên tệp như bảng trên, chép vào `mo-hinh-ai` rồi nhấp đúp `CapNhatMoHinh.bat`.
+
+### 8.1. Bé trai ✅ đã có mô hình AI (Tencent HY 3D)
+
+Tệp: `be-trai.glb` · Gemini: đính kèm `gau-anh-mau-3.png` · ảnh chọn được lưu thành `be-trai-anh-mau.png`
+
+```text
+Use the attached bear only as a style reference (same 3D render style, proportions and soft materials). Draw a new character: A cheerful Vietnamese boy, about 7 years old: light warm skin, neat short black hair with soft rounded bangs, close to the head, big shiny dark brown eyes, rosy cheeks, friendly closed-mouth smile, sky-blue T-shirt with a small yellow star on the chest, blue jeans, red sneakers with white soles. Cute chibi 3D cartoon for a kids game: big round head, small round body, short thick limbs, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms held out about 45 degrees from the body with a clear gap under each arm, legs apart with a clear gap between them, facing front, empty hands with short thick rounded fingers, no base, no ground, no shadow. He is a human child, not a bear: no fur, no animal ears, no muzzle. No hat, no glasses, no hair accessories, no backpack, no scarf. 3D render, front view, plain light grey background, square image.
+```
+
+### 8.2. Bé gái ✅ đã có mô hình AI (Tencent HY 3D)
+
+Tệp: `be-gai.glb` · Gemini: đính kèm `be-trai-anh-mau.png` · ảnh chọn được lưu thành `be-gai-anh-mau.png`
+
+Bé gái mặc **quần soóc** (không mặc váy) để hai chân tách rời, bước chân đẹp; hai bím tóc **ngắn, dày, sát đầu** để
+không chạm vai khi bé chạy.
+
+```text
+Use the attached boy only as a style reference (same 3D render style, face style, proportions and soft materials). Draw his classmate, a cheerful Vietnamese girl, about 7 years old: light warm skin, black hair with soft bangs and two short thick rounded pigtails close to the head, tied with small pink hair ties, big shiny dark brown eyes, rosy cheeks, friendly closed-mouth smile, pink T-shirt with a small white heart on the chest, light purple shorts, pink sneakers with white soles. Cute chibi 3D cartoon for a kids game: big round head, small round body, short thick limbs, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms held out about 45 degrees from the body with a clear gap under each arm, legs apart with a clear gap between them, facing front, empty hands with short thick rounded fingers, no base, no ground, no shadow. No hat, no glasses, no backpack, no scarf, no skirt. 3D render, front view, plain light grey background, square image.
+```
+
+### 8.3. Bộ đồ
+
+Tệp: `be-trai-<bộ đồ>.glb` · `be-gai-<bộ đồ>.glb` · Gemini: đính kèm `be-trai-anh-mau.png` hoặc `be-gai-anh-mau.png`
+
+Câu lệnh chung – thay `<OUTFIT>` bằng bộ đồ muốn vẽ (tả bằng tiếng Anh):
+
+```text
+Use the attached child as the same character: keep exactly the same face, hair, skin, body proportions, pose and 3D render style. Change only the clothes to: <OUTFIT>. Keep the arms held out with a clear gap under each arm and a clear gap between the legs, empty hands, no hat, no glasses, no backpack. 3D render, front view, plain light grey background, square image.
+```
+
+Gợi ý thay `<OUTFIT>` (ghi rõ *no helmet*, *no sword*: mũ là đồ riêng trong túi đồ, còn tay cần để trống):
+
+- **Đồ thể thao** – `be-trai-the-thao.glb`, `be-gai-the-thao.glb`
+  ```text
+  a red sports jersey with a big white number 10, white sports shorts, red and white sneakers
+  ```
+- **Đồ phi hành gia** – `be-trai-phi-hanh-gia.glb`, `be-gai-phi-hanh-gia.glb`
+  ```text
+  a puffy white astronaut suit with blue and orange details, chunky white boots, no helmet
+  ```
+- **Đồ hiệp sĩ nhỏ** – `be-trai-hiep-si-nho.glb`, `be-gai-hiep-si-nho.glb`
+  ```text
+  small silver knight armor with gold trim over a blue tunic, brown boots, no helmet, no sword
+  ```
+- **Váy công chúa** (chỉ bé gái) – `be-gai-vay-cong-chua.glb`. Váy **ngắn trên đầu gối** để chân còn bước được.
+  ```text
+  a puffy light pink princess dress with gold trim that ends above the knees, pink shoes
+  ```
+
+Bốn bộ đồ trên công cụ đã biết sẵn tên tiếng Việt và biểu tượng (⚽ 🚀 🛡️ 👑). Bộ đồ khác thì đặt tên trong mục
+`"bo-do"` của `cau-hinh.json`, hoặc viết tên tệp có dấu (vd. `be-gai-đồ-mùa-hè.glb` → *Đồ mùa hè*).

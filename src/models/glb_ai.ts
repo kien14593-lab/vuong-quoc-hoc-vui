@@ -2,12 +2,15 @@
  * Mô hình tạo bằng AI (Tencent HY 3D, Meshy, Tripo...) – tự nhận tệp trong src/assets/models/ai/:
  *   <khóa>.glb            mô hình chính (có thể kèm hoạt cảnh)        vd. npc_bear.glb
  *   <khóa>@<vai>.glb      tệp hoạt cảnh thêm (walk, run, wave...)     vd. npc_bear@walk.glb
- *   config.json           tinh chỉnh: { "npc_bear": { "height": 2, "rotY": 180, "material": "toon" } }
+ *   config.json           tinh chỉnh – công cụ ghi lại mỗi lần chạy từ mo-hinh-ai/cau-hinh.json (đừng sửa tay):
+ *                         { "npc_bear": { "height": 2, "rotY": 180, "material": "toon" } }
+ *   player_trai.glb, player_gai.glb, player_<bé>__<bộ đồ>.glb   bé (nhân vật chính) và bộ đồ – xem core/outfits.ts
  * Tên tiếng Việt (gau.glb, gau@di.glb...) cũng được nhận theo bảng ai-names.json.
  * Mô hình AI được ưu tiên hơn mô hình CC0 và mô hình dựng bằng code cùng khóa.
  * Công cụ tools/xu-ly-mo-hinh.mjs (CapNhatMoHinh.bat) tối ưu & chép tệp từ thư mục mo-hinh-ai/ vào đây.
  */
 import './glb_cc0';
+import { kidModelDefaults } from '../core/outfits';
 import { CLIP_ROLES, defineGlbModel, type AnimSource, type ClipRole, type GlbSpec } from './glb';
 import names from '../assets/models/ai-names.json';
 
@@ -63,8 +66,8 @@ for (const [path, url] of Object.entries(files)) {
 
 for (const [key, src] of mains) {
   AI_MODELS.push(key);
-  // Bé (nhân vật chính) và các bộ đồ: dựng xương tự động để đi, chạy, vẫy tay thật (công cụ đã dò sẵn trong config.json);
-  // lệch mipmap -1 để tóc không có vệt nứt màu khi nhìn từ xa (xem GlbLook.mipBias).
-  const kid: Partial<GlbSpec> = key.startsWith('player_') ? { autoRig: true, mipBias: -1 } : {};
+  // Bé (nhân vật chính) và các bộ đồ: tự dựng xương (công cụ đã dò sẵn khớp – mục "rig" trong config.json),
+  // lệch mipmap -1 (xem kidModelDefaults).
+  const kid: Partial<GlbSpec> = kidModelDefaults(key);
   defineGlbModel(key, { src, animSrc: anims.get(key), source: 'ai', credit: 'Tạo bằng AI', ...kid, ...config[key] });
 }

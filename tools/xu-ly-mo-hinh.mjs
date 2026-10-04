@@ -135,7 +135,8 @@ function outfitId(name) {
  * là bộ đồ (không phải động tác). null nếu không phải bé.
  */
 function kidOf(name) {
-  const base = String(name).replace(/\.(glb|gltf)$/i, '');
+  // NFC: tên gõ kiểu "Unicode tổ hợp" (dấu tách rời) vẫn giữ được chữ có dấu làm tên bộ đồ.
+  const base = String(name).normalize('NFC').replace(/\.(glb|gltf)$/i, '');
   const parts = slug(base).split(/[^a-z0-9]+/).filter(Boolean);
   for (let i = parts.length; i > 0; i--) {
     const kid = keyOf(parts.slice(0, i).join('-'));
@@ -165,7 +166,7 @@ function outfitDefaults(id, text) {
     ? /^(đồ|bộ|váy|áo|quần|đầm)(\s|$)/i.test(t)
       ? cap(t)
       : `Đồ ${t}`
-    : (known?.[0] ?? `Đồ ${(t || id.replace(/_/g, ' ')).toLowerCase()}`);
+    : (known?.[0] ?? `Đồ ${id.replace(/_/g, ' ')}`);
   const hint = OUTFIT_ICON_HINT.find(([rx]) => rx.test(`_${id}_`));
   return { name, price: OUTFIT_PRICE, icon: known?.[1] ?? hint?.[1] ?? OUTFIT_ICON, level: 1, named: accented || Boolean(known) };
 }

@@ -41,6 +41,19 @@ export function isKid(v: unknown): v is Kid {
 
 const KEY_RE = /^player_(trai|gai)(?:__([a-z0-9_]+))?$/;
 
+/** Khóa mô hình AI của bé hoặc một bộ đồ của bé (player_trai, player_gai__the_thao...). */
+export function isKidModel(key: string): boolean {
+  return KEY_RE.test(key);
+}
+
+/**
+ * Cài đặt mặc định khi nạp bé và mọi bộ đồ của bé (có sẵn trong code, công cụ không ghi vào config.json): tự dựng
+ * xương để đi, chạy, vẫy tay thật; lệch mipmap -1 để tóc không có vệt nứt màu khi nhìn từ xa (xem GlbLook.mipBias).
+ */
+export function kidModelDefaults(key: string): { autoRig?: boolean; mipBias?: number } {
+  return isKidModel(key) ? { autoRig: true, mipBias: -1 } : {};
+}
+
 /** "the_thao" → "Đồ the thao" (tên tạm khi cấu hình chưa có tên tiếng Việt). */
 function fallbackName(code: string): string {
   return `Đồ ${code.replace(/_/g, ' ')}`;

@@ -7,8 +7,10 @@ import {
   OUTFIT_PRICE,
   OUTFITS,
   isKid,
+  isKidModel,
   keysFromFiles,
   kidKey,
+  kidModelDefaults,
   kidOutfits,
   outfitCatalog,
   outfitFits,
@@ -103,6 +105,17 @@ describe('khóa mô hình bé', () => {
     expect(isKid('trai')).toBe(true);
     expect(isKid('gai')).toBe(true);
     for (const v of ['boy', '', null, undefined, 1, 'Trai']) expect(isKid(v)).toBe(false);
+  });
+
+  it('bé và mọi bộ đồ nạp như nhau: tự dựng xương, lệch mipmap -1; nhân vật khác không đổi', () => {
+    for (const k of ['player_trai', 'player_gai', 'player_trai__the_thao', 'player_gai__vay_cong_chua']) {
+      expect(isKidModel(k), k).toBe(true);
+      expect(kidModelDefaults(k), k).toEqual({ autoRig: true, mipBias: -1 });
+    }
+    for (const k of ['player', 'npc_bear', 'pet_dog', 'player_ban', 'player_trai__', 'npc_player_trai']) {
+      expect(isKidModel(k), k).toBe(false);
+      expect(kidModelDefaults(k), k).toEqual({});
+    }
   });
 });
 

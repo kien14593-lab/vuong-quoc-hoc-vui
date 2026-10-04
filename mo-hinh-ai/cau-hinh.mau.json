@@ -11,5 +11,12 @@
   "hiep-si": { "chieu-cao": 1.8, "xoay": 0, "tam-giac": 40000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
   "cun": { "chieu-cao": 0.82, "xoay": 0, "tam-giac": 25000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
   "rua": { "chieu-cao": 1.4, "xoay": 0, "tam-giac": 30000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
-  "nai": { "chieu-cao": 1.55, "xoay": 0, "tam-giac": 30000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" }
+  "nai": { "chieu-cao": 1.55, "xoay": 0, "tam-giac": 30000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
+  "be-trai": { "chieu-cao": 1.7, "xoay": 0, "tam-giac": 40000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
+  "be-gai": { "chieu-cao": 1.62, "xoay": 0, "tam-giac": 40000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
+  "bo-do": {
+    "_ghi-chu": "Tên, giá (xu), biểu tượng, cấp của bộ đồ trong cửa hàng – dùng chung cho bé trai và bé gái. Xem mục 8 của CAU-LENH-TAO-NHAN-VAT.md.",
+    "the-thao": { "ten": "Đồ thể thao", "gia": 60, "bieu-tuong": "⚽" },
+    "vay-cong-chua": { "ten": "Váy công chúa", "gia": 120, "bieu-tuong": "👑", "cap": 3 }
+  }
 }

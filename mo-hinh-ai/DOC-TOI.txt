@@ -8,8 +8,16 @@ Chep cac tep .glb tai tu Tencent HY 3D / Meshy / Tripo vao day, dat ten theo nha
   gau-vay-tay.glb  Chu Gau - dong tac vay tay
   tho.glb, meo.glb, cu.glb, robot.glb, vua.glb ...
 
+Be (nhan vat chinh) va bo do:
+
+  be-trai.glb               Be trai - do thuong ngay
+  be-gai.glb                Be gai - do thuong ngay
+  be-trai-the-thao.glb      Be trai - do the thao (tu co trong cua hang)
+  be-gai-vay-cong-chua.glb  Be gai - vay cong chua (bo do chi co cho be gai)
+
 Sau do nhap dup CapNhatMoHinh.bat o thu muc goc cua tro choi.
 Mo hinh qua nang (vd. 80 MB cua HY 3D) duoc tu giam cho nhe.
 Chi can de tep cua nhan vat MOI: nhan vat da lap tu truoc duoc giu nguyen.
 Go mo hinh cua mot nhan vat: CapNhatMoHinh.bat --go gau
 Huong dan day du: HUONG-DAN-MO-HINH-AI.md
+Cau lenh tao be va bo do: muc 8 cua CAU-LENH-TAO-NHAN-VAT.md
