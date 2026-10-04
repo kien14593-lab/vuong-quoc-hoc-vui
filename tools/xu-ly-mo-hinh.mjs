@@ -8,7 +8,7 @@
  * 2. Nhận tên nhân vật + động tác theo bảng src/assets/models/ai-names.json (tiếng Việt không dấu cũng được)
  * 3. Tối ưu: thu nhỏ ảnh (webp 1024; riêng từng nhân vật: "anh"), lưới quá dày (> 60.000 tam giác, vd. 1,5 triệu
  *    của HY 3D) tự giảm còn ~60.000 tam giác (riêng từng nhân vật: "tam-giac" trong cau-hinh.json), nén lưới
- *    (meshopt), bỏ dữ liệu thừa; tô kín khe giữa các mảnh ảnh trước khi giảm (hết vệt lưới xám mảnh trên mô hình
+ *    (meshopt), bỏ dữ liệu thừa; tô kín khe giữa các mảnh ảnh trước và sau khi giảm (hết vệt lưới xám mảnh trên mô hình
  *    HY 3D; tắt riêng: "sua-vet-nut": false); tệp động tác chỉ giữ phần chuyển động
  * 4. Ghi vào src/assets/models/ai/<khóa>.glb, <khóa>@<động tác>.glb  +  config.json (từ mo-hinh-ai/cau-hinh.json),
  *    GHI-CONG.md (bảng ghi công) và .tao-tu-dong.txt (danh sách tệp do công cụ tạo)
@@ -466,8 +466,9 @@ function simplifyMesh(ratio) {
  * và thu nhỏ ảnh, mép mảnh lấy nhầm màu khe → vệt lưới xám mảnh trên mô hình. Mọi điểm ảnh nằm ngoài tất cả tam giác
  * UV (của mọi lưới dùng ảnh đó) được tô bằng màu của điểm ảnh gần nhất nằm trong mảnh; điểm ảnh trong mảnh giữ
  * nguyên từng byte. Chạy trên ảnh gốc và ghi lại PNG (không mất dữ liệu). Trả về số ảnh đã sửa.
+ * Gọi 2 lần: trước khi giảm lưới (theo mọi tam giác gốc) và sau khi giảm (theo tam giác còn lại; quiet: không báo lại).
  */
-async function padUvGaps(doc) {
+async function padUvGaps(doc, { quiet = false } = {}) {
   const users = new Map(); // ảnh → [{ prim, tc }]
   const why = new Map(); // ảnh → lý do không sửa được an toàn
   for (const mesh of doc.getRoot().listMeshes()) {
@@ -540,7 +541,7 @@ async function padUvGaps(doc) {
   let fixed = 0;
   for (const [tex, list] of users) {
     const name = tex.getName() || tex.getURI() || `ảnh số ${doc.getRoot().listTextures().indexOf(tex) + 1}`;
-    const skip = (reason) => console.log(`  ⚠ Sửa vệt nứt: bỏ qua ${name} (${reason}).`);
+    const skip = (reason) => quiet || console.log(`  ⚠ Sửa vệt nứt: bỏ qua ${name} (${reason}).`);
     if (why.has(tex)) {
       skip(why.get(tex));
       continue;
@@ -834,7 +835,8 @@ async function main() {
       doc.getRoot().listAnimations()[0].setName('idle');
       clips[0] = `${clips[0]} → đứng yên`;
     }
-    if ((seamFix[key] ?? seamFix[key.split(OUTFIT_SEP)[0]]) !== false) {
+    const seamOn = (seamFix[key] ?? seamFix[key.split(OUTFIT_SEP)[0]]) !== false;
+    if (seamOn) {
       const n = await padUvGaps(doc);
       if (n) console.log(`  ℹ Sửa vệt nứt: tô kín khe giữa các mảnh ảnh (${n} ảnh).`);
     }
@@ -845,6 +847,9 @@ async function main() {
     const reduce = Boolean(ratio && ratio < 1);
     if (reduce) steps.push(dequantize(), weld(), simplifyMesh(ratio));
     await doc.transform(...steps);
+    // Tô lại lần 2 theo các mảnh UV còn dùng sau khi giảm: mảnh tí hon không còn tam giác nào (chấm màu áo, giày
+    // nằm sát mép tóc) bị tô đè bằng màu mảnh gần nhất → hết vệt màu ở ảnh thu nhỏ (mipmap) khi nhìn từ xa.
+    if (seamOn && reduce) await padUvGaps(doc, { quiet: true });
     // Bé, bộ đồ: dò xương trên lưới đã giảm (trước khi nén), ghi trọng số vào tệp.
     if (isKidKey(key) && !skins) {
       const r = await bakeKid(doc, cfgFor(key).rotY ?? 0);
