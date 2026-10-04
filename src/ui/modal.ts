@@ -1,6 +1,7 @@
 import { sfx } from '../core/audio';
 import { button, h, type Child } from './dom';
 import { layer, popBlock, pushBlock } from './root';
+import { dismissToasts } from './toast';
 
 export interface ModalOpts {
   title: string;
@@ -101,6 +102,7 @@ window.addEventListener('keydown', (e) => {
 
 /** Hộp xác nhận Có/Không. `focus`: nút được chọn sẵn – bấm Enter là bấm nút đó. */
 export function confirmBox(text: Child, opts: { title?: string; icon?: string; yes?: string; no?: string; focus?: 'yes' | 'no' } = {}): Promise<boolean> {
+  dismissToasts();
   return new Promise((resolve) => {
     let answer = false;
     const no = button(opts.no ?? 'Không', () => m.close(), 'btn-soft');
@@ -126,6 +128,7 @@ export function confirmBox(text: Child, opts: { title?: string; icon?: string; y
 }
 
 export function alertBox(title: string, text: Child, icon = '💬', ok = 'Đã hiểu'): Promise<void> {
+  dismissToasts();
   const m = openModal({
     title,
     icon,

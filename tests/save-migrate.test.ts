@@ -386,6 +386,30 @@ describe('nhập tệp trùng hồ sơ đã có trên máy: hỏi lại, so sán
   }
   const onDevice = (id: string) => [storage.get(`p.${id}`), storage.get('profiles')];
 
+  it('máy mới chưa có hồ sơ nào (chưa có cả danh sách hồ sơ): nhập luôn, không hỏi; hồ sơ hiện ở danh sách, chơi đúng số xu trong tệp', async () => {
+    const index = storage.get('profiles');
+    try {
+      // Máy cũ: xuất hồ sơ rồi xóa khỏi máy này → giả lập máy mới (chưa từng có hồ sơ nào).
+      const src = oldSave({ coins: 123 });
+      store(src);
+      const file = exportProfile(src.id);
+      deleteProfile(src.id);
+      storage.remove('profiles');
+      expect(listProfiles()).toEqual([]);
+      const a = answer(false);
+      const done = await importBackup(file, a.ask);
+      expect(a.seen).toHaveLength(0);
+      expect(done).toMatchObject({ device: null, playing: false, older: false });
+      expect(listProfiles().map((s) => [s.id, s.name, s.grade, s.stars])).toEqual([[src.id, src.name, 2, 12]]);
+      expect(loadProfile(src.id)).toMatchObject({ id: src.id, name: src.name });
+      expect(profile().coins).toBe(123);
+    } finally {
+      unloadProfile();
+      if (index === null) storage.remove('profiles');
+      else storage.set('profiles', index);
+    }
+  });
+
   it('hồ sơ chưa có trên máy: nhập luôn, không hỏi', async () => {
     const fresh = oldSave();
     const a = answer(false);

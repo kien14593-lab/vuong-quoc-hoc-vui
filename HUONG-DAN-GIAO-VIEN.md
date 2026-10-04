@@ -1,7 +1,7 @@
 # 👩‍🏫 Hướng dẫn cho giáo viên – Vương Quốc Học Vui
 
 Tài liệu ngắn cho thầy cô và phụ huynh: cách để trò chơi đọc to bằng giọng hay nhất trên máy ở trường,
-trên điện thoại và máy tính bảng.
+trên điện thoại và máy tính bảng; cách chuyển hồ sơ của bé sang máy khác.
 
 ## 🗣️ Giọng đọc
 
@@ -63,3 +63,17 @@ nếu cần.
 - Kiểm tra ⚙️ Cài đặt → 🗣️ Đọc câu hỏi đang **bật**, bấm **Nghe thử**.
 - Cửa sổ xem trước trong một số ứng dụng (không phải trình duyệt) không có giọng tiếng Việt – hãy mở bằng Edge,
   Chrome hoặc Safari.
+
+## 💾 Chuyển hồ sơ sang máy khác
+
+Tiến độ của bé lưu riêng trên từng máy, từng trình duyệt (bản web và tệp `VuongQuocHocVui.html` cũng lưu riêng).
+Muốn chơi tiếp ở máy khác (máy ở trường ↔ máy tính bảng ở nhà) hoặc gửi hồ sơ của bé cho cô:
+
+1. **Máy cũ:** 👪 Góc phụ huynh → **Quản lý** → **Xuất hồ sơ JSON**. Gửi tệp `.json` vừa tải về sang máy mới
+   (Zalo, e-mail, USB…).
+2. **Máy mới:** 👪 Góc phụ huynh → **Nhập hồ sơ JSON** → chọn tệp. Máy **chưa có hồ sơ nào** vẫn nhập được: nút
+   hiện ngay sau câu hỏi kiểm tra người lớn, không cần tạo hồ sơ tạm. Máy đã có hồ sơ thì nút ở thẻ **Quản lý**.
+3. Ở màn hình chính bấm **▶ Chơi** → chọn hồ sơ của bé để chơi tiếp.
+
+Máy đã có hồ sơ của chính bé đó thì game hỏi lại trước, kèm bảng so sánh "Trên máy này" / "Trong tệp". Tệp **cũ hơn**
+bản trên máy thì có lời cảnh báo – bấm **Thôi** để giữ bản trên máy.

@@ -96,13 +96,14 @@ function showGate(): void {
   setTimeout(() => input.focus(), 50);
 }
 
-function showDashboard(): void {
+/** `focusId`: hồ sơ mở sẵn (vd. hồ sơ vừa nhập); không có → hồ sơ đang chơi, hoặc hồ sơ chơi gần nhất. */
+function showDashboard(focusId?: string): void {
   const profiles = listProfiles();
   if (!profiles.length) {
-    void alertBox('Góc phụ huynh', 'Chưa có hồ sơ học tập nào để xem.', '👪');
+    showEmpty();
     return;
   }
-  const currentId = hasProfile() ? profile().id : profiles[0].id;
+  const currentId = focusId ?? (hasProfile() ? profile().id : profiles[0].id);
   activeProfile = liveProfile(currentId) ?? liveProfile(profiles[0].id);
   activeTab = 'overview';
   headerEl = h('div.dash-header');
@@ -117,6 +118,56 @@ function showDashboard(): void {
     body: h('div.dashboard', h('aside.dash-sidebar', headerEl, railEl), contentEl),
   });
   renderAll();
+}
+
+/**
+ * Máy chưa có hồ sơ nào (máy mới): mời nhập tệp hồ sơ xuất từ máy khác – không phải tạo hồ sơ tạm trước.
+ * Nhập xong → mở góc phụ huynh ở hồ sơ vừa nhập. Tệp hỏng → báo lỗi, hộp này vẫn mở để chọn tệp khác.
+ * Không chọn sẵn nút nào: cổng xác nhận mở hộp này bằng phím Enter, chọn sẵn nút "Nhập" thì cũng phím Enter đó sẽ bấm luôn nút.
+ */
+function showEmpty(): void {
+  const fileInput = profileFileInput((p) => {
+    box.close();
+    showDashboard(p.id);
+  });
+  const box = openModal({
+    title: 'Góc phụ huynh',
+    icon: '👪',
+    width: 820,
+    className: 'dashboard-empty modal-small',
+    body: h('div', h('p.confirm-text', 'Chưa có hồ sơ học tập nào trên máy này. Nếu bé đã chơi ở máy khác, hãy nhập tệp hồ sơ (.json) xuất từ máy đó.'), fileInput),
+    footer: [button('Đóng', () => box.close(), 'btn-soft'), button('📥 Nhập hồ sơ JSON', () => fileInput.click(), 'btn-primary')],
+  });
+}
+
+/**
+ * Ô chọn tệp hồ sơ (ẩn), dùng chung cho thẻ "Quản lý" và hộp "máy chưa có hồ sơ". Trùng hồ sơ đã có trên máy → hỏi lại;
+ * thay hồ sơ đang chơi → về màn hình chính; còn lại → `onImported` rồi báo nhập thành công.
+ */
+function profileFileInput(onImported: (p: Profile) => void): HTMLInputElement {
+  const fileInput = h<HTMLInputElement>('input.dash-file-hidden', { type: 'file', accept: 'application/json,.json' });
+  fileInput.addEventListener('change', async () => {
+    const file = fileInput.files?.[0];
+    // Chọn lại đúng tệp đó (sau khi bấm "Thôi" hay gặp tệp hỏng) vẫn phải đọc lại.
+    fileInput.value = '';
+    if (!file) return;
+    let done: ImportCheck | null;
+    try {
+      done = await importBackup(await file.text(), askImport);
+    } catch (err) {
+      void alertBox('Không nhập được hồ sơ', err instanceof Error ? err.message : 'Tệp không hợp lệ.', '⚠️');
+      return;
+    }
+    if (!done) return;
+    if (done.playing) {
+      nav.title();
+      toast('Đã nhập hồ sơ. Chọn hồ sơ để chơi tiếp nhé!', { icon: '✓', tone: 'good' });
+      return;
+    }
+    onImported(done.profile);
+    toast('Đã nhập hồ sơ thành công.', { icon: '✓', tone: 'good' });
+  });
+  return fileInput;
 }
 
 function renderAll(): void {
@@ -253,27 +304,8 @@ function renderActivity(p: Profile): HTMLElement {
 
 function renderManage(p: Profile): HTMLElement {
   const gradeSelect = h<HTMLSelectElement>('select.dash-select', {}, ...([1, 2, 3, 4, 5] as Grade[]).map((g) => h('option', { value: String(g), selected: g === p.grade }, GRADE_NAMES[g])));
-  const fileInput = h<HTMLInputElement>('input.dash-file-hidden', { type: 'file', accept: 'application/json,.json' });
-  fileInput.addEventListener('change', async () => {
-    const file = fileInput.files?.[0];
-    // Chọn lại đúng tệp đó (sau khi bấm "Thôi") vẫn phải hỏi lại.
-    fileInput.value = '';
-    if (!file) return;
-    let done: ImportCheck | null;
-    try {
-      done = await importBackup(await file.text(), askImport);
-    } catch (err) {
-      void alertBox('Không nhập được hồ sơ', err instanceof Error ? err.message : 'Tệp không hợp lệ.', '⚠️');
-      return;
-    }
-    if (!done) return;
-    if (done.playing) {
-      nav.title();
-      toast('Đã nhập hồ sơ. Chọn hồ sơ để chơi tiếp nhé!', { icon: '✓', tone: 'good' });
-      return;
-    }
-    activeProfile = done.profile;
-    toast('Đã nhập hồ sơ thành công.', { icon: '✓', tone: 'good' });
+  const fileInput = profileFileInput((imported) => {
+    activeProfile = imported;
     renderAll();
   });
   const changeGrade = async () => {

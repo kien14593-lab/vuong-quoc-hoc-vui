@@ -39,6 +39,10 @@ Câu hỏi tự điều chỉnh độ khó theo lớp và theo kết quả làm 
   Hồ sơ chưa có trên máy thì nhập luôn, không hỏi.
   Khi đang chơi mà nhập tệp của **chính hồ sơ đang chơi**, đặt lại tiến độ hoặc xóa hồ sơ đó,
   game tự về màn hình chính để tải lại hồ sơ cho đúng.
+- **Chuyển hồ sơ sang máy khác:** máy cũ: Góc phụ huynh → Quản lý → **Xuất hồ sơ JSON**; máy mới: Góc phụ huynh →
+  **Nhập hồ sơ JSON**. Máy mới **chưa có hồ sơ nào** vẫn nhập được ngay (nút hiện ngay sau câu hỏi kiểm tra người
+  lớn), không cần tạo hồ sơ tạm; nhập xong bấm **▶ Chơi** ở màn hình chính để chơi tiếp. Các bước chi tiết:
+  **[HUONG-DAN-GIAO-VIEN.md](HUONG-DAN-GIAO-VIEN.md)**.
 
 ### 🗣️ Giọng đọc
 

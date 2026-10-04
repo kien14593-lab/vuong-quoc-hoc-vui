@@ -20,6 +20,13 @@ export function toast(text: string, opts: { icon?: Child; tone?: 'info' | 'good'
   })();
 }
 
+/** Bỏ ngay mọi thông báo đang hiện – gọi khi mở hộp hỏi lại / hộp báo, để thông báo không che tiêu đề hay nút của hộp. */
+export function dismissToasts(): void {
+  layer('toast')
+    .querySelectorAll('.toast')
+    .forEach((el) => el.remove());
+}
+
 /** Phần thưởng bay lên giữa màn hình: "+10 XP", "+3 xu"... */
 export function rewardBurst(parts: { icon: Child; text: string; cls?: string }[], at?: { x: number; y: number }): void {
   if (!parts.length) return;
