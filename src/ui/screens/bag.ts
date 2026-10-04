@@ -113,7 +113,7 @@ export function openBag(start: Tab = 'wear'): void {
     kidsEl.replaceChildren(
       ...KIDS.map((k) =>
         h(
-          `button.bag-kid${k === cur ? '.on' : ''}`,
+          `button.bag-kid.${k}${k === cur ? '.on' : ''}`,
           {
             type: 'button',
             onclick: () => {

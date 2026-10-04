@@ -314,6 +314,11 @@
   transform: translateY(-3px);
 }
 
+.bag-kid.trai.on {
+  background: var(--blue-l);
+  border-color: #2e86c9;
+}
+
 .bag-subtabs {
   display: flex;
   flex-wrap: wrap;

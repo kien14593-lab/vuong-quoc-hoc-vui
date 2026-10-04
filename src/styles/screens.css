@@ -302,6 +302,17 @@
   color: #e05584;
 }
 
+/* Bé trai được chọn: viền xanh dương (bé gái giữ màu hồng ở trên). */
+.cr-kid.trai.on {
+  border-color: #2e86c9;
+  background: var(--blue-l);
+  box-shadow: 0 0 0 8px rgba(126, 200, 227, 0.55), var(--shadow-s);
+}
+
+.cr-kid.trai.on .cr-kid-name::before {
+  color: #2e86c9;
+}
+
 @keyframes idle-bob {
   50% {
     translate: 0 -6px;
