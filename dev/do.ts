@@ -14,6 +14,7 @@ import { animateRig, rigOf, type AnimState, type Rig } from '../src/models/rig';
  * Thử đồ cho bé AI (dành cho phát triển): lưới ảnh bé trai / bé gái đeo từng món, nhìn trước / nghiêng / sau.
  *  kids=trai,gai          bé nào
  *  items=all              mũ, balo, phụ kiện (cả món ẩn) – hoặc hat | backpack | acc | danh sách mã (none = không đeo gì)
+ *                         đeo nhiều món cùng lúc: ghép bằng "+" (vd hat_wizard+bag_rocket+acc_cape)
  *  views=0,90,180         góc nhìn (độ: 0 trước, 90 nghiêng trái, 180 sau)
  *  anim=idle|walk|run|wave|air|happy|ride|talk   f=0 (thời điểm trong một chu kỳ, 0..1)
  *  outfit=outfit_the_thao bộ đồ (bé chưa có thì mặc đồ thường ngày)
@@ -74,9 +75,11 @@ function items(): string[] {
 
 function equipFor(id: string): Partial<Equipped> {
   const eq: Partial<Equipped> = OUTFIT ? { outfit: OUTFIT } : {};
-  const d = ITEMS.find((x) => x.id === id);
-  const slot = d && SLOT[d.cat];
-  if (slot) (eq as Record<string, string | null>)[slot] = id;
+  for (const one of id.split(/[+\s]+/)) {
+    const d = ITEMS.find((x) => x.id === one);
+    const slot = d && SLOT[d.cat];
+    if (slot) (eq as Record<string, string | null>)[slot] = one;
+  }
   return eq;
 }
 
@@ -192,11 +195,13 @@ function grid(): void {
       scene.remove(p.root);
       disposeTree(p.root);
     }
-    const d = ITEMS.find((x) => x.id === id);
-    g.fillStyle = '#263238';
-    g.fillText(id, 6, TH + row * ch + 22);
-    g.fillStyle = '#607d8b';
-    g.fillText(d?.name ?? 'không đeo gì', 6, TH + row * ch + 40);
+    id.split(/[+\s]+/).forEach((one, i) => {
+      const y = TH + row * ch + i * 38;
+      g.fillStyle = '#263238';
+      g.fillText(one, 6, y + 22);
+      g.fillStyle = '#607d8b';
+      g.fillText(ITEMS.find((x) => x.id === one)?.name ?? 'không đeo gì', 6, y + 40);
+    });
     g.strokeStyle = '#d0d7d3';
     g.strokeRect(0.5, TH + row * ch + 0.5, out.width - 1, ch - 1);
     row++;
