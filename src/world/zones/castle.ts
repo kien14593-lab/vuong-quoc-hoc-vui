@@ -421,7 +421,8 @@ export class CastleZone extends Zone {
       for (let i = 0; i < 5; i++) {
         const topic = topics[(Math.floor(this.rnd() * topics.length) + i) % topics.length];
         const q = adaptiveQuestion(topic, { levelDelta: 1, theme: { who: 'Nhà Vua', item: 'viên sao', unit: 'viên', emoji: '⭐' } });
-        await this.quiz(q, { src: `castle:king:${i}`, speaker: CAST.vua, title: `Thử thách Nhà Vua ${i + 1}/5`, icon: '👑' }, [KING_SPOT.x, KING_SPOT.y + 2.0, KING_SPOT.z], 13);
+        // Ngắm ngang ngực vua để mặt, râu và cổ áo hiện trọn phía trên thẻ câu hỏi (cả màn hình điện thoại xoay ngang).
+        await this.quiz(q, { src: `castle:king:${i}`, speaker: CAST.vua, title: `Thử thách Nhà Vua ${i + 1}/5`, icon: '👑' }, [KING_SPOT.x, KING_SPOT.y + 1.0, KING_SPOT.z], 13);
         this.king.actor.celebrate(0.8);
       }
       setFlag('castle.king');
