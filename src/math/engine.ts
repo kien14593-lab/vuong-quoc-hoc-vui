@@ -3,12 +3,12 @@ import { genArea, genGeometry, genPerimeter } from './gen/geometry';
 import { genDecimal, genFraction, genRatio, genWord } from './gen/advanced';
 import { genLength, genMoney, genTime } from './gen/measure';
 import { TOPICS } from './curriculum';
-import type { GenOptions, Question, Topic } from './types';
+import type { GenOptions, MathTopic, Question, Topic } from './types';
 import { rand } from './util';
 
 export type Gen = (level: number, o: GenOptions) => Question;
 
-export const GENERATORS: Record<Topic, Gen> = {
+export const GENERATORS: Record<MathTopic, Gen> = {
   count: genCount,
   compare: genCompare,
   add: genAdd,
@@ -42,7 +42,7 @@ export function sanitize(q: Question): Question {
   return { ...q, choices };
 }
 
-export function generate(topic: Topic, level: number, o: GenOptions): Question {
+export function generate(topic: MathTopic, level: number, o: GenOptions): Question {
   const lv = Math.max(1, Math.min(TOPICS[topic].maxLevel, Math.round(level)));
   return sanitize(GENERATORS[topic](lv, o));
 }
@@ -54,7 +54,7 @@ export function isCorrect(q: Question, value: string): boolean {
 }
 
 /** Chọn chủ đề có trọng số (ưu tiên chủ đề yếu). */
-export function pickTopic(topics: Topic[], weights?: Partial<Record<Topic, number>>): Topic {
+export function pickTopic<T extends Topic>(topics: T[], weights?: Partial<Record<Topic, number>>): T {
   const R = rand();
   if (!weights) return R.pick(topics);
   const ws = topics.map((t) => Math.max(0.05, weights[t] ?? 1));

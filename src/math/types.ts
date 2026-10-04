@@ -1,6 +1,14 @@
 export type Grade = 1 | 2 | 3 | 4 | 5;
 
-export type Topic =
+/** Môn học của một câu hỏi. */
+export type Subject = 'math' | 'english';
+
+/** Chủ đề Tiếng Anh (bộ câu hỏi ở src/english/). */
+export type EnTopic = 'en_vocab' | 'en_listen' | 'en_phonics' | 'en_spell' | 'en_sentence' | 'en_numbers' | 'en_time';
+
+export type Topic = MathTopic | EnTopic;
+
+export type MathTopic =
   | 'count'
   | 'compare'
   | 'add'
@@ -50,7 +58,13 @@ export type Visual =
   | { kind: 'ruler'; length: number; object: 'pencil' | 'crayon' | 'ribbon' }
   | { kind: 'lengths'; items: { name: string; length: number; color: string }[] }
   | { kind: 'ratio'; a: { emoji: string; count: number }; b: { emoji: string; count: number } }
-  | { kind: 'grid100'; tenths: number; hundredths: number };
+  | { kind: 'grid100'; tenths: number; hundredths: number }
+  /** Hình lớn (emoji) kèm chú thích tiếng Việt; `hex` = ô màu (câu hỏi màu sắc). */
+  | { kind: 'picture'; emoji?: string; caption?: string; hex?: string }
+  /** Thẻ "Nghe" lớn: bấm để nghe lại phần tiếng Anh (`Question.en`). */
+  | { kind: 'listen' }
+  /** Các ô chữ cái; `null` = ô trống cần điền. */
+  | { kind: 'letters'; tiles: (string | null)[]; emoji?: string; caption?: string };
 
 export type ShapeName =
   | 'circle'
@@ -83,6 +97,13 @@ export interface Question {
   hint: string;
   /** Lời giải từng bước dùng khi trả lời sai lần 3. */
   steps: string[];
+  /**
+   * Câu hỏi Tiếng Anh: phần tiếng Anh (từ hoặc câu đầy đủ, đã điền đáp án) – đọc bằng giọng tiếng Anh
+   * khi bấm thẻ Nghe và sau khi trả lời đúng. Trong `prompt`/`speech`/`hint`, phần tiếng Anh được đặt trong «…».
+   */
+  en?: string;
+  /** Câu hỏi nghe: phần tiếng Anh không hiện trên màn hình, chỉ được đọc to. */
+  listen?: boolean;
 }
 
 export interface GenOptions {

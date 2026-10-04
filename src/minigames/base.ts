@@ -10,7 +10,7 @@ import { cancelOwner, tween, type Handle, type TweenOpts } from '../engine/tween
 import { AttemptTracker, adaptiveQuestion, finishQuestion, mixedQuestion, type SubmitResult } from '../game/challenge';
 import { pickTopic } from '../math/engine';
 import { makeQ } from '../math/util';
-import type { Grade, Question, Topic, WordTheme } from '../math/types';
+import type { Grade, MathTopic, Question, Topic, WordTheme } from '../math/types';
 import { buildModel, collectTicks } from '../models/registry';
 import { animateRig, rigOf, type AnimState, type Rig } from '../models/rig';
 import { MiniUI } from './ui';
@@ -28,7 +28,7 @@ export interface MiniInfo {
   /** Kỹ năng luyện tập (hiển thị), ví dụ "Cộng / trừ". */
   skill: string;
   /** Các chủ đề toán được dùng (để sinh câu hỏi và cho bảng phụ huynh). */
-  topics: Topic[];
+  topics: MathTopic[];
   /** Cách chơi – 1–2 câu ngắn cho trẻ. */
   desc: string;
   /** Số vòng mỗi lượt chơi. */
@@ -347,14 +347,14 @@ export abstract class MiniGame implements Stage {
   }
 
   /** Câu hỏi thích ứng theo năng lực, trong các chủ đề của trò chơi (hoặc chủ đề chỉ định). */
-  question(topics: Topic | Topic[] = this.info.topics, theme?: WordTheme): Question {
+  question(topics: MathTopic | MathTopic[] = this.info.topics, theme?: WordTheme): Question {
     const list = Array.isArray(topics) ? topics : [topics];
     if (list.length === 1) return adaptiveQuestion(list[0], { theme });
     return mixedQuestion(list, theme);
   }
 
   /** Chọn một chủ đề trong danh sách (ngẫu nhiên, ưu tiên đều). */
-  pickTopic(topics: Topic[] = this.info.topics): Topic {
+  pickTopic(topics: MathTopic[] = this.info.topics): MathTopic {
     return pickTopic(topics);
   }
 

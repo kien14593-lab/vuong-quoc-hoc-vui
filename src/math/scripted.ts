@@ -2,7 +2,7 @@
  * Các câu hỏi cố định lấy đúng theo kịch bản (dùng cho lớp 1–2),
  * và bảng chủ đề thay thế để sinh câu hỏi phù hợp cho lớp 3–5.
  */
-import type { GenOptions, Grade, Question, Topic } from './types';
+import type { GenOptions, Grade, MathTopic, Question } from './types';
 import { MINUS, TIMES, fmt, makeQ, numChoices, choiceCount, rand } from './util';
 import { addSteps, mulSteps, subSteps } from './gen/arith';
 
@@ -155,7 +155,7 @@ const SCRIPTED: Record<BeatId, (o: GenOptions) => Question> = {
 };
 
 /** Chủ đề dùng để sinh câu hỏi cho lớp 3, 4, 5 tại mỗi tình huống. */
-const BEAT_TOPICS: Record<BeatId, [Topic, Topic, Topic]> = {
+const BEAT_TOPICS: Record<BeatId, [MathTopic, MathTopic, MathTopic]> = {
   villageBoxes: ['count', 'count', 'count'],
   shopFruit: ['money', 'money', 'money'],
   forestBridge: ['add', 'fraction', 'decimal'],
@@ -171,8 +171,8 @@ const BEAT_TOPICS: Record<BeatId, [Topic, Topic, Topic]> = {
   penguins: ['mul', 'area', 'area'],
 };
 
-export function beatTopic(beat: BeatId, grade: Grade): Topic {
-  if (grade <= 2) return SCRIPTED[beat]({ grade }).topic;
+export function beatTopic(beat: BeatId, grade: Grade): MathTopic {
+  if (grade <= 2) return SCRIPTED[beat]({ grade }).topic as MathTopic;
   return BEAT_TOPICS[beat][grade - 3];
 }
 

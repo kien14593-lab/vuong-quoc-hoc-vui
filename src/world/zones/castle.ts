@@ -5,7 +5,7 @@ import { CAST, villager } from '../../game/cast';
 import { adaptiveQuestion, mixedQuestion } from '../../game/challenge';
 import { checkBadges, on, reward } from '../../game/story';
 import { GRADE_TOPICS } from '../../math/curriculum';
-import type { Question, Topic } from '../../math/types';
+import type { MathTopic, Question } from '../../math/types';
 import { say } from '../../ui/dialog';
 import { toast } from '../../ui/toast';
 import { Zone, type Npc, type PickSpot, type Spawn } from '../zone';
@@ -305,9 +305,9 @@ export class CastleZone extends Zone {
     setFlag('castle.intro');
   }
 
-  private roomTopics(id: RoomId): Topic[] {
+  private roomTopics(id: RoomId): MathTopic[] {
     const grade = profile().grade;
-    const wanted: Record<RoomId, Partial<Record<typeof grade, Topic[]>>> = {
+    const wanted: Record<RoomId, Partial<Record<typeof grade, MathTopic[]>>> = {
       mul: { 1: ['add'], 2: ['mul'], 3: ['mul', 'div'], 4: ['mul', 'div'], 5: ['mul', 'div'] },
       frac: { 1: ['compare'], 2: ['div'], 3: ['fraction'], 4: ['fraction', 'decimal'], 5: ['fraction', 'decimal'] },
       geo: { 1: ['geometry'], 2: ['geometry'], 3: ['perimeter', 'area', 'geometry'], 4: ['perimeter', 'area', 'geometry'], 5: ['perimeter', 'area', 'geometry'] },
@@ -316,7 +316,7 @@ export class CastleZone extends Zone {
     return (wanted[id][grade] ?? ['geometry']).filter((t) => allowed.has(t));
   }
 
-  private pickTopic(id: RoomId, step = 0): Topic {
+  private pickTopic(id: RoomId, step = 0): MathTopic {
     const topics = this.roomTopics(id);
     return topics[step % Math.max(1, topics.length)] ?? GRADE_TOPICS[profile().grade][0];
   }

@@ -3,7 +3,7 @@ import { profile, recordAnswer, skill, type AnswerResult } from '../core/state';
 import { GRADE_TOPICS, TOPICS } from '../math/curriculum';
 import { generate, isCorrect, pickTopic, sanitize } from '../math/engine';
 import { ballsQuestion, beatTopic, scripted, usesScripted, type BeatId } from '../math/scripted';
-import type { Question, Topic, WordTheme } from '../math/types';
+import type { MathTopic, Question, Topic, WordTheme } from '../math/types';
 import { coinIcon } from '../ui/icons';
 import { rewardBurst, toast } from '../ui/toast';
 
@@ -53,7 +53,7 @@ export class AttemptTracker {
 }
 
 /* ---------------- Sinh câu hỏi ---------------- */
-export function adaptiveQuestion(topic: Topic, o: { theme?: WordTheme; levelDelta?: number; level?: number } = {}): Question {
+export function adaptiveQuestion(topic: MathTopic, o: { theme?: WordTheme; levelDelta?: number; level?: number } = {}): Question {
   const s = skill(topic);
   const lv = o.level ?? s.level + (o.levelDelta ?? 0);
   return generate(topic, lv, { grade: profile().grade, support: s.support, theme: o.theme });
@@ -82,7 +82,7 @@ export function topicWeights(topics: Topic[]): Partial<Record<Topic, number>> {
   return w;
 }
 
-export function mixedQuestion(topics?: Topic[], theme?: WordTheme): Question {
+export function mixedQuestion(topics?: MathTopic[], theme?: WordTheme): Question {
   const list = topics && topics.length ? topics : GRADE_TOPICS[profile().grade];
   return adaptiveQuestion(pickTopic(list, topicWeights(list)), { theme });
 }
