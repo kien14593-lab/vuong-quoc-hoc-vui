@@ -12,6 +12,6 @@
   "cun": { "chieu-cao": 0.82, "xoay": 0, "tam-giac": 25000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
   "rua": { "chieu-cao": 1.4, "xoay": 0, "tam-giac": 30000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
   "nai": { "chieu-cao": 1.55, "xoay": 0, "tam-giac": 30000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
-  "be-trai": { "chieu-cao": 1.7, "xoay": 0, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
-  "be-gai": { "chieu-cao": 1.62, "xoay": 0, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" }
+  "be-trai": { "chieu-cao": 1.7, "xoay": 0, "tam-giac": 40000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
+  "be-gai": { "chieu-cao": 1.62, "xoay": 0, "tam-giac": 40000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" }
 }
