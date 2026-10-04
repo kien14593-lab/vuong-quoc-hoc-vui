@@ -36,7 +36,8 @@ vào mục `"nguon"` khi lắp mô hình). Nên đọc điều khoản sử dụ
 - Ảnh tốt: **một nhân vật**, **nhìn thẳng**, **nền trơn**, thấy đủ toàn thân, tay tách khỏi người, hai chân có khe hở.
 - Ảnh hợp lệ: **PNG/JPG/WEBP**, tối đa **10 MB**, mỗi cạnh **512–4096 px**, gần **vuông**.
 - Nhân vật có **nhiều phần màu trắng** (Robot Bíp, Chú Hề Bibo, Nhà Vua…): đổi *"plain white background"* thành
-  *"plain light grey background"* để phần trắng không lẫn vào nền.
+  *"plain light grey background"* để phần trắng không lẫn vào nền. Nhân vật mặc **giáp bạc** (Hiệp Sĩ Thỏ) thì giữ
+  nền trắng – giáp bạc dễ lẫn vào nền xám.
 - **Mẹo để nhân vật mới cùng phong cách với Chú Gấu** (cô đã làm Thỏ Bông và Cô Mèo như vậy): trong **Gemini**, đính kèm ảnh
   mẫu của Gấu (`gau-anh-mau-3.png`) cùng với câu lệnh của nhân vật, thêm vào **đầu** câu lệnh:
   `Use the attached bear only as a style reference (same 3D render style, proportions and soft materials). Draw a new character:`
@@ -153,7 +154,7 @@ xương và động tác thật** (đi, chạy, vẫy tay…).
 **Thứ tự gợi ý** (HY 3D cho khoảng 20 lượt mỗi ngày – nên làm từng con, xem trong trò chơi rồi mới làm tiếp):
 
 1. **Chú Gấu** ✅, **Thỏ Bông** ✅, **Cô Mèo** ✅, **Bác Cú** ✅ (đã xong – Tencent HY 3D).
-2. **Robot Bíp** ✅, **Chú Hề Bibo** ✅, **Bác Voi** ✅, **Nhà Vua** ✅ (đã xong – Tencent HY 3D), Hiệp Sĩ Thỏ.
+2. **Robot Bíp** ✅, **Chú Hề Bibo** ✅, **Bác Voi** ✅, **Nhà Vua** ✅, **Hiệp Sĩ Thỏ** ✅ (đã xong – Tencent HY 3D).
 3. Cô Sóc, Ông Rùa, Bạn Nai (+ thú Sở Thú nếu muốn).
 
 **Không nên thay:**
@@ -250,15 +251,17 @@ Vương miện răng **ngắn, dày** có đá đỏ to, áo choàng chỉ **t�
 A kind, chubby old king (chibi human): fair skin, big shiny eyes, rosy cheeks, friendly smile under a big fluffy white mustache, short round fluffy white beard, short white hair, chunky gold crown with short thick rounded points and a few big round red gems, knee-length purple robe with gold trim, thick puffy white collar, short thick red cape hanging behind him to the knees (not touching the ground), purple trousers, chunky brown boots. Cute chibi 3D cartoon for a kids game: big round head, small round body, short thick limbs, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from body, legs apart, facing front, empty hands, no base, no ground, no shadow. He is a human, not a bear: no fur, no animal ears, no muzzle.
 ```
 
-### 5.9. Hiệp Sĩ Thỏ – giữ các phòng thử thách ở Lâu Đài (một tệp dùng cho mọi hiệp sĩ)
+### 5.9. Hiệp Sĩ Thỏ – giữ các phòng thử thách ở Lâu Đài (một tệp dùng cho mọi hiệp sĩ) ✅ đã có mô hình AI (Tencent HY 3D)
 
 Tệp: `hiep-si-dung.glb` · `hiep-si-noi.glb` · `hiep-si-vay-tay.glb` · `hiep-si-vui.glb`
 
+Tai **dày**, hơi tách nhau (chi tiết mảnh dễ bị thủng khi tạo 3D), mũ **hở mặt** để thấy cả khuôn mặt, giáp **bạc**, **không cầm kiếm, khiên**, ở bước 1 dùng *"plain white background"* (nền trắng) vì giáp bạc dễ lẫn vào nền xám, và ghi rõ *"It is a bunny, not a bear"* vì ảnh mẫu phong cách là chú gấu.
+
 ```text
-A brave bunny knight standing on two legs: cream fur, long ears sticking up out of a shiny silver helmet, silver chest armor with gold trim, blue cape, pink nose, small brown boots. Cute chibi 3D cartoon for a kids game: big round head, small round body, short limbs, big shiny eyes, friendly smile, rosy cheeks, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from body, legs apart, facing front, empty hands, no base, no background.
+A brave, friendly bunny knight standing on two legs: warm cream fur, big shiny eyes, rosy cheeks, pink nose, friendly smile, a rounded open-face matte light silver helmet covering only the top of the head (no visor, whole face visible), two long bunny ears with pink inside standing straight up out of the helmet, slightly apart, thick and soft like a plush toy (not paper-thin), rounded matte light silver chest armor with gold trim and a big gold star in the middle, short thick royal blue cape hanging behind to the knees (not touching the ground), chunky brown boots. Cute chibi 3D cartoon for a kids game: big round head, small round body, short thick limbs, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from body, legs apart, facing front, empty hands, no sword, no shield, no base, no ground, no shadow. It is a bunny, not a bear: no round bear ears.
 ```
 
-> Muốn hiệp sĩ cầm khiên: thay `empty hands` bằng `holding a small round blue shield with a gold star`
+> Muốn hiệp sĩ cầm khiên: thay `empty hands, no sword, no shield` bằng `holding a small thick round blue shield with a gold star`
 > (gắn xương có thể kém chính xác hơn).
 
 ### 5.10. Cô Sóc – Rừng Thông Thái, Mê Cung

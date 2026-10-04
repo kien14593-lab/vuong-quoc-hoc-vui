@@ -9,6 +9,7 @@ Tệp này do `tools/xu-ly-mo-hinh.mjs` tạo tự động.
 | Chú Hề | npc_clown | Tencent HY 3D (hy3d.tencent.ai) | he.glb |
 | Bác Voi | npc_elephant | Tencent HY 3D (hy3d.tencent.ai) | voi.glb |
 | Nhà Vua | npc_king | Tencent HY 3D (hy3d.tencent.ai) | vua.glb |
+| Hiệp Sĩ Thỏ | npc_knight | Tencent HY 3D (hy3d.tencent.ai) | hiep-si.glb |
 | Bác Cú | npc_owl | Tencent HY 3D (hy3d.tencent.ai) | cu.glb |
 | Thỏ Bông | npc_rabbit | Tencent HY 3D (hy3d.tencent.ai) | tho.glb |
 | Robot Bíp | npc_robot | Tencent HY 3D (hy3d.tencent.ai) | robot.glb |

@@ -7,7 +7,8 @@
  * 1. Đọc mọi tệp .glb trong thư mục mo-hinh-ai/  (vd. gau.glb, gau-di.glb, gau@vay-tay.glb)
  * 2. Nhận tên nhân vật + động tác theo bảng src/assets/models/ai-names.json (tiếng Việt không dấu cũng được)
  * 3. Tối ưu: thu nhỏ ảnh (webp 1024), lưới quá dày (> 60.000 tam giác, vd. 1,5 triệu của HY 3D) tự giảm còn
- *    ~60.000 tam giác, nén lưới (meshopt), bỏ dữ liệu thừa; tệp động tác chỉ giữ phần chuyển động
+ *    ~60.000 tam giác (riêng từng nhân vật: "tam-giac" trong cau-hinh.json), nén lưới (meshopt), bỏ dữ liệu thừa;
+ *    tệp động tác chỉ giữ phần chuyển động
  * 4. Ghi vào src/assets/models/ai/<khóa>.glb, <khóa>@<động tác>.glb  +  config.json (từ mo-hinh-ai/cau-hinh.json),
  *    GHI-CONG.md (bảng ghi công) và .tao-tu-dong.txt (danh sách tệp do công cụ tạo)
  *
@@ -79,7 +80,7 @@ const TEX_SIZE = Number(arg('anh', 1024)) || 1024;
 const REDUCE = arg('giam', null) === null ? null : Number(arg('giam'));
 const DRY = arg('xem', false) === true;
 const GO = argAll('go');
-/** Lưới dày hơn mức này được tự giảm về đúng mức này (vd. HY 3D: 1.500.000 → 60.000 tam giác). */
+/** Lưới dày hơn mức này được tự giảm về đúng mức này (vd. HY 3D: 1.500.000 → 60.000 tam giác). Đổi riêng: "tam-giac". */
 const AUTO_TRI_LIMIT = 60000;
 /** Sai lệch hình dạng tối đa khi giảm lưới (tỉ lệ theo kích thước mô hình: 0,01 = 1%). */
 const SIMPLIFY_ERROR = 0.01;
@@ -145,6 +146,8 @@ const MATERIAL = { mem: 'lambert', 'mem-mai': 'lambert', lambert: 'lambert', 'ho
 
 function convertConfig(raw) {
   const out = {};
+  /** Khóa → số tam giác tối đa riêng ("tam-giac"). Chỉ dùng lúc giảm lưới, không ghi vào config.json của game. */
+  const tris = {};
   const warn = [];
   for (const [name, c] of Object.entries(raw ?? {})) {
     if (name.startsWith('_')) continue;
@@ -165,7 +168,11 @@ function convertConfig(raw) {
         if (m) o.material = m;
         else warn.push(`cau-hinh.json: "${name}" – vật liệu "${v}" không hợp lệ (dùng: mem, hoat-hinh, goc).`);
       } else if (sk === 'nguon' || k === 'credit') o.credit = String(v);
-      else if (sk === 'di-tai-cho' || k === 'inPlace') o.inPlace = Boolean(v);
+      else if (sk === 'tam-giac' || k === 'triangles') {
+        const n = Math.round(Number(v));
+        if (n >= 1000) tris[key] = n;
+        else warn.push(`cau-hinh.json: "${name}" – "tam-giac" phải là số từ 1000 trở lên (vd. 40000) – bỏ qua.`);
+      } else if (sk === 'di-tai-cho' || k === 'inPlace') o.inPlace = Boolean(v);
       else if (sk === 'toc-do-di' || k === 'walkRate') o.walkRate = Number(v);
       else if (sk === 'toc-do-chay' || k === 'runRate') o.runRate = Number(v);
       else if (sk === 'mau' || k === 'colors') o.colors = v;
@@ -182,7 +189,7 @@ function convertConfig(raw) {
     }
     out[key] = { ...out[key], ...o };
   }
-  return { out, warn };
+  return { out, tris, warn };
 }
 
 /* ------------------------------------------------------------------ */
@@ -292,7 +299,7 @@ async function main() {
       process.exitCode = 1;
     }
   }
-  const { out: config, warn: cfgWarn } = convertConfig(cfgRaw);
+  const { out: config, tris: triLimits, warn: cfgWarn } = convertConfig(cfgRaw);
   cfgWarn.forEach((w) => console.log('  ⚠ ' + w));
 
   // Gom theo nhân vật
@@ -411,7 +418,8 @@ async function main() {
     }
     const steps = [dedup(), prune({ keepLeaves: true }), resample()];
     let ratio = REDUCE;
-    if (!ratio && tris > AUTO_TRI_LIMIT) ratio = AUTO_TRI_LIMIT / tris;
+    const triLimit = triLimits[key] ?? AUTO_TRI_LIMIT;
+    if (!ratio && tris > triLimit) ratio = triLimit / tris;
     const reduce = Boolean(ratio && ratio < 1);
     if (reduce) steps.push(dequantize(), weld(), simplifyMesh(ratio));
     steps.push(textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [TEX_SIZE, TEX_SIZE] }), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));

@@ -29,6 +29,12 @@
     "material": "lambert",
     "credit": "Tencent HY 3D (hy3d.tencent.ai)"
   },
+  "npc_knight": {
+    "height": 1.8,
+    "rotY": 0,
+    "material": "lambert",
+    "credit": "Tencent HY 3D (hy3d.tencent.ai)"
+  },
   "npc_owl": {
     "height": 1.6,
     "rotY": 0,

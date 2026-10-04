@@ -383,5 +383,5 @@ reg('npc_clown', buildClown, 1.8, 0.48, 'Chú Hề Bibo: buildCharacter + red no
 reg('npc_elephant', buildElephant, 2.2, 0.7, 'Bác Voi: tai earL/earR, trunk custom sway, mũ/áo keeper.', undefined, { portrait: 'bust' });
 reg('npc_owl', buildOwl, 1.55, 0.5, 'Bác Cú: wings as armL/armR, glasses, mortarboard.');
 reg('npc_king', buildKing, 1.9, 0.55, 'Nhà Vua: buildCharacter crown/cape/beard, scepter.', undefined, { portrait: 'bust' });
-reg('npc_knight', () => buildRabbit(true), 1.5, 0.48, 'Hiệp Sĩ Thỏ: earL/earR, sword, shield, cape, armor.');
+reg('npc_knight', () => buildRabbit(true), 1.5, 0.48, 'Hiệp Sĩ Thỏ: earL/earR, sword, shield, cape, armor.', undefined, { portrait: 'bust' });
 reg('npc_villager', buildVillager, 1.35, 0.44, 'Dân làng thú dễ thương; variants v=0..5: pig, duck, puppy, hamster, frog, chick.', [{ v: 0 }, { v: 1 }, { v: 2 }, { v: 3 }, { v: 4 }, { v: 5 }]);

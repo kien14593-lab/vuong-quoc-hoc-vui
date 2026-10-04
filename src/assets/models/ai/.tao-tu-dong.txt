@@ -6,6 +6,7 @@
     "npc_clown.glb",
     "npc_elephant.glb",
     "npc_king.glb",
+    "npc_knight.glb",
     "npc_owl.glb",
     "npc_rabbit.glb",
     "npc_robot.glb"
@@ -25,6 +26,9 @@
     ],
     "npc_king": [
       "vua.glb"
+    ],
+    "npc_knight": [
+      "hiep-si.glb"
     ],
     "npc_owl": [
       "cu.glb"

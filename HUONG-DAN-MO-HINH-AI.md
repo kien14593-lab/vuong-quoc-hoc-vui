@@ -95,7 +95,8 @@ Nhấp đúp `CapNhatMoHinh.bat`. Công cụ sẽ:
 
 - nhận tên nhân vật/động tác, báo lỗi nếu tên tệp sai;
 - **tối ưu**: thu nhỏ ảnh (WebP 1024 px), nén lưới; mô hình quá nặng (> 60.000 tam giác, vd. 1,5 triệu mặt của
-  HY 3D) được **tự giảm** còn khoảng 60.000 tam giác mà vẫn giữ dáng và độ mịn (tệp 80 MB → dưới 1 MB);
+  HY 3D) được **tự giảm** còn khoảng 60.000 tam giác mà vẫn giữ dáng và độ mịn (tệp 80 MB → dưới 1 MB; đổi riêng
+  từng nhân vật bằng `tam-giac`, mục 4);
 - tệp động tác chỉ giữ phần chuyển động (nhẹ hơn nhiều);
 - chép kết quả vào `src\assets\models\ai\` và tạo bảng ghi công `GHI-CONG.md`;
 - **chỉ làm lại nhân vật có tệp trong `mo-hinh-ai`**: nhân vật đã lắp từ trước (kể cả lắp trên máy khác) được **giữ
@@ -132,6 +133,7 @@ Nếu nhân vật quá to/nhỏ, quay lưng lại, hay màu bị lạ: mở **`m
 | `chieu-cao` | Chiều cao trong game (mét). Bỏ trống = bằng nhân vật có sẵn. |
 | `xoay` | Xoay thêm (độ) nếu nhân vật quay lưng/quay ngang: thử `180`, `90`, `-90`. |
 | `vat-lieu` | `mem` (mặc định – mịn, không bóng, hợp phong cách pastel), `hoat-hinh` (tô bóng kiểu hoạt hình), `goc` (giữ nguyên vật liệu gốc). |
+| `tam-giac` | Số tam giác tối đa khi tự giảm lưới (bỏ trống = 60000). Số nhỏ hơn → tệp nhẹ hơn, trò chơi mượt hơn ở cảnh có nhiều nhân vật AI (vd. Hiệp Sĩ Thỏ dùng `40000` vì Lâu Đài có 3 hiệp sĩ và Nhà Vua). **Chỉ có tác dụng khi `mo-hinh-ai` có tệp gốc** của nhân vật đó. |
 | `nang-len` / `ha-xuong` | Nâng/hạ nhân vật (mét) nếu bị lơ lửng hoặc lún. Riêng Robot Bíp: `nang-len` là độ cao bay (bỏ trống = 0.42 như robot có sẵn), còn `chieu-cao` chỉ tính thân robot. |
 | `toc-do-di`, `toc-do-chay` | Tốc độ phát động tác đi/chạy (1 = bình thường; 1.3 = nhanh hơn). |
 | `an` | Ẩn bớt chi tiết theo tên lưới, vd. `["Sword"]`. |
