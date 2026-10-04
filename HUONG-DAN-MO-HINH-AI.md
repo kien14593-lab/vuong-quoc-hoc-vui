@@ -114,7 +114,8 @@ công cụ lấy tệp "đứng yên" làm mô hình chính. Tệp gộp nhiều
 Nhấp đúp `CapNhatMoHinh.bat`. Công cụ sẽ:
 
 - nhận tên nhân vật/động tác, báo lỗi nếu tên tệp sai;
-- **tối ưu**: thu nhỏ ảnh (WebP 1024 px; đổi riêng từng nhân vật bằng `anh`, mục 4), nén lưới; mô hình quá nặng
+- **tối ưu**: thu nhỏ ảnh (WebP 1024 px; đổi riêng từng nhân vật bằng `anh`, mục 4), nén lưới, bỏ ảnh mà trò chơi
+  không dùng (ảnh kim loại/độ nhám khi `vat-lieu` là `mem` hay `hoat-hinh`); mô hình quá nặng
   (> 60.000 tam giác, vd. 1,5 triệu mặt của HY 3D) được **tự giảm** còn khoảng 60.000 tam giác mà vẫn giữ dáng và độ
   mịn (tệp 80 MB → dưới 1 MB; đổi riêng từng nhân vật bằng `tam-giac`, mục 4);
 - **sửa vệt nứt**: tô kín khe giữa các mảnh ảnh để mô hình không có những vệt lưới xám mảnh (thông báo
@@ -156,8 +157,8 @@ Nếu nhân vật quá to/nhỏ, quay lưng lại, hay màu bị lạ: mở **`m
 |---|---|
 | `chieu-cao` | Chiều cao trong game (mét). Bỏ trống = bằng nhân vật có sẵn. |
 | `xoay` | Xoay thêm (độ) nếu nhân vật quay lưng/quay ngang: thử `180`, `90`, `-90`. |
-| `vat-lieu` | `mem` (mặc định – mịn, không bóng, hợp phong cách pastel), `hoat-hinh` (tô bóng kiểu hoạt hình), `goc` (giữ nguyên vật liệu gốc). |
-| `tam-giac` | Số tam giác tối đa khi tự giảm lưới (bỏ trống = 60000). Số nhỏ hơn → tệp nhẹ hơn, trò chơi mượt hơn ở cảnh có nhiều nhân vật AI (vd. Hiệp Sĩ Thỏ dùng `40000` vì Lâu Đài có 3 hiệp sĩ và Nhà Vua; Ông Rùa và Bạn Nai dùng `30000` để Rừng, Mê Cung và Sở Thú tải nhanh hơn). **Chỉ có tác dụng khi `mo-hinh-ai` có tệp gốc** của nhân vật đó. |
+| `vat-lieu` | `mem` (mặc định – mịn, không bóng, hợp phong cách pastel), `hoat-hinh` (tô bóng kiểu hoạt hình), `goc` (giữ nguyên vật liệu gốc). Với `mem` và `hoat-hinh`, công cụ bỏ ảnh kim loại/độ nhám (trò chơi không dùng) – tệp nhẹ hơn mà nhìn y như cũ; vì vậy muốn đổi một nhân vật đã lắp sang `goc` thì chép lại tệp gốc vào `mo-hinh-ai` rồi chạy lại. |
+| `tam-giac` | Số tam giác tối đa khi tự giảm lưới (bỏ trống = 60000). Số nhỏ hơn → tệp nhẹ hơn, game tải nhanh và mượt hơn. Mỗi nhân vật đã lắp đều có **số riêng – số nhỏ nhất mà nhìn ở góc gần nhất trong game vẫn y như cũ**: Thỏ Bông `15000`; thú cưng `15000`–`25000`; Cô Mèo, Bác Cú, Ông Rùa, Bạn Nai `30000`; Chú Gấu, Robot Bíp, Chú Hề, Bác Voi, Nhà Vua, Hiệp Sĩ Thỏ, bé trai, bé gái `40000` (thấp hơn nữa thì vd. vành mũ Chú Gấu bị nứt, lông mày Nhà Vua bị gợn). Nhân vật mới: thử `30000` rồi xem ảnh chụp gần; thấy vệt nứt, lỗ thủng hay mặt bị gợn thì tăng lên. **Chỉ có tác dụng khi `mo-hinh-ai` có tệp gốc** của nhân vật đó. |
 | `anh` | Cỡ ảnh tối đa (điểm ảnh, bỏ trống = 1024). Nhân vật nhỏ như thú cưng có thể dùng `512`: tệp nhẹ hơn mà nhìn trong game vẫn y hệt. Nếu gõ `--anh` khi chạy công cụ thì `--anh` được ưu tiên. **Chỉ có tác dụng khi `mo-hinh-ai` có tệp gốc**. |
 | `sua-vet-nut` | Sửa những **vệt lưới xám mảnh** (như đường chỉ khâu) trên mô hình HY 3D – **bật sẵn**: công cụ tô kín khe giữa các mảnh ảnh bằng màu ngay bên cạnh, phần hình vẽ giữ nguyên (tệp nặng thêm khoảng 6%). Mô hình được tự giảm lưới thì công cụ tô thêm **lần 2** sau khi giảm (hết chấm màu lạ khi nhìn từ xa) – vì vậy **xử lý lại** một nhân vật đã lắp từ trước sẽ cho ảnh hơi khác bản cũ một chút, sạch vệt hơn: đó là bình thường. Ghi `false` để tắt cho riêng nhân vật đó. **Chỉ có tác dụng khi `mo-hinh-ai` có tệp gốc**. |
 | `nang-len` / `ha-xuong` | Nâng/hạ nhân vật (mét) nếu bị lơ lửng hoặc lún. Riêng Robot Bíp: `nang-len` là độ cao bay (bỏ trống = 0.42 như robot có sẵn), còn `chieu-cao` chỉ tính thân robot. |

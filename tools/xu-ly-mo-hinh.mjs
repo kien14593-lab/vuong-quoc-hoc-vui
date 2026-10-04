@@ -8,7 +8,8 @@
  * 2. Nhận tên nhân vật + động tác theo bảng src/assets/models/ai-names.json (tiếng Việt không dấu cũng được)
  * 3. Tối ưu: thu nhỏ ảnh (webp 1024; riêng từng nhân vật: "anh"), lưới quá dày (> 60.000 tam giác, vd. 1,5 triệu
  *    của HY 3D) tự giảm còn ~60.000 tam giác (riêng từng nhân vật: "tam-giac" trong cau-hinh.json), nén lưới
- *    (meshopt), bỏ dữ liệu thừa; tô kín khe giữa các mảnh ảnh trước và sau khi giảm (hết vệt lưới xám mảnh trên mô hình
+ *    (meshopt, hướng mặt 8 bit), bỏ dữ liệu thừa (vật liệu "mem"/"hoat-hinh": bỏ ảnh kim loại/độ nhám và ảnh che
+ *    sáng – game không dùng); tô kín khe giữa các mảnh ảnh trước và sau khi giảm (hết vệt lưới xám mảnh trên mô hình
  *    HY 3D; tắt riêng: "sua-vet-nut": false); tệp động tác chỉ giữ phần chuyển động
  * 4. Ghi vào src/assets/models/ai/<khóa>.glb, <khóa>@<động tác>.glb  +  config.json (từ mo-hinh-ai/cau-hinh.json),
  *    GHI-CONG.md (bảng ghi công) và .tao-tu-dong.txt (danh sách tệp do công cụ tạo)
@@ -463,6 +464,38 @@ function simplifyMesh(ratio) {
 }
 
 /**
+ * Vật liệu "mem"/"hoat-hinh": game vẽ bằng Lambert/Toon (src/models/glb.ts convertMaterial), không dùng ảnh kim
+ * loại/độ nhám và ảnh che sáng → bỏ hai ảnh đó (nhìn y hệt, tệp nhẹ hơn). Hệ số kim loại về 0 để game vẫn chọn đúng
+ * kiểu vẽ như khi còn ảnh (Phong chỉ dùng khi kim loại > 0.5 mà không có ảnh kim loại). Trả về số ảnh đã bỏ.
+ */
+function dropUnusedPbr(doc) {
+  let n = 0;
+  for (const mat of doc.getRoot().listMaterials()) {
+    if (mat.getMetallicRoughnessTexture()) {
+      mat.setMetallicRoughnessTexture(null).setMetallicFactor(0).setRoughnessFactor(1);
+      n++;
+    }
+    if (mat.getOcclusionTexture()) {
+      mat.setOcclusionTexture(null);
+      n++;
+    }
+  }
+  return n;
+}
+
+/** Tệp .glb (đã lắp) còn ảnh kim loại/độ nhám không – chỉ đọc phần JSON. null = không đọc được. */
+function glbHasMr(p) {
+  try {
+    const b = fs.readFileSync(p);
+    if (b.readUInt32LE(0) !== 0x46546c67) return null;
+    const j = JSON.parse(b.toString('utf8', 20, 20 + b.readUInt32LE(12)));
+    return (j.materials ?? []).some((m) => m.pbrMetallicRoughness?.metallicRoughnessTexture);
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Sửa vệt nứt ("sua-vet-nut", bật sẵn): ảnh của HY 3D có khe tối/mờ giữa các mảnh ảnh (đảo UV); sau khi giảm lưới
  * và thu nhỏ ảnh, mép mảnh lấy nhầm màu khe → vệt lưới xám mảnh trên mô hình. Mọi điểm ảnh nằm ngoài tất cả tam giác
  * UV (của mọi lưới dùng ảnh đó) được tô bằng màu của điểm ảnh gần nhất nằm trong mảnh; điểm ảnh trong mảnh giữ
@@ -795,6 +828,16 @@ async function main() {
     for (const f of KID_INHERIT) if (base[f] !== undefined) inh[f] = base[f];
     return { ...inh, ...own };
   };
+  for (const [key, files] of kept) {
+    const main = files.find((f) => !f.includes('@'));
+    if (!main || cfgFor(key).material !== 'standard' || (prevCfg[key]?.material ?? 'lambert') === 'standard') continue;
+    if (glbHasMr(path.join(OUT_DIR, main)) === false) {
+      console.log(
+        `  ⚠ ${label(key)}: đổi "vat-lieu" sang "goc" – bản đã lắp không còn ảnh kim loại/độ nhám (kiểu "mem"/"hoat-hinh" ` +
+          'không dùng) nên sẽ trông mờ hơn. Chép lại tệp gốc vào mo-hinh-ai rồi chạy lại để có vật liệu gốc đầy đủ.',
+      );
+    }
+  }
   const rigs = new Map(); // khóa bé/bộ đồ -> xương đã dò (lưu vào config.json)
   if (!glbs.length && !GO.length) {
     if (kept.size) console.log('  ℹ Không có tệp .glb mới trong mo-hinh-ai – chỉ cập nhật cấu hình (cau-hinh.json) cho các nhân vật đã lắp.');
@@ -836,6 +879,10 @@ async function main() {
       doc.getRoot().listAnimations()[0].setName('idle');
       clips[0] = `${clips[0]} → đứng yên`;
     }
+    const mode = cfgFor(key).material ?? 'lambert';
+    if (mode !== 'standard' && dropUnusedPbr(doc)) {
+      console.log(`  ℹ Bỏ ảnh kim loại/độ nhám (vật liệu "${mode === 'toon' ? 'hoat-hinh' : 'mem'}" không dùng) – tệp nhẹ hơn, nhìn y như cũ.`);
+    }
     const seamOn = (seamFix[key] ?? seamFix[key.split(OUTFIT_SEP)[0]]) !== false;
     if (seamOn) {
       const n = await padUvGaps(doc);
@@ -858,7 +905,11 @@ async function main() {
     }
     // Bộ đồ dùng cỡ ảnh của bé nếu không ghi riêng.
     const texSize = (!TEX_CLI && (texSizes[key] ?? texSizes[key.split(OUTFIT_SEP)[0]])) || TEX_SIZE;
-    await doc.transform(textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [texSize, texSize] }), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
+    // Hướng mặt 8 bit (mặc định 10 bit, tốn gấp đôi): ảnh chụp gần trong game lệch tối đa 1–2 mức màu – nhìn y hệt.
+    await doc.transform(
+      textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [texSize, texSize] }),
+      meshopt({ encoder: MeshoptEncoder, level: 'medium', quantizeNormal: 8 }),
+    );
     const trisAfter = triangles(doc);
     const outName = `${key}.glb`;
     const outPath = path.join(OUT_DIR, outName);
