@@ -1164,8 +1164,16 @@ export abstract class Zone implements Stage {
     }
     if (!id) return;
     const p = this.player.pos;
-    this.pet = new Follower(id, this.player, { x: p.x - 1, z: p.z + 0.8 });
-    this.scene.add(this.pet.root);
+    const pet = new Follower(id, this.player, { x: p.x - 1, z: p.z + 0.8 });
+    this.pet = pet;
+    this.scene.add(pet.root);
+    // Mạng chậm (mới nhận nuôi, mô hình AI chưa tải): tạm dùng thú dựng bằng code, tải xong thì thay ngay tại chỗ.
+    if (!glbReady([id]))
+      void ensureGlb([id]).then((ok) => {
+        if (!ok || this.disposed || this.pet !== pet || !hasProfile() || profile().equipped.pet !== id) return;
+        const next = buildModel(id);
+        disposeTree(next.userData.glb ? pet.swapModel(next) : next);
+      });
   }
 
   private onLook(): void {

@@ -70,9 +70,45 @@
     "material": "lambert",
     "credit": "Tencent HY 3D (hy3d.tencent.ai)"
   },
+  "pet_cat": {
+    "height": 0.78,
+    "rotY": 35,
+    "material": "lambert",
+    "credit": "Tencent HY 3D (hy3d.tencent.ai)"
+  },
+  "pet_dino": {
+    "height": 0.9,
+    "rotY": -20,
+    "material": "lambert",
+    "credit": "Tencent HY 3D (hy3d.tencent.ai)"
+  },
   "pet_dog": {
     "height": 0.82,
     "rotY": 0,
+    "material": "lambert",
+    "credit": "Tencent HY 3D (hy3d.tencent.ai)"
+  },
+  "pet_fox": {
+    "height": 0.82,
+    "rotY": -40,
+    "material": "lambert",
+    "credit": "Tencent HY 3D (hy3d.tencent.ai)"
+  },
+  "pet_panda": {
+    "height": 0.8,
+    "rotY": 0,
+    "material": "lambert",
+    "credit": "Tencent HY 3D (hy3d.tencent.ai)"
+  },
+  "pet_penguin": {
+    "height": 0.72,
+    "rotY": 0,
+    "material": "lambert",
+    "credit": "Tencent HY 3D (hy3d.tencent.ai)"
+  },
+  "pet_rabbit": {
+    "height": 0.86,
+    "rotY": 90,
     "material": "lambert",
     "credit": "Tencent HY 3D (hy3d.tencent.ai)"
   },

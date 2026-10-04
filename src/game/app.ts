@@ -99,8 +99,11 @@ export async function goZone(id: ZoneId, spawn: Spawn = 'start'): Promise<void> 
   try {
     const meta = ZONE_META[id];
     // Tải mô hình AI của khu vực (và bé – trước nhất) song song với màn mờ dần. (Dựng lỗi thì về làng: mô hình AI của làng đã nạp từ màn tiêu đề.)
+    // Tệp đang tải không cần gấp nữa (ảnh bé ở màn tiêu đề / tạo hồ sơ, ảnh thẻ cửa hàng...) nhường đường cho khu vực sắp vào.
+    // Thú cưng không chờ: tải sau người trong khu vực rồi tự thay ngay tại chỗ (world/zone.ts makePet) – mạng chậm vẫn vào kịp.
+    lowerGlb();
     const me = playerNeed();
-    const models = waitModels(zoneModels(id, hasProfile() ? profile().equipped.pet : null, me), playerModels(me));
+    const models = waitModels(zoneModels(id, null, me), playerModels(me));
     await fade(true, `${meta.icon} ${meta.name}`);
     await models;
     closeAllModals();
@@ -215,8 +218,6 @@ export async function enterWorld(o: EnterOpts = {}): Promise<void> {
     spawn = 'start';
   }
   bindHud();
-  // Ảnh bé ở màn tiêu đề / tạo hồ sơ không cần gấp nữa: nhường đường cho bé và khu vực sắp vào (mạng chậm vào nhanh hơn).
-  lowerGlb();
   await goZone(id, spawn);
   checkBadges();
   // Hồ sơ cũ: báo số xu trả lại cho áo, quần, giày đã bỏ.

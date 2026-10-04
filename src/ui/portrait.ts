@@ -198,3 +198,32 @@ export function setPlayerPortrait(img: HTMLImageElement, kid: Kid, eq: Partial<E
 export function clearPortraits(): void {
   cache.clear();
 }
+
+/**
+ * Đặt chân dung mô hình (thú cưng...) vào thẻ ảnh. Mô hình AI chưa tải xong: vẽ tạm mô hình dựng bằng code và nhấp nháy
+ * nhẹ (lớp `.portrait-wait`), `load` xong thì tự thay bằng mô hình AI. Trả về false nếu không vẽ được.
+ */
+export function setModelPortrait(
+  img: HTMLImageElement,
+  key: string,
+  o: PortraitOpts = {},
+  load: (key: string) => Promise<unknown> = (k) => ensureGlb([k]),
+): boolean {
+  if (!hasModel(key)) return false;
+  const tok = String(++reqSeq);
+  img.dataset.portraitReq = tok;
+  const ready = glbReady([key]);
+  const url = cached(JSON.stringify(['m', key, o]), () => buildModel(key, o.opts ?? {}), o, ready);
+  if (!url) return false;
+  if (img.src !== url) img.src = url;
+  img.classList.toggle('portrait-wait', !ready);
+  if (!ready)
+    void load(key).then(() => {
+      if (img.dataset.portraitReq !== tok) return;
+      // Tải bị bỏ qua (đã đóng bảng) hoặc tạm dừng: giữ ảnh tạm.
+      const u = glbReady([key]) ? modelPortrait(key, o) : '';
+      if (u && img.src !== u) img.src = u;
+      img.classList.remove('portrait-wait');
+    });
+  return true;
+}

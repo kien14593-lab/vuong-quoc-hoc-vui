@@ -15,6 +15,12 @@ Tệp này do `tools/xu-ly-mo-hinh.mjs` tạo tự động.
 | Thỏ Bông | npc_rabbit | Tencent HY 3D (hy3d.tencent.ai) | tho.glb |
 | Robot Bíp | npc_robot | Tencent HY 3D (hy3d.tencent.ai) | robot.glb |
 | Ông Rùa | npc_turtle | Tencent HY 3D (hy3d.tencent.ai) | rua.glb |
+| Mèo mướp con | pet_cat | Tencent HY 3D (hy3d.tencent.ai) | meo-con.glb |
+| Khủng long tí hon | pet_dino | Tencent HY 3D (hy3d.tencent.ai) | khung-long.glb |
 | Cún con | pet_dog | Tencent HY 3D (hy3d.tencent.ai) | cun.glb |
+| Cáo con | pet_fox | Tencent HY 3D (hy3d.tencent.ai) | cao.glb |
+| Gấu trúc con | pet_panda | Tencent HY 3D (hy3d.tencent.ai) | gau-truc.glb |
+| Chim cánh cụt con | pet_penguin | Tencent HY 3D (hy3d.tencent.ai) | chim-canh-cut.glb |
+| Thỏ con | pet_rabbit | Tencent HY 3D (hy3d.tencent.ai) | tho-con.glb |
 | Bé gái | player_gai | Tencent HY 3D (hy3d.tencent.ai) | be-gai.glb |
 | Bé trai | player_trai | Tencent HY 3D (hy3d.tencent.ai) | be-trai.glb |

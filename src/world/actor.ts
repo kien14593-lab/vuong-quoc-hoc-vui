@@ -60,6 +60,8 @@ export class Actor {
   private stuckT = 0;
   private lastD = Infinity;
   private t = 0;
+  /** Tỉ lệ riêng của nhân vật này (opts.scale), áp lại khi đổi mô hình. */
+  private readonly scaleK: number;
 
   constructor(
     readonly key: string,
@@ -67,7 +69,7 @@ export class Actor {
   ) {
     this.model = buildModel(key, o.opts ?? {});
     this.rig = rigOf(this.model);
-    const s = o.scale ?? 1;
+    const s = (this.scaleK = o.scale ?? 1);
     this.model.scale.multiplyScalar(s);
     this.root.add(this.model);
     this.root.position.set(o.x ?? 0, o.y ?? 0, o.z ?? 0);
@@ -88,13 +90,14 @@ export class Actor {
   /** Đổi mô hình (ví dụ người chơi thay trang phục). */
   swapModel(next: THREE.Object3D): THREE.Object3D {
     const old = this.model;
-    next.scale.copy(old.scale);
+    // Không chép scale của mô hình cũ: mô hình dựng bằng code có thể tự thu nhỏ gốc (vd. cánh cụt con 0.78).
+    next.scale.multiplyScalar(this.scaleK);
     this.root.remove(old);
     this.root.add(next);
     this.model = next;
     this.rig = rigOf(next);
     this.ticks = collectTicks(next);
-    this.height = ((next.userData.height as number | undefined) ?? 1.6) * next.scale.y;
+    this.height = ((next.userData.height as number | undefined) ?? 1.6) * this.scaleK;
     return old;
   }
 

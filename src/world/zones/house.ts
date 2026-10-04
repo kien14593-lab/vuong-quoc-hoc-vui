@@ -420,7 +420,7 @@ export class HouseZone extends Zone {
     this.bubble(this.pet.root, 'Ngon quá!', 1.3, 1800);
     const y0 = this.pet.root.position.y;
     this.tween(0.55, (k) => {
-      this.pet!.root.position.y = y0 + Math.sin(k * Math.PI * 2) * 0.22;
+      this.pet!.root.position.y = y0 + Math.abs(Math.sin(k * Math.PI * 2)) * 0.22;
     });
     this.fx.burst('heart', [this.pet.root.position.x, 1.0, this.pet.root.position.z], { count: 16, spread: 0.8 });
     sfx('correct');

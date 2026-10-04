@@ -3,7 +3,7 @@ import { outfitFits, playerKey, type Kid } from '../core/outfits';
 import { hasProfile, profile, type Equipped } from '../core/state';
 import { ensureGlb, glbReady } from '../models/glb';
 import { h } from './dom';
-import { modelPortrait, playerPortrait, type Framing } from './portrait';
+import { modelPortrait, playerPortrait, setModelPortrait, type Framing } from './portrait';
 
 /**
  * Ảnh minh họa vật phẩm (dựng từ mô hình 3D): bộ đồ, mũ, balo, phụ kiện hiện trên chính bé của người chơi,
@@ -104,6 +104,7 @@ function whenModel(key: string, box: HTMLElement, then: () => void): void {
 /** Thẻ ảnh vật phẩm (có biểu tượng tạm trong lúc dựng ảnh). */
 export function itemThumb(id: string, cls = 'item-art', size = 220): HTMLElement {
   const d = item(id);
+  if (d?.cat === 'pet') return petThumb(id, cls, size);
   const box = h(`div.${cls}`, h('span.item-art-emoji', d ? (d.icon ?? CAT_EMOJI[d.cat]) : '❔'));
   const draw = () => {
     queue.push(() => {
@@ -127,6 +128,29 @@ export function lazyModelThumb(make: () => string, emoji: string, cls = 'item-ar
     if (!box.isConnected) return;
     const url = make();
     if (url) box.replaceChildren(h('img', { src: url, alt: '', draggable: false }));
+  });
+  pump();
+  return box;
+}
+
+/**
+ * Mô hình AI của thú cưng chưa tải: tải lần lượt TỪNG con (mạng chậm không phải tải mọi con cùng lúc), chỉ cho thẻ còn
+ * đang hiện trên màn hình (đóng cửa hàng / đổi ngăn thì bỏ qua phần còn lại).
+ */
+let petChain: Promise<unknown> = Promise.resolve();
+
+function petLoad(key: string, box: HTMLElement): Promise<unknown> {
+  petChain = petChain.then(() => (box.isConnected && !glbReady([key]) ? ensureGlb([key]) : false));
+  return petChain;
+}
+
+/** Thẻ ảnh thú cưng: hiện ngay (tạm bằng thú dựng bằng code, nhấp nháy nhẹ), tải xong mô hình AI thì tự thay. */
+function petThumb(id: string, cls: string, size: number): HTMLElement {
+  const box = h(`div.${cls}`, h('span.item-art-emoji', CAT_EMOJI.pet));
+  queue.push(() => {
+    if (!box.isConnected) return;
+    const img = h<HTMLImageElement>('img', { alt: '', draggable: false });
+    if (setModelPortrait(img, id, { framing: 'full', yaw: 28, size, pitch: 12 }, (k) => petLoad(k, box))) box.replaceChildren(img);
   });
   pump();
   return box;

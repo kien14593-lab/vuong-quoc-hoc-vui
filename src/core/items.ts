@@ -56,12 +56,12 @@ export const ITEMS: ItemDef[] = [
   I({ id: 'acc_cape', name: 'Áo choàng siêu nhân', cat: 'acc', price: 60, level: 3, style: 'cape', color: '#ff6b6b' }),
   I({ id: 'acc_medal', name: 'Huy chương vàng', cat: 'acc', price: 0, level: 1, style: 'medal', color: '#ffd166', hidden: true, desc: 'Phần thưởng Khu Vui Chơi.' }),
   // Thú cưng
-  I({ id: 'pet_dog', name: 'Cún con', cat: 'pet', price: 50, level: 1, style: 'dog', desc: 'Luôn vẫy đuôi chạy theo bạn.' }),
+  I({ id: 'pet_dog', name: 'Cún con', cat: 'pet', price: 50, level: 1, style: 'dog', desc: 'Luôn tung tăng chạy theo bạn.' }),
   I({ id: 'pet_cat', name: 'Mèo mướp', cat: 'pet', price: 60, level: 2, style: 'cat', desc: 'Thích nằm sưởi nắng.' }),
   I({ id: 'pet_rabbit', name: 'Thỏ trắng', cat: 'pet', price: 60, level: 2, style: 'rabbit', desc: 'Nhảy tưng tưng rất vui.' }),
   I({ id: 'pet_panda', name: 'Gấu trúc', cat: 'pet', price: 90, level: 3, style: 'panda', desc: 'Mê ăn lá tre.' }),
   I({ id: 'pet_fox', name: 'Cáo nhỏ', cat: 'pet', price: 90, level: 3, style: 'fox', desc: 'Thông minh và nhanh nhẹn.' }),
-  I({ id: 'pet_penguin', name: 'Chim cánh cụt', cat: 'pet', price: 110, level: 4, style: 'penguin', desc: 'Đi lạch bạch đáng yêu.' }),
+  I({ id: 'pet_penguin', name: 'Chim cánh cụt', cat: 'pet', price: 110, level: 4, style: 'penguin', desc: 'Mê ăn cá, tròn xoe đáng yêu.' }),
   I({ id: 'pet_dino', name: 'Khủng long', cat: 'pet', price: 150, level: 5, style: 'dino', desc: 'Khủng long tí hon siêu hiền.' }),
   // Ván trượt
   I({ id: 'board_skate', name: 'Ván trượt', cat: 'board', price: 60, level: 2, style: 'skate', color: '#ff8fab', desc: 'Di chuyển nhanh hơn!' }),

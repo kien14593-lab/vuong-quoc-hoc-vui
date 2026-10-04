@@ -12,7 +12,13 @@
     "npc_rabbit.glb",
     "npc_robot.glb",
     "npc_turtle.glb",
+    "pet_cat.glb",
+    "pet_dino.glb",
     "pet_dog.glb",
+    "pet_fox.glb",
+    "pet_panda.glb",
+    "pet_penguin.glb",
+    "pet_rabbit.glb",
     "player_gai.glb",
     "player_trai.glb"
   ],
@@ -50,8 +56,26 @@
     "npc_turtle": [
       "rua.glb"
     ],
+    "pet_cat": [
+      "meo-con.glb"
+    ],
+    "pet_dino": [
+      "khung-long.glb"
+    ],
     "pet_dog": [
       "cun.glb"
+    ],
+    "pet_fox": [
+      "cao.glb"
+    ],
+    "pet_panda": [
+      "gau-truc.glb"
+    ],
+    "pet_penguin": [
+      "chim-canh-cut.glb"
+    ],
+    "pet_rabbit": [
+      "tho-con.glb"
     ],
     "player_gai": [
       "be-gai.glb"
