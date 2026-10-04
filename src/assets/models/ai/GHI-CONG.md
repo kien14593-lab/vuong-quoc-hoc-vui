@@ -13,3 +13,4 @@ Tệp này do `tools/xu-ly-mo-hinh.mjs` tạo tự động.
 | Bác Cú | npc_owl | Tencent HY 3D (hy3d.tencent.ai) | cu.glb |
 | Thỏ Bông | npc_rabbit | Tencent HY 3D (hy3d.tencent.ai) | tho.glb |
 | Robot Bíp | npc_robot | Tencent HY 3D (hy3d.tencent.ai) | robot.glb |
+| Cún con | pet_dog | Tencent HY 3D (hy3d.tencent.ai) | cun.glb |

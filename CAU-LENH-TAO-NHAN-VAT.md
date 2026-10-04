@@ -299,7 +299,7 @@ nhún nhảy, lắc lư. (Meshy gắn xương được thú 4 chân nhưng ít �
 
 **Thú cưng** (chạy theo bé):
 
-- `cun.glb` – Cún con
+- `cun.glb` – Cún con ✅ đã có mô hình AI (Tencent HY 3D)
   ```text
   A little puppy standing on four legs: golden tan fur, cream muzzle and chest, darker floppy ears, blue collar with a round gold tag, small curled tail. Cute chibi 3D cartoon for a kids game: big round head, small round body, big shiny eyes, happy smile, soft rounded shapes, pastel matte vinyl toy look. Full body, facing front, no base, no background.
   ```

@@ -71,6 +71,10 @@ const KEY_VI = {
   npc_bear: 'Chú Gấu', npc_rabbit: 'Thỏ Bông', npc_robot: 'Robot Bíp', npc_cat: 'Cô Mèo', npc_owl: 'Bác Cú', npc_squirrel: 'Cô Sóc',
   npc_turtle: 'Ông Rùa', npc_deer: 'Bạn Nai', npc_elephant: 'Bác Voi', npc_king: 'Nhà Vua', npc_knight: 'Hiệp Sĩ Thỏ', npc_clown: 'Chú Hề',
   npc_villager: 'Dân làng',
+  pet_dog: 'Cún con', pet_cat: 'Mèo mướp con', pet_rabbit: 'Thỏ con', pet_panda: 'Gấu trúc con', pet_fox: 'Cáo con',
+  pet_penguin: 'Chim cánh cụt con', pet_dino: 'Khủng long tí hon',
+  animal_giraffe: 'Hươu cao cổ', animal_monkey: 'Khỉ', animal_penguin: 'Chim cánh cụt (Sở Thú)', animal_zebra: 'Ngựa vằn',
+  animal_hippo: 'Hà mã', animal_lion: 'Sư tử',
 };
 
 /* ------------------------------------------------------------------ */

@@ -57,5 +57,11 @@
     ],
     "material": "lambert",
     "credit": "Tencent HY 3D (hy3d.tencent.ai)"
+  },
+  "pet_dog": {
+    "height": 0.82,
+    "rotY": 0,
+    "material": "lambert",
+    "credit": "Tencent HY 3D (hy3d.tencent.ai)"
   }
 }
