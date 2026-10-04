@@ -364,6 +364,17 @@ textarea {
   font-size: 36px;
 }
 
+/* Đồng xu vẽ bằng SVG (ui/icons.ts) – emoji đồng xu U+1FA99 là Emoji 13, Windows 10 hiện ô trống. */
+.ic-coin {
+  display: inline-block;
+  flex: none;
+  width: 1.08em;
+  height: 1.08em;
+  vertical-align: -0.17em;
+  background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><radialGradient id='a' cx='.36' cy='.3' r='.8'><stop offset='0' stop-color='%23fff6c2'/><stop offset='.45' stop-color='%23ffd43b'/><stop offset='1' stop-color='%23f0a30a'/></radialGradient></defs><circle cx='32' cy='34.5' r='28' fill='%23c47a06'/><circle cx='32' cy='30.5' r='28' fill='url(%23a)' stroke='%23c47a06' stroke-width='2.5'/><circle cx='32' cy='30.5' r='19.5' fill='none' stroke='%23e39a0b' stroke-width='3'/><rect x='27.5' y='18.5' width='9' height='24' rx='4.5' fill='%23e39a0b'/><path d='M14 22a20 20 0 0 1 12-10' fill='none' stroke='%23fff' stroke-width='4' stroke-linecap='round' opacity='.75'/></svg>")
+    center / contain no-repeat;
+}
+
 .reward-burst {
   position: absolute;
   left: 960px;

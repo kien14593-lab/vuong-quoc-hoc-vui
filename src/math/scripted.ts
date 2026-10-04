@@ -52,15 +52,15 @@ const SCRIPTED: Record<BeatId, (o: GenOptions) => Question> = {
   },
   forestBridge: (o) => {
     const c = numChoices(7, [6, 8, 5, 1], choiceCount(o.grade, o.support));
-    return makeQ({ topic: 'add', level: 2, context: 'Cây cầu bị nâng lên. Bảng hỏi:', prompt: '4 + 3 = ?', visual: { kind: 'objects', emoji: '🪵', groups: [4, 3], op: '+' }, ...c, hint: 'Hãy đếm từng nhóm khúc gỗ rồi gộp lại.', steps: addSteps(4, 3) });
+    return makeQ({ topic: 'add', level: 2, context: 'Cây cầu bị nâng lên. Bảng hỏi:', prompt: '4 + 3 = ?', visual: { kind: 'objects', emoji: '🟫', groups: [4, 3], op: '+' }, ...c, hint: 'Hãy đếm từng nhóm khúc gỗ rồi gộp lại.', steps: addSteps(4, 3) });
   },
   forestRock: (o) => {
     const c = numChoices(5, [4, 6, 11, 3], choiceCount(o.grade, o.support));
-    return makeQ({ topic: 'sub', level: 2, context: 'Tảng đá chặn đường. Trên đá khắc:', prompt: `8 ${MINUS} 3 = ?`, visual: { kind: 'objects', emoji: '🪨', groups: [8], op: '-', crossOut: 3 }, ...c, hint: 'Bắt đầu từ 8 rồi đếm lùi 3 bước.', steps: subSteps(8, 3) });
+    return makeQ({ topic: 'sub', level: 2, context: 'Tảng đá chặn đường. Trên đá khắc:', prompt: `8 ${MINUS} 3 = ?`, visual: { kind: 'objects', emoji: '🌑', groups: [8], op: '-', crossOut: 3 }, ...c, hint: 'Bắt đầu từ 8 rồi đếm lùi 3 bước.', steps: subSteps(8, 3) });
   },
   bearBridge: (o) => {
     const c = numChoices(12, [11, 13, 2, 10], choiceCount(o.grade, o.support));
-    return makeQ({ topic: 'add', level: 3, context: 'Cây cầu bị khóa. Cầu cần 7 tấm ván và thêm 5 tấm ván nữa.', prompt: '7 + 5 = ?', visual: { kind: 'objects', emoji: '🪵', groups: [7, 5], op: '+' }, ...c, hint: 'Bắt đầu từ 7, đếm thêm 5: 8, 9, 10, 11, 12.', steps: addSteps(7, 5) });
+    return makeQ({ topic: 'add', level: 3, context: 'Cây cầu bị khóa. Cầu cần 7 tấm ván và thêm 5 tấm ván nữa.', prompt: '7 + 5 = ?', visual: { kind: 'objects', emoji: '🟫', groups: [7, 5], op: '+' }, ...c, hint: 'Bắt đầu từ 7, đếm thêm 5: 8, 9, 10, 11, 12.', steps: addSteps(7, 5) });
   },
   bearStones: () =>
     makeQ({

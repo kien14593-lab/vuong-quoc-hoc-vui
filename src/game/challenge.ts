@@ -4,6 +4,7 @@ import { GRADE_TOPICS, TOPICS } from '../math/curriculum';
 import { generate, isCorrect, pickTopic, sanitize } from '../math/engine';
 import { ballsQuestion, beatTopic, scripted, usesScripted, type BeatId } from '../math/scripted';
 import type { Question, Topic, WordTheme } from '../math/types';
+import { coinIcon } from '../ui/icons';
 import { rewardBurst, toast } from '../ui/toast';
 
 /** Phản hồi đúng theo kịch bản – không gây áp lực, không "Game Over". */
@@ -101,7 +102,7 @@ export function finishQuestion(q: Question, attempts: number, ms: number, o: Fin
     rewardBurst(
       [
         { icon: '✨', text: `+${res.xp} XP`, cls: 'xp' },
-        { icon: '🪙', text: `+${res.coins} xu`, cls: 'coin' },
+        { icon: coinIcon(), text: `+${res.coins} xu`, cls: 'coin' },
       ],
       o.at,
     );

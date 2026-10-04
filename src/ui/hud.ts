@@ -3,7 +3,8 @@ import { bus } from '../core/events';
 import { badgeDef, levelDef, levelProgress } from '../core/progression';
 import { hasProfile, profile } from '../core/state';
 import { setVirtualMove } from '../world/input';
-import { button, h } from './dom';
+import { button, h, type Child } from './dom';
+import { coinIcon } from './icons';
 import { openModal } from './modal';
 import { inputBlocked, layer } from './root';
 import { playerPortrait } from './portrait';
@@ -80,12 +81,12 @@ class Hud {
       h('div.hud-card-info', e.name, e.title, h('div.hud-xp', e.xpFill, e.xpText)),
     );
 
-    const chip = (k: string, icon: string, tip: string) => {
+    const chip = (k: string, icon: Child, tip: string) => {
       e[k] = h('span.hud-chip-n', '0');
       e[`${k}Chip`] = h(`div.hud-chip.chip-${k}`, { title: tip }, h('span.hud-chip-i', icon), e[k]);
       return e[`${k}Chip`];
     };
-    const wallet = h('div.hud-wallet', chip('coins', '🪙', 'Xu'), chip('stars', '⭐', 'Ngôi sao'), chip('tickets', '🎟️', 'Vé'), chip('keys', '🗝️', 'Chìa khóa'));
+    const wallet = h('div.hud-wallet', chip('coins', coinIcon(), 'Xu'), chip('stars', '⭐', 'Ngôi sao'), chip('tickets', '🎟️', 'Vé'), chip('keys', '🗝️', 'Chìa khóa'));
 
     e.quest = h('div.hud-quest', h('span.hud-quest-i'), h('span.hud-quest-t'));
 

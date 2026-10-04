@@ -1,5 +1,7 @@
 import { sfx } from '../core/audio';
 import { addCoins, addKeys, addStars, addTickets, addXp, awardBadge, flag, giveItem, hasBadge, hasProfile, isCollected, level, profile, questState, setFlag, type ZoneId } from '../core/state';
+import type { Child } from '../ui/dom';
+import { coinIcon } from '../ui/icons';
 import { rewardBurst } from '../ui/toast';
 
 /**
@@ -159,10 +161,10 @@ export function storyObjective(): Objective | null {
       return { text: 'Nói chuyện với Chú Gấu ở cổng rừng', icon: '🐻', zone: 'village' };
     case 'bridge':
       if (!on('forest.bridge')) return { text: 'Mở Cầu Phép Cộng trong rừng', icon: '🌉', zone: 'forest' };
-      if (!on('forest.rock')) return { text: 'Dọn tảng đá chặn đường', icon: '🪨', zone: 'forest' };
+      if (!on('forest.rock')) return { text: 'Dọn tảng đá chặn đường', icon: '⛏️', zone: 'forest' };
       return { text: 'Mở cây cầu bị khóa cho chú Gấu', icon: '🔒', zone: 'forest' };
     case 'stones':
-      return { text: 'Chọn viên đá lớn nhất để qua suối', icon: '🪨', zone: 'forest' };
+      return { text: 'Chọn viên đá lớn nhất để qua suối', icon: '👣', zone: 'forest' };
     case 'maze':
       return { text: `Tìm 3 chìa khóa trong Mê Cung (${mazeKeys()}/3)`, icon: '🗝️', zone: 'maze' };
     case 'exit':
@@ -198,7 +200,7 @@ export interface Reward {
 
 /** Trao thưởng (kèm hiệu ứng chữ bay). Huy hiệu/lên cấp tự hiện bảng chúc mừng qua HUD. */
 export function reward(r: Reward, at?: { x: number; y: number }): void {
-  const parts: { icon: string; text: string; cls?: string }[] = [];
+  const parts: { icon: Child; text: string; cls?: string }[] = [];
   if (r.stars) {
     addStars(r.stars);
     parts.push({ icon: '⭐', text: `+${r.stars} sao`, cls: 'star' });
@@ -213,7 +215,7 @@ export function reward(r: Reward, at?: { x: number; y: number }): void {
   }
   if (r.coins) {
     addCoins(r.coins);
-    parts.push({ icon: '🪙', text: `+${r.coins} xu`, cls: 'coin' });
+    parts.push({ icon: coinIcon(), text: `+${r.coins} xu`, cls: 'coin' });
   }
   if (r.xp) {
     addXp(r.xp);

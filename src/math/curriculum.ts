@@ -18,7 +18,7 @@ export const TOPICS: Record<Topic, TopicInfo> = {
   sequence: { name: 'Dãy số', icon: '🚂', maxLevel: 5, start: [1, 2, 3, 4, 5] },
   time: { name: 'Thời gian', icon: '🕐', maxLevel: 5, start: [1, 2, 3, 4, 5] },
   length: { name: 'Độ dài', icon: '📏', maxLevel: 5, start: [1, 2, 3, 4, 5] },
-  money: { name: 'Tiền và mua sắm', icon: '🪙', maxLevel: 5, start: [1, 2, 3, 4, 5] },
+  money: { name: 'Tiền và mua sắm', icon: '💰', maxLevel: 5, start: [1, 2, 3, 4, 5] },
   geometry: { name: 'Hình học', icon: '🔷', maxLevel: 5, start: [1, 2, 3, 4, 5] },
   perimeter: { name: 'Chu vi', icon: '📐', maxLevel: 5, start: [1, 1, 1, 3, 4] },
   area: { name: 'Diện tích', icon: '🟩', maxLevel: 5, start: [1, 1, 1, 2, 4] },

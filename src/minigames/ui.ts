@@ -3,6 +3,7 @@ import { sfx } from '../core/audio';
 import { speak } from '../core/speech';
 import type { Visual } from '../math/types';
 import { h } from '../ui/dom';
+import { coinIcon } from '../ui/icons';
 import { layer, onUIResize, uiSize } from '../ui/root';
 import { renderVisual } from '../ui/visuals';
 import type { MiniInfo, MiniResult } from './base';
@@ -275,7 +276,7 @@ export class MiniUI {
           stars,
           h('div.mg-score-line', `Điểm: ${r.score} / ${r.max}`),
           r.best ? h('div.mg-best', '🏆 Kỷ lục mới!') : null,
-          h('div.mg-rewards', h('span.mg-reward.coin', `🪙 +${r.coins} xu`), h('span.mg-reward.xp', `✨ +${r.xp} XP`)),
+          h('div.mg-rewards', h('span.mg-reward.coin', coinIcon(), ` +${r.coins} xu`), h('span.mg-reward.xp', `✨ +${r.xp} XP`)),
           h('div.mg-actions', again, home),
         ),
       );

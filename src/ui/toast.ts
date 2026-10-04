@@ -1,8 +1,8 @@
-import { h, wait } from './dom';
+import { h, wait, type Child } from './dom';
 import { layer } from './root';
 
 /** Thông báo nhỏ trượt xuống từ phía trên. */
-export function toast(text: string, opts: { icon?: string; tone?: 'info' | 'good' | 'warn' | 'gold'; ms?: number } = {}): void {
+export function toast(text: string, opts: { icon?: Child; tone?: 'info' | 'good' | 'warn' | 'gold'; ms?: number } = {}): void {
   const host = layer('toast');
   let stack = host.querySelector<HTMLElement>('.toast-stack');
   if (!stack) {
@@ -21,7 +21,7 @@ export function toast(text: string, opts: { icon?: string; tone?: 'info' | 'good
 }
 
 /** Phần thưởng bay lên giữa màn hình: "+10 XP", "+3 xu"... */
-export function rewardBurst(parts: { icon: string; text: string; cls?: string }[], at?: { x: number; y: number }): void {
+export function rewardBurst(parts: { icon: Child; text: string; cls?: string }[], at?: { x: number; y: number }): void {
   if (!parts.length) return;
   const host = layer('fx');
   const el = h(

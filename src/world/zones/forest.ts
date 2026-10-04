@@ -86,9 +86,9 @@ export class ForestZone extends Zone {
 
   override objective(): { text: string; icon?: string } | null {
     if (!on('forest.bridge')) return { text: 'Mở Cầu Phép Cộng', icon: '🌉' };
-    if (!on('forest.rock')) return { text: 'Dọn tảng đá chặn đường', icon: '🪨' };
+    if (!on('forest.rock')) return { text: 'Dọn tảng đá chặn đường', icon: '⛏️' };
     if (!on('forest.bearBridge')) return { text: 'Mở cây cầu bị khóa cho Chú Gấu', icon: '🔒' };
-    if (!on('forest.stones')) return { text: 'Chọn viên đá lớn nhất để qua suối', icon: '🪨' };
+    if (!on('forest.stones')) return { text: 'Chọn viên đá lớn nhất để qua suối', icon: '👣' };
     return { text: 'Đi tiếp tới Mê Cung Kỳ Bí', icon: '🌀' };
   }
 
@@ -154,12 +154,12 @@ export class ForestZone extends Zone {
       z: ROCK_Z + 2.0,
       r: 3.4,
       label: 'Giải để phá đá',
-      icon: '🪨',
+      icon: '⛏️',
       obj: this.rock ?? undefined,
       enabled: () => on('forest.bridge') && !on('forest.rock'),
       run: () => this.solveRock(),
     });
-    this.sign(-2.9, ROCK_Z + 1.6, '🪨 Tảng đá chặn đường', { y: 2.1 });
+    this.sign(-2.9, ROCK_Z + 1.6, '🚧 Tảng đá chặn đường', { y: 2.1 });
 
     this.interact({
       id: 'forest:bearBridge',
@@ -180,7 +180,7 @@ export class ForestZone extends Zone {
       z: STONE_Z + 3.2,
       r: 2.2,
       label: 'Chọn đá lớn nhất',
-      icon: '🪨',
+      icon: '👣',
       enabled: () => on('forest.bearBridge') && !on('forest.stones') && !this.stonesStarted,
       auto: true,
       run: () => this.startStonePick(),
@@ -503,7 +503,7 @@ export class ForestZone extends Zone {
 
   private async solveRock(): Promise<void> {
     if (!this.rock || on('forest.rock')) return;
-    await this.quiz(storyQuestion('forestRock'), { src: 'forest:rock', speaker: CAST.gau, title: 'Tảng đá chặn đường', icon: '🪨', rewards: false, quiet: true }, this.rock, 11);
+    await this.quiz(storyQuestion('forestRock'), { src: 'forest:rock', speaker: CAST.gau, title: 'Tảng đá chặn đường', icon: '⛏️', rewards: false, quiet: true }, this.rock, 11);
     setFlag('forest.rock');
     await this.shatterRock();
     this.unblockRockTerrain();
@@ -531,7 +531,7 @@ export class ForestZone extends Zone {
       const spots: PickSpot[] = this.stoneQuestion.choices.slice(0, 3).map((c, i) => ({
         value: c.value,
         label: `Chọn ${c.label}`,
-        icon: '🪨',
+        icon: '👣',
         x: this.choiceStones[i].position.x,
         z: this.choiceStones[i].position.z,
         r: 0.95,
@@ -542,7 +542,7 @@ export class ForestZone extends Zone {
         src: 'forest:stones',
         speaker: CAST.gau,
         title: 'Đá qua suối',
-        icon: '🪨',
+        icon: '👣',
         area: { x: 0, z: STONE_Z, r: 7 },
         showVisual: true,
         rewards: false,

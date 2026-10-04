@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { engine } from '../engine/core';
-import { h } from '../ui/dom';
+import { h, type Child } from '../ui/dom';
 import { layer, uiSize } from '../ui/root';
 
 /**
@@ -132,9 +132,10 @@ export class Labels {
     }, ms);
   }
 
-  /** Chữ bay lên (ví dụ "+1 ⭐"). */
-  float(pos: THREE.Vector3, text: string, cls = ''): void {
-    const l = this.add({ pos: pos.clone(), y: 0, text, cls: `wl-float${cls ? ' ' + cls : ''}`, maxDist: 80 });
+  /** Chữ bay lên (ví dụ "+1 ⭐"). Nhận cả phần tử (ví dụ đồng xu vẽ – ui/icons.ts). */
+  float(pos: THREE.Vector3, text: Child, cls = ''): void {
+    const el = h(`div.wlabel.wl-float${cls ? '.' + cls.split(' ').join('.') : ''}`, h('span.wl-text', text));
+    const l = this.add({ pos: pos.clone(), y: 0, el, maxDist: 80 });
     window.setTimeout(() => l.remove(), 1300);
   }
 

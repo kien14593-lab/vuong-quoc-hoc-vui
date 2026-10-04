@@ -3,6 +3,7 @@ import { CAT_NAMES, item, ITEMS, type ItemCat, type ItemDef } from '../../core/i
 import { awardBadge, equip, giveItem, hasBadge, hasItem, itemCount, level, profile, spendCoins } from '../../core/state';
 import { playerPortrait } from '../portrait';
 import { button, h } from '../dom';
+import { coinIcon } from '../icons';
 import { itemThumb } from '../itemArt';
 import { openModal } from '../modal';
 import { toast } from '../toast';
@@ -56,7 +57,7 @@ export function openShop(startTab = 0): Promise<void> {
     if (!stackable(d) && hasItem(d.id)) return;
     if (p.coins < d.price) {
       sfx('error');
-      toast(`Bạn cần thêm ${d.price - p.coins} xu nữa. Hãy giải toán hoặc chơi mini-game để có thêm xu nhé!`, { icon: '🪙', tone: 'warn', ms: 3600 });
+      toast(`Bạn cần thêm ${d.price - p.coins} xu nữa. Hãy giải toán hoặc chơi mini-game để có thêm xu nhé!`, { icon: coinIcon(), tone: 'warn', ms: 3600 });
       return;
     }
     if (!spendCoins(d.price)) return;
@@ -100,7 +101,7 @@ export function openShop(startTab = 0): Promise<void> {
         : soldOut
           ? h('div.shop-owned', '✔ Đã có')
           : button(
-              [h('span', '🪙'), h('span', String(d.price))],
+              [coinIcon(), h('span', String(d.price))],
               (e) => {
                 e.stopPropagation();
                 buy(d);
@@ -141,7 +142,7 @@ export function openShop(startTab = 0): Promise<void> {
     'div.shop',
     h(
       'div.shop-side',
-      h('div.shop-wallet', h('span', '🪙'), coinsEl, h('small', 'xu')),
+      h('div.shop-wallet', coinIcon(), coinsEl, h('small', 'xu')),
       h('div.shop-stage', preview),
       previewName,
       h('div.shop-tip', 'Chạm vào món đồ để mặc thử. Bấm nút giá để mua!'),

@@ -4,6 +4,7 @@ import { CAT_NAMES, item, ITEMS, type ItemCat } from '../../core/items';
 import { BADGES } from '../../core/progression';
 import { equip, hasBadge, profile } from '../../core/state';
 import { button, h } from '../dom';
+import { coinIcon } from '../icons';
 import { itemThumb } from '../itemArt';
 import { openModal } from '../modal';
 import { playerPortrait } from '../portrait';
@@ -131,7 +132,7 @@ export function openBag(start: Tab = 'wear'): void {
       const wallet = h(
         'div.bag-wallet',
         ...([
-          ['🪙', p.coins, 'xu'],
+          [coinIcon(), p.coins, 'xu'],
           ['⭐', p.stars, 'sao'],
           ['🎟️', p.tickets, 'vé'],
           ['🗝️', p.keys, 'chìa khóa'],

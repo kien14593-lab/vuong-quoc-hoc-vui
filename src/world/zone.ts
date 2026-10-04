@@ -17,7 +17,9 @@ import { miniDef, miniName, miniTitle } from '../minigames/registry';
 import { buildModel, collectTicks, modelRadius, type Collider } from '../models/registry';
 import type { Speaker } from '../ui/dialog';
 import { say } from '../ui/dialog';
+import type { Child } from '../ui/dom';
 import { hud } from '../ui/hud';
+import { coinIcon } from '../ui/icons';
 import { inputBlocked } from '../ui/root';
 import { toast } from '../ui/toast';
 import { Actor, Follower } from './actor';
@@ -242,7 +244,9 @@ interface PortalRec {
   text: string;
 }
 
-const PICK_ICON: Record<PickupKind, string> = { star: '⭐', coin: '🪙', key: '🗝️', ticket: '🎟️', heart: '💖', apple: '🍎', banana: '🍌', fish: '🐟', gift: '🎁' };
+const PICK_ICON: Record<Exclude<PickupKind, 'coin'>, string> = { star: '⭐', key: '🗝️', ticket: '🎟️', heart: '💖', apple: '🍎', banana: '🍌', fish: '🐟', gift: '🎁' };
+/** Biểu tượng bay lên khi nhặt; đồng xu là hình vẽ (ui/icons.ts) vì emoji đồng xu không hiện trên Windows 10. */
+const pickIcon = (k: PickupKind): Child => (k === 'coin' ? coinIcon() : PICK_ICON[k]);
 const UP = new THREE.Vector3(0, 1, 0);
 
 export abstract class Zone implements Stage {
@@ -896,7 +900,7 @@ export abstract class Zone implements Stage {
     }
     this.fx.burst(pk.kind === 'star' ? 'star' : pk.kind === 'heart' ? 'heart' : 'sparkle', pos, { count: 16 });
     this.fx.ring(new THREE.Vector3(pos.x, 0, pos.z), { color: '#fff3a0' });
-    this.labels.float(pos, pk.kind === 'heart' ? '💖' : `+${n} ${PICK_ICON[pk.kind]}`, 'gold');
+    this.labels.float(pos, pk.kind === 'heart' ? '💖' : [`+${n} `, pickIcon(pk.kind)], 'gold');
     pk.obj.removeFromParent();
     disposeTree(pk.obj);
     pk.onPick?.();
