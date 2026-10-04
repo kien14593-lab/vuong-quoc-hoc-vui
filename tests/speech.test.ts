@@ -4,6 +4,7 @@ interface FakeVoice {
   name: string;
   lang: string;
   localService: boolean;
+  voiceURI?: string;
 }
 interface FakeUtt {
   text: string;
@@ -23,7 +24,7 @@ const h = vi.hoisted(() => {
     spoken: [] as FakeUtt[],
     cancels: 0,
     handlers: [] as (() => void)[],
-    settings: { voice: true, voiceRate: 1 },
+    settings: { voice: true, voiceRate: 1 } as { voice: boolean; voiceRate: number; charVoices?: boolean; voiceVi?: { uri: string; name: string } | null },
     grade: 1,
     duck: [] as boolean[],
   };
@@ -58,7 +59,7 @@ vi.mock('../src/core/state', () => ({
 }));
 
 import { Rng } from '../src/core/rng';
-import { canListen, hasEnglishVoice, hasVietnameseVoice, speak, speakEnglish, stopSpeech } from '../src/core/speech';
+import { canListen, hasEnglishVoice, hasVietnameseVoice, maleVoiceName, refreshVoices, speak, speakEnglish, speakParts, stopSpeech, viVoiceLabel, voiceName } from '../src/core/speech';
 import { hasEnglish, plainText, rankVoices, speechText, splitLang, type VoiceLike } from '../src/core/voices';
 import { ALL_TOPICS, TOPICS } from '../src/math/curriculum';
 import { generate } from '../src/math/engine';
@@ -262,7 +263,7 @@ describe('speech.ts – đọc hai giọng nối tiếp', () => {
     speak('Chọn hình đúng: «cat» 🐱');
     expect(said()).toEqual(['vi:Chọn hình đúng:']);
     expect(h.spoken[0].voice).toBe(VI);
-    expect(h.spoken[0].pitch).toBeCloseTo(1.1);
+    expect(h.spoken[0].pitch).toBe(1);
     h.spoken[0].onend?.();
     expect(said()).toEqual(['vi:Chọn hình đúng:', 'en:cat']);
     expect(h.spoken[1].voice).toBe(EN_NET);
@@ -343,5 +344,147 @@ describe('speech.ts – đọc hai giọng nối tiếp', () => {
   it('Có giọng tiếng Anh và đang bật tiếng: được ra câu hỏi nghe', () => {
     expect(hasEnglishVoice()).toBe(true);
     expect(canListen()).toBe(true);
+  });
+});
+
+const HOAIMY = V('Microsoft Hoài My Online (Natural) - Vietnamese (Vietnam)', 'vi-VN', false);
+const NAMMINH = V('Microsoft Nam Minh Online (Natural) - Vietnamese (Vietnam)', 'vi-VN', false);
+const LINH = V('Linh', 'vi-VN');
+
+describe('speech.ts – mỗi nhân vật một giọng', () => {
+  beforeEach(() => {
+    stopSpeech();
+    h.spoken.length = 0;
+    h.settings = { voice: true, voiceRate: 1 };
+    h.grade = 3;
+    setVoices([HOAIMY, NAMMINH, EN_NET, EN_LOCAL]);
+  });
+
+  const last = () => h.spoken[h.spoken.length - 1];
+
+  it('Giọng dẫn chuyện: Hoài My, cao độ 1, tốc độ 0.95; giọng nam: Nam Minh', () => {
+    expect(voiceName()).toBe(HOAIMY.name);
+    expect(maleVoiceName()).toBe(NAMMINH.name);
+    speak('Xin chào!');
+    expect(last().voice).toBe(HOAIMY);
+    expect(last().pitch).toBe(1);
+    expect(last().rate).toBeCloseTo(0.95);
+  });
+
+  it('Tên dễ đọc của giọng đang dùng (Cài đặt) giống ô chọn giọng', () => {
+    expect(viVoiceLabel('nu')).toBe('Hoài My (cần mạng)');
+    expect(viVoiceLabel('nam')).toBe('Nam Minh (cần mạng)');
+    const linh = (q: string): VoiceLike => ({ name: 'Linh', lang: 'vi-VN', localService: true, voiceURI: `com.apple.voice.${q}.vi-VN.Linh` });
+    setVoices([linh('compact'), linh('premium'), EN_LOCAL]);
+    expect(viVoiceLabel('nu')).toBe('Linh (Cao cấp)');
+    setVoices([EN_LOCAL]);
+    expect(viVoiceLabel('nu')).toBe(null);
+    expect(viVoiceLabel('nam')).toBe(null);
+  });
+
+  it('Nhân vật nữ: giọng dẫn chuyện với tốc độ, cao độ riêng; nhân vật nam: Nam Minh', () => {
+    speak('Chào bạn!', { who: 'tho' });
+    expect(last().voice).toBe(HOAIMY);
+    expect(last().rate).toBeCloseTo(1.0);
+    expect(last().pitch).toBeCloseTo(1.08);
+    speak('Chào bạn!', { who: 'v4' });
+    expect(last().voice).toBe(HOAIMY);
+    expect(last().rate).toBeCloseTo(0.8);
+    speak('Chào bạn!', { who: 'gau' });
+    expect(last().voice).toBe(NAMMINH);
+    expect(last().rate).toBeCloseTo(0.9);
+    expect(last().pitch).toBeCloseTo(0.97);
+    speak('Ta là Nhà Vua.', { who: 'vua' });
+    expect(last().voice).toBe(NAMMINH);
+    expect(last().rate).toBeCloseTo(0.85);
+    expect(last().pitch).toBeCloseTo(0.88);
+  });
+
+  it('Tốc độ nhân vật nhân với tốc độ đọc trong Cài đặt', () => {
+    h.settings = { voice: true, voiceRate: 1.2 };
+    speak('Chào!', { who: 'robot' });
+    expect(last().rate).toBeCloseTo(1.12 * 1.2);
+    speak('Chào!');
+    expect(last().rate).toBeCloseTo(0.95 * 1.2);
+  });
+
+  it('Phần «tiếng Anh» trong lời nhân vật vẫn đọc bằng giọng tiếng Anh (cao độ 1)', () => {
+    speak('Bạn nói theo chú nhé: «Hello!»', { who: 'gau' });
+    expect(last().voice).toBe(NAMMINH);
+    last().onend?.();
+    expect(last().voice).toBe(EN_NET);
+    expect(last().pitch).toBe(1);
+    expect(last().rate).toBeCloseTo(0.9);
+  });
+
+  it('Tắt "Giọng nhân vật" → mọi lời dùng giọng dẫn chuyện', () => {
+    h.settings = { voice: true, voiceRate: 1, charVoices: false };
+    speak('Chào!', { who: 'gau' });
+    expect(last().voice).toBe(HOAIMY);
+    expect(last().pitch).toBe(1);
+    expect(last().rate).toBeCloseTo(0.95);
+  });
+
+  it('Không có mã / mã lạ → giọng dẫn chuyện', () => {
+    for (const who of [undefined, null, '', 'xyz', 'constructor', 'toString', '__proto__']) {
+      speak('Chào!', { who });
+      expect(last().voice).toBe(HOAIMY);
+      expect(last().pitch).toBe(1);
+    }
+  });
+
+  it('Nghe thử: Thỏ Bông rồi Chú Gấu, kể cả khi đang tắt "Giọng nhân vật" và tắt đọc', () => {
+    h.settings = { voice: false, voiceRate: 1, charVoices: false };
+    speakParts(
+      [
+        { text: 'Chào bạn! Mình là Thỏ Bông.', lang: 'vi', who: 'tho' },
+        { text: 'Còn mình là Chú Gấu!', lang: 'vi', who: 'gau' },
+      ],
+      { force: true, chars: true },
+    );
+    expect(last().voice).toBe(HOAIMY);
+    expect(last().pitch).toBeCloseTo(1.08);
+    last().onend?.();
+    expect(last().voice).toBe(NAMMINH);
+    expect(h.spoken.length).toBe(2);
+  });
+
+  it('Máy không có giọng nam: nhân vật nam dùng giọng nữ, đọc trầm hơn (×0.85)', () => {
+    setVoices([V('Tiếng Việt Việt Nam', 'vi-VN'), EN_LOCAL]);
+    expect(maleVoiceName()).toBe(null);
+    speak('Chào!', { who: 'gau' });
+    expect(last().voice?.name).toBe('Tiếng Việt Việt Nam');
+    expect(last().pitch).toBeCloseTo(0.97 * 0.85);
+    expect(last().rate).toBeCloseTo(0.9);
+  });
+
+  it('Giọng trực tuyến lỗi → đọc lại bằng giọng cục bộ; nhân vật nam vẫn đọc trầm', () => {
+    setVoices([HOAIMY, NAMMINH, LINH]);
+    speak('Chào!', { who: 'gau' });
+    expect(last().voice).toBe(NAMMINH);
+    last().onerror?.({ error: 'network' });
+    expect(last().voice).toBe(LINH);
+    expect(last().pitch).toBeCloseTo(0.97 * 0.85);
+    expect(h.spoken.length).toBe(2);
+  });
+
+  it('Giọng chọn trong Cài đặt thay giọng dẫn chuyện (tìm theo voiceURI, mất mã thì theo tên)', () => {
+    const LINH_ENH = { ...V('Linh', 'vi-VN'), voiceURI: 'com.apple.voice.enhanced.vi-VN.Linh' };
+    const LINH_CMP = { ...V('Linh', 'vi-VN'), voiceURI: 'com.apple.voice.compact.vi-VN.Linh' };
+    setVoices([HOAIMY, NAMMINH, LINH_CMP, LINH_ENH]);
+    h.settings = { voice: true, voiceRate: 1, voiceVi: { uri: LINH_CMP.voiceURI, name: 'Linh' } };
+    refreshVoices();
+    speak('Xin chào!');
+    expect(last().voice).toBe(LINH_CMP);
+    speak('Chào!', { who: 'gau' });
+    expect(last().voice).toBe(NAMMINH);
+    h.settings = { voice: true, voiceRate: 1, voiceVi: { uri: 'com.apple.voice.premium.vi-VN.Linh', name: 'Linh' } };
+    refreshVoices();
+    speak('Xin chào!');
+    expect(last().voice).toBe(LINH_ENH);
+    h.settings = { voice: true, voiceRate: 1, voiceVi: { uri: 'x', name: 'Không còn' } };
+    refreshVoices();
+    speak('Xin chào!');
+    expect(last().voice).toBe(HOAIMY);
   });
 });

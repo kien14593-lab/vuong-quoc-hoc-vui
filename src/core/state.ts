@@ -6,6 +6,7 @@ import { item, RETIRED_WEAR, type DecorSlot, type WearSlot } from './items';
 import { DEFAULT_OUTFIT, isKid, outfitFits, type Kid } from './outfits';
 import { badgeDef, coinsForAttempts, levelFromXp, xpForAttempts } from './progression';
 import { storage } from './storage';
+import type { VoiceChoice } from './voices';
 
 export type ZoneId = 'village' | 'forest' | 'maze' | 'park' | 'zoo' | 'castle' | 'house';
 
@@ -120,6 +121,10 @@ export interface Settings {
   fullscreenHint: boolean;
   /** Chất lượng đồ họa 3D. */
   quality: 'auto' | 'high' | 'low';
+  /** Mỗi nhân vật một giọng đọc riêng (tắt: mọi lời dùng giọng dẫn chuyện). */
+  charVoices: boolean;
+  /** Giọng đọc tiếng Việt bé chọn trên máy này (null = tự động chọn giọng tốt nhất). */
+  voiceVi: VoiceChoice | null;
 }
 
 const LOG_CAP = 1500;
@@ -127,8 +132,37 @@ const LOG_CAP = 1500;
 let current: Profile | null = null;
 let saveTimer: number | null = null;
 
-export const DEFAULT_SETTINGS: Settings = { music: 0.5, sfx: 0.8, voice: true, voiceRate: 1, fullscreenHint: true, quality: 'auto' };
-let settings: Settings = { ...DEFAULT_SETTINGS, ...storage.getJSON<Partial<Settings>>('settings', {}) };
+export const DEFAULT_SETTINGS: Settings = {
+  music: 0.5,
+  sfx: 0.8,
+  voice: true,
+  voiceRate: 1,
+  fullscreenHint: true,
+  quality: 'auto',
+  charVoices: true,
+  voiceVi: null,
+};
+
+/** Đọc cài đặt đã lưu: trường thiếu hoặc sai kiểu lấy giá trị mặc định (cài đặt cũ vẫn dùng được). */
+export function mergeSettings(raw: unknown): Settings {
+  const r = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+  const d = DEFAULT_SETTINGS;
+  const num = (v: unknown, def: number) => (typeof v === 'number' && Number.isFinite(v) ? v : def);
+  const bool = (v: unknown, def: boolean) => (typeof v === 'boolean' ? v : def);
+  const vv = r.voiceVi as Record<string, unknown> | null | undefined;
+  return {
+    music: num(r.music, d.music),
+    sfx: num(r.sfx, d.sfx),
+    voice: bool(r.voice, d.voice),
+    voiceRate: num(r.voiceRate, d.voiceRate),
+    fullscreenHint: bool(r.fullscreenHint, d.fullscreenHint),
+    quality: r.quality === 'auto' || r.quality === 'high' || r.quality === 'low' ? r.quality : d.quality,
+    charVoices: bool(r.charVoices, d.charVoices),
+    voiceVi: vv && typeof vv === 'object' && typeof vv.uri === 'string' && typeof vv.name === 'string' ? { uri: vv.uri, name: vv.name } : null,
+  };
+}
+
+let settings: Settings = mergeSettings(storage.getJSON<unknown>('settings', {}));
 
 export function getSettings(): Settings {
   return settings;

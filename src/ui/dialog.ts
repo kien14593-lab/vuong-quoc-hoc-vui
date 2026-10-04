@@ -13,6 +13,8 @@ export interface Speaker {
   /** Tùy chọn dựng mô hình (ví dụ biến thể dân làng). */
   artOpts?: Record<string, unknown>;
   color?: string;
+  /** Mã giọng đọc riêng (xem core/voice-profiles.ts); không có = giọng dẫn chuyện. */
+  voice?: string;
 }
 
 /** Ảnh chân dung (data URL) của người nói, '' nếu không có. */
@@ -110,7 +112,7 @@ async function runSay(sp: Speaker | null, lines: string[]): Promise<void> {
     for (const line of lines) {
       ui.next.classList.remove('show');
       let typing = true;
-      speak(line);
+      speak(line, { who: sp?.voice });
       const finish = typewrite(ui.text, line, () => {
         typing = false;
         ui.next.classList.add('show');
@@ -146,7 +148,7 @@ async function runChoose(sp: Speaker | null, text: string, options: string[]): P
   const ui = build(sp);
   ui.el.classList.add('has-choices');
   layer('dialog').appendChild(ui.el);
-  speak(text);
+  speak(text, { who: sp?.voice });
   const finish = typewrite(ui.text, text, () => undefined);
   try {
     return await new Promise<number>((resolve) => {

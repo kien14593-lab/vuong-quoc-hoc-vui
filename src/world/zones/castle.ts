@@ -260,7 +260,7 @@ export class CastleZone extends Zone {
       rot: -60,
       wander: 1.4,
       talk: async () => {
-        await say({ name: 'Lính gác Piko', color: '#8fd3ff' }, ['Mẹo nhỏ nhé!', 'Nếu thấy đá đáp án, hãy đi tới và chọn bằng nút tròn. Sai cũng không sao, lâu đài sẽ gợi ý cho bạn.']);
+        await say({ name: 'Lính gác Piko', color: '#8fd3ff', voice: 'v1' }, ['Mẹo nhỏ nhé!', 'Nếu thấy đá đáp án, hãy đi tới và chọn bằng nút tròn. Sai cũng không sao, lâu đài sẽ gợi ý cho bạn.']);
       },
     });
     this.npc('npc_villager', -8.8, -4.8, {
@@ -270,9 +270,9 @@ export class CastleZone extends Zone {
       rot: 40,
       wander: 1.2,
       talk: async () => {
-        await say({ name: 'Thị vệ Mây', color: '#ffb38a' }, 'Mình có một câu đố trong sân lâu đài!');
+        await say({ name: 'Thị vệ Mây', color: '#ffb38a', voice: 'v3' }, 'Mình có một câu đố trong sân lâu đài!');
         await this.quiz(mixedQuestion(GRADE_TOPICS[profile().grade]), { src: 'castle:riddle', speaker: { name: 'Thị vệ Mây', color: '#ffb38a' }, title: 'Câu đố trong sân', icon: '🧩' }, [-8.8, 1.4, -4.8], 10);
-        await say({ name: 'Thị vệ Mây', color: '#ffb38a' }, 'Hay quá! Bạn suy luận như một hiệp sĩ toán học.');
+        await say({ name: 'Thị vệ Mây', color: '#ffb38a', voice: 'v3' }, 'Hay quá! Bạn suy luận như một hiệp sĩ toán học.');
       },
     });
     this.npc('npc_villager', 6.8, 7.6, {
@@ -281,7 +281,7 @@ export class CastleZone extends Zone {
       opts: { v: 4 },
       rot: 180,
       talk: async () => {
-        await say({ name: 'Quan thư ký', color: '#c7b3ff' }, ['Ba phòng có thể làm theo bất kỳ thứ tự nào.', 'Làm xong cả ba, cửa đại sảnh sẽ mở để gặp Nhà Vua.']);
+        await say({ name: 'Quan thư ký', color: '#c7b3ff', voice: 'v4' }, ['Ba phòng có thể làm theo bất kỳ thứ tự nào.', 'Làm xong cả ba, cửa đại sảnh sẽ mở để gặp Nhà Vua.']);
       },
     });
   }

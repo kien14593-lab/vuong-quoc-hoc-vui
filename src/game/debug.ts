@@ -1,4 +1,5 @@
 import * as state from '../core/state';
+import { speak, voiceInfo } from '../core/speech';
 import { engine } from '../engine/core';
 import { dialogOpen } from '../ui/dialog';
 import { questionOpen, solveOpenQuestion } from '../ui/question';
@@ -45,6 +46,10 @@ export function installDebug(): void {
     next: () => key('Enter'),
     /** Chọn phương án thứ n trong hộp lựa chọn. */
     pick: (n: number) => key(`Digit${n}`, String(n)),
+    /** Đọc thử một câu bằng giọng của nhân vật `who` (mã trong core/voice-profiles.ts; bỏ trống = giọng dẫn chuyện). */
+    speak: (text: string, who?: string) => speak(text, { who, force: true }),
+    /** Các giọng đọc đang dùng trên máy này. */
+    voices: () => voiceInfo(),
     /** Nhấn phím tương tác (E). */
     act: () => key('KeyE', 'e'),
     /** Tự qua hội thoại, trả lời đúng, chọn phương án `choice` trong `sec` giây. */

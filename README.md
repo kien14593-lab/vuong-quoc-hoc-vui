@@ -35,6 +35,20 @@ Câu hỏi tự điều chỉnh độ khó theo lớp và theo kết quả làm 
   chủ đề, tiến bộ theo tuần, mục tiêu, nhật ký hoạt động; xuất / nhập tệp JSON (chuyển máy), đổi lớp,
   đặt lại tiến độ, xóa hồ sơ.
 
+### 🗣️ Giọng đọc
+
+- Lời thoại và câu hỏi được **đọc to** bằng giọng đọc có sẵn của trình duyệt / máy (không cần tải thêm gì khi dùng
+  **Microsoft Edge có mạng**).
+- **Mỗi nhân vật một giọng:** trên Edge có mạng, lời dẫn chuyện, câu hỏi và các nhân vật nữ (Thỏ Bông, Cô Mèo,
+  Cô Sóc, Bạn Nai…) dùng giọng **Hoài My**; các nhân vật nam (Chú Gấu, Bác Cú, Nhà Vua, Robot Bíp, Chú Hề Bibo…)
+  dùng giọng **Nam Minh**. Mỗi nhân vật còn có tốc độ đọc riêng (Bà Ba, Nhà Vua đọc chậm; Robot Bíp, Bé Na nhanh hơn).
+  Máy chỉ có một giọng tiếng Việt thì nhân vật nam dùng giọng đó, đọc trầm hơn (nếu giọng cho phép đổi cao độ).
+- **⚙️ Cài đặt:** bật / tắt đọc, tốc độ đọc, **🎭 Giọng nhân vật** (tắt thì mọi lời dùng một giọng), nút
+  **Nghe thử giọng nhân vật**, và **🎙️ Chọn giọng đọc** khi máy có từ 2 giọng tiếng Việt (lưu riêng trên từng máy).
+- **Điện thoại / máy tính bảng:** giọng có sẵn thường nghe như máy – tải giọng tốt hơn (iPhone/iPad: "Linh (Nâng cao)")
+  theo mục **💡 Giọng đọc chưa hay?** trong Cài đặt hoặc **[HUONG-DAN-GIAO-VIEN.md](HUONG-DAN-GIAO-VIEN.md)**.
+- Bản offline (tệp HTML) không có mạng thì dùng giọng cài trong Windows (ví dụ Microsoft An); Hoài My / Nam Minh cần mạng.
+
 ## 🗺️ Nội dung
 
 **7 khu vực** (mở dần theo cốt truyện "Giúp chú Gấu đến sở thú"):
@@ -55,7 +69,7 @@ Chơi tại các điểm trong thế giới hoặc từ nút **Trò chơi** (m�
 
 **17 chủ đề toán** (đếm, so sánh, cộng, trừ, nhân, chia, dãy số, thời gian, độ dài, tiền, hình học, chu vi,
 diện tích, phân số, số thập phân, tỉ số – phần trăm, toán có lời văn) với mức khởi đầu theo lớp 1–5 và tự
-tăng / giảm độ khó theo kết quả. Câu hỏi có thể được đọc to (giọng đọc của trình duyệt).
+tăng / giảm độ khó theo kết quả. Lời thoại và câu hỏi được đọc to, mỗi nhân vật một giọng (mục **🗣️ Giọng đọc** ở trên).
 
 **Nhân vật chính:** khi tạo hồ sơ, học sinh chọn **Bé trai** hoặc **Bé gái** (nhân vật 3D tạo bằng AI, biết đi, chạy,
 vẫy tay) và đổi lại được trong **Túi đồ**. **Bộ đồ** mua ở cửa hàng của Cô Mèo; mũ, balo, phụ kiện, thú cưng và ván
@@ -105,6 +119,8 @@ Trang thử nghiệm khi chạy `npm run dev`:
   `/dev/dashboard.html` – Góc phụ huynh với dữ liệu mẫu.
 - `/dev/do.html?kids=trai,gai&items=hat` – thử mũ, balo, phụ kiện trên bé AI (trước / nghiêng / sau; `anim`,
   `outfit`, `mat`) · `/dev/rig.html?key=player_trai&mode=strip` – xương tự dựng (`mode=weights|strip|perf`).
+- Giọng đọc: `__vq.speak('Chào bạn!', 'gau')` đọc bằng giọng một nhân vật (mã trong `src/core/voice-profiles.ts`),
+  `__vq.voices()` cho biết giọng đang dùng; thêm `?qa=1` vào địa chỉ để ghi nhật ký giọng đọc vào `window.__vqVoiceLog`.
 
 ### Cấu trúc thư mục
 

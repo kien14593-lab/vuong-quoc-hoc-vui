@@ -1,0 +1,65 @@
+# 👩‍🏫 Hướng dẫn cho giáo viên – Vương Quốc Học Vui
+
+Tài liệu ngắn cho thầy cô và phụ huynh: cách để trò chơi đọc to bằng giọng hay nhất trên máy ở trường,
+trên điện thoại và máy tính bảng.
+
+## 🗣️ Giọng đọc
+
+Trò chơi đọc to lời thoại và câu hỏi bằng giọng đọc có sẵn của trình duyệt / máy. **Mỗi nhân vật một giọng:**
+
+| Ai nói | Giọng (Edge có mạng) | Ghi chú |
+|---|---|---|
+| Lời dẫn chuyện, câu hỏi, gợi ý, mini-game | Hoài My | Giọng nữ, đọc vừa phải |
+| Thỏ Bông, Cô Mèo, Cô Sóc, Bạn Nai, Bé Na, Chị Mai, Bé Bin, Bà Ba | Hoài My | Mỗi bạn nhanh / chậm khác nhau (Bà Ba đọc chậm nhất) |
+| Chú Gấu, Bác Cú, Nhà Vua, Hiệp Sĩ Thỏ, Robot Bíp, Chú Hề Bibo, Bác Voi, Ông Rùa, Anh Tí, Chú Tư | Nam Minh | Nhà Vua, Ông Rùa đọc chậm; Robot Bíp, Chú Hề nhanh hơn |
+
+### Máy tính ở trường (Windows)
+
+- Nên mở trò chơi bằng **Microsoft Edge** khi có mạng: Edge có sẵn hai giọng tự nhiên **Hoài My** (nữ) và
+  **Nam Minh** (nam), không cần cài thêm.
+- **Chrome** trên Windows thường **không có** giọng tiếng Việt. Muốn có giọng cả khi mất mạng: Cài đặt Windows →
+  Thời gian & ngôn ngữ → Giọng nói → Thêm giọng nói → **Tiếng Việt** (giọng Microsoft An – giọng nam; máy chỉ có
+  giọng này thì mọi nhân vật dùng chung giọng An).
+- Bản offline (tệp `VuongQuocHocVui.html`): có mạng và mở bằng Edge thì vẫn có Hoài My / Nam Minh; không có mạng thì
+  dùng giọng đã cài trong Windows.
+
+### Trong trò chơi: ⚙️ Cài đặt
+
+- **🗣️ Đọc câu hỏi:** bật / tắt đọc to. **⏩ Tốc độ đọc** (0.6× – 1.4×) áp dụng cho mọi giọng; mỗi nhân vật vẫn giữ
+  nhịp nhanh / chậm riêng.
+- **🎭 Giọng nhân vật:** bật (mặc định) = mỗi nhân vật một giọng; tắt = mọi lời dùng một giọng dẫn chuyện.
+  Nút **Nghe thử giọng nhân vật** đọc lời Thỏ Bông rồi Chú Gấu.
+- **🎙️ Chọn giọng đọc:** chỉ hiện khi máy có từ 2 giọng tiếng Việt trở lên. **"Tự động (khuyên dùng)"** chọn giọng
+  tốt nhất. Lựa chọn lưu riêng trên từng máy / trình duyệt (không đi theo hồ sơ học sinh). Giọng có ghi
+  "(cần mạng)" sẽ tự đổi sang giọng của máy khi mất mạng.
+- Dòng ghi chú bên dưới cho biết giọng đang dùng và máy có giọng nam hay không.
+
+## 📱 Giọng đọc trên điện thoại / máy tính bảng
+
+Giọng có sẵn của điện thoại thường nghe như máy. Tải giọng tốt hơn **một lần** (nên dùng Wi-Fi), rồi chọn trong
+⚙️ Cài đặt → 🎙️ Chọn giọng đọc. Mục **💡 Giọng đọc chưa hay?** trong Cài đặt cũng có các bước này.
+
+### iPhone / iPad
+
+1. Mở **Cài đặt → Trợ năng → Nội dung được đọc → Giọng nói → Tiếng Việt**.
+2. Chọn **Linh** → tải bản **"Linh (Nâng cao)"**.
+3. Mở lại trò chơi → ⚙️ Cài đặt → 🎙️ Chọn giọng đọc → **"Linh (Nâng cao)"** (máy có bản **"Cao cấp"** thì chọn bản đó).
+
+iPhone / iPad chỉ có giọng nữ tiếng Việt: các nhân vật nam dùng giọng Linh, đọc trầm hơn.
+
+### Android
+
+1. Mở **Cài đặt** → tìm **"Chuyển văn bản thành giọng nói"** (thường ở Quản lý chung, hoặc Hệ thống → Ngôn ngữ).
+2. Chọn công cụ của **Google** → ⚙️ → **Cài đặt dữ liệu giọng nói** → **Tiếng Việt** → tải giọng về máy.
+3. Mở lại trò chơi → ⚙️ Cài đặt → 🎙️ Chọn giọng đọc (nếu máy có nhiều giọng).
+
+Tên các mục có thể hơi khác tùy hãng máy. Mỗi máy đọc cao / thấp, nhanh / chậm hơi khác nhau – chỉnh **Tốc độ đọc**
+nếu cần.
+
+### Không nghe thấy giọng đọc?
+
+- Trình duyệt chỉ đọc sau khi bé chạm / nhấp vào màn hình lần đầu.
+- Tăng âm lượng; trên iPhone tắt chế độ im lặng (công tắc bên hông máy) rồi thử lại.
+- Kiểm tra ⚙️ Cài đặt → 🗣️ Đọc câu hỏi đang **bật**, bấm **Nghe thử**.
+- Cửa sổ xem trước trong một số ứng dụng (không phải trình duyệt) không có giọng tiếng Việt – hãy mở bằng Edge,
+  Chrome hoặc Safari.

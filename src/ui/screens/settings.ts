@@ -1,9 +1,10 @@
 import { sfx } from '../../core/audio';
-import { hasVietnameseVoice, speak, voiceName } from '../../core/speech';
+import { mobileOs } from '../../core/device';
+import { chosenVoiceKey, hasVietnameseVoice, onVoicesChanged, speak, speakParts, viVoiceLabel, viVoiceOptions } from '../../core/speech';
 import { getSettings, updateSettings } from '../../core/state';
 import { backToTitle } from '../../game/app';
 import { glbReport } from '../../models/glb';
-import { button, h } from '../dom';
+import { button, clear, h } from '../dom';
 import { confirmBox, openModal } from '../modal';
 import { openDashboard } from './dashboard';
 
@@ -32,31 +33,110 @@ export async function toggleFullscreen(): Promise<void> {
   }
 }
 
+const VOICE_SAMPLE = 'Xin chào! Mình sẽ đọc câu hỏi cho bạn nghe nhé.';
+
+/** Nghe thử: Thỏ Bông (giọng nữ) rồi Chú Gấu (giọng nam). */
+function previewCharVoices(): void {
+  speakParts(
+    [
+      { text: 'Chào bạn! Mình là Thỏ Bông.', lang: 'vi', who: 'tho' },
+      { text: 'Còn mình là Chú Gấu!', lang: 'vi', who: 'gau' },
+    ],
+    { force: true, chars: true },
+  );
+}
+
+function voiceNote(selectShown: boolean): string {
+  if (!hasVietnameseVoice()) {
+    return mobileOs()
+      ? 'Máy chưa có giọng đọc tiếng Việt. Xem mục "Giọng đọc chưa hay?" bên dưới để tải giọng về máy.'
+      : 'Máy tính chưa có giọng đọc tiếng Việt. Để bật: Cài đặt Windows → Thời gian & ngôn ngữ → Giọng nói → Thêm giọng nói → Tiếng Việt. (Microsoft Edge có sẵn giọng đọc trực tuyến khi có mạng.)';
+  }
+  const nam = viVoiceLabel('nam');
+  const head = selectShown ? '' : `Giọng đọc: ${viVoiceLabel('nu') ?? 'tiếng Việt'}. `;
+  return head + (nam ? `Giọng nhân vật nam: ${nam}.` : 'Máy chưa có giọng nam tiếng Việt nên nhân vật nam dùng giọng đọc này, đọc trầm hơn.');
+}
+
+/** Chọn giọng đọc (chỉ hiện khi máy có từ 2 giọng tiếng Việt) và ghi chú giọng đang dùng. Vẽ lại khi danh sách giọng thay đổi. */
+function renderVoicePanel(box: HTMLElement): void {
+  clear(box);
+  const opts = viVoiceOptions();
+  const showSelect = opts.length > 1;
+  if (showSelect) {
+    const sel = h<HTMLSelectElement>(
+      'select.set-select',
+      { 'aria-label': 'Chọn giọng đọc' },
+      h('option', { value: '' }, 'Tự động (khuyên dùng)'),
+      opts.map((o) => h('option', { value: o.key }, o.label)),
+    );
+    sel.value = chosenVoiceKey();
+    sel.addEventListener('change', () => {
+      const o = opts.find((x) => x.key === sel.value);
+      updateSettings({ voiceVi: o ? { uri: o.key, name: o.name } : null });
+      speak(VOICE_SAMPLE, { force: true });
+    });
+    box.appendChild(h('div.set-row', h('span.set-label', '🎙️ Chọn giọng đọc'), sel));
+    const used = viVoiceLabel('nu');
+    if (used) box.appendChild(h('div.set-sub', `Đang dùng: ${used}`));
+  }
+  box.appendChild(h('div.set-note', voiceNote(showSelect)));
+}
+
+/** Hướng dẫn tải giọng đọc tốt hơn trên điện thoại / máy tính bảng. */
+function phoneVoiceTip(): HTMLElement | null {
+  const os = mobileOs();
+  if (!os) return null;
+  const steps =
+    os === 'ios'
+      ? [
+          'Mở Cài đặt → Trợ năng → Nội dung được đọc → Giọng nói → Tiếng Việt.',
+          'Chọn Linh → tải giọng "Linh (Nâng cao)" về máy (nên dùng Wi-Fi).',
+          'Mở lại trò chơi → ⚙️ Cài đặt → 🎙️ Chọn giọng đọc → "Linh (Nâng cao)".',
+        ]
+      : [
+          'Mở Cài đặt → tìm "Chuyển văn bản thành giọng nói" (thường ở mục Quản lý chung hoặc Hệ thống → Ngôn ngữ).',
+          'Chọn công cụ của Google → ⚙️ → Cài đặt dữ liệu giọng nói → Tiếng Việt → tải giọng về máy.',
+          'Mở lại trò chơi → ⚙️ Cài đặt → 🎙️ Chọn giọng đọc.',
+        ];
+  return h(
+    'details.set-tip',
+    { open: !hasVietnameseVoice() },
+    h('summary', '💡 Giọng đọc chưa hay?'),
+    h('ol', steps.map((s) => h('li', s))),
+    h('div.set-sub', 'Tên các mục có thể hơi khác tùy máy.'),
+  );
+}
+
 /** Cửa sổ cài đặt âm thanh, giọng đọc, toàn màn hình. */
 export function openSettings(o: { inGame: boolean }): void {
   const s = getSettings();
   const pct = (v: number) => `${Math.round(v * 100)}%`;
-  const voiceOk = hasVietnameseVoice();
   const aiCredits = [...new Set(glbReport().filter((r) => r.source === 'ai' && r.credit).map((r) => r.credit!))];
   const voiceToggle = button(s.voice ? '🔊 Đang bật' : '🔇 Đang tắt', () => {
     const on = !getSettings().voice;
     updateSettings({ voice: on });
     voiceToggle.textContent = on ? '🔊 Đang bật' : '🔇 Đang tắt';
     voiceToggle.classList.toggle('btn-green', on);
-    if (on) speak('Xin chào! Mình sẽ đọc câu hỏi cho bạn nghe nhé.', { force: true });
+    if (on) speak(VOICE_SAMPLE, { force: true });
   }, s.voice ? 'btn-green btn-small' : 'btn-small');
+  const charToggle = button(s.charVoices ? '🎭 Đang bật' : 'Đang tắt', () => {
+    const on = !getSettings().charVoices;
+    updateSettings({ charVoices: on });
+    charToggle.textContent = on ? '🎭 Đang bật' : 'Đang tắt';
+    charToggle.classList.toggle('btn-green', on);
+  }, s.charVoices ? 'btn-green btn-small' : 'btn-small');
+  const voices = h('div.set-voices');
+  renderVoicePanel(voices);
+  const offVoices = onVoicesChanged(() => renderVoicePanel(voices));
   const body = h(
     'div.settings',
     slider('Nhạc nền', '🎵', s.music, 0, 1, 0.05, (v) => updateSettings({ music: v }), pct),
     slider('Âm thanh', '🔔', s.sfx, 0, 1, 0.05, (v) => updateSettings({ sfx: v }), pct),
     h('div.set-row', h('span.set-label', '🗣️ Đọc câu hỏi'), voiceToggle, button('Nghe thử', () => speak('Bạn An có 3 quả táo, mẹ cho thêm 2 quả. Hỏi An có tất cả bao nhiêu quả táo?', { force: true }), 'btn-small btn-soft')),
     slider('Tốc độ đọc', '⏩', s.voiceRate, 0.6, 1.4, 0.1, (v) => updateSettings({ voiceRate: v }), (v) => `${v.toFixed(1)}×`),
-    h(
-      'div.set-note',
-      voiceOk
-        ? `Giọng đọc: ${voiceName() ?? 'tiếng Việt'}`
-        : 'Máy tính chưa có giọng đọc tiếng Việt. Để bật: Cài đặt Windows → Thời gian & ngôn ngữ → Giọng nói → Thêm giọng nói → Tiếng Việt. (Microsoft Edge có sẵn giọng đọc trực tuyến khi có mạng.)',
-    ),
+    h('div.set-row', h('span.set-label', '🎭 Giọng nhân vật'), charToggle, button('Nghe thử giọng nhân vật', () => previewCharVoices(), 'btn-small btn-soft')),
+    voices,
+    phoneVoiceTip(),
     h('div.set-row', h('span.set-label', '🖥️ Toàn màn hình'), button(isFullscreen() ? 'Thu nhỏ' : 'Phóng to', () => void toggleFullscreen(), 'btn-small btn-blue')),
     h(
       'div.set-help',
@@ -86,5 +166,5 @@ export function openSettings(o: { inGame: boolean }): void {
         ),
       ]
     : undefined;
-  openModal({ title: 'Cài đặt', icon: '⚙️', width: 1180, body, footer });
+  openModal({ title: 'Cài đặt', icon: '⚙️', width: 1180, body, footer, onClose: offVoices });
 }

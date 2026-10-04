@@ -26,6 +26,9 @@ export const CAST = {
   rua: { name: 'Ông Rùa', art: 'npc_turtle', color: '#7cc79a', role: 'Ông cụ thông thái bên hồ' },
 } satisfies Record<string, CastMember>;
 
+// Mã giọng đọc của nhân vật chính là khóa của họ trong CAST (xem core/voice-profiles.ts).
+for (const [id, m] of Object.entries(CAST)) (m as Speaker).voice = id;
+
 export type CastId = keyof typeof CAST;
 
 /** Dân làng (6 biến thể ngoại hình). */
@@ -40,8 +43,8 @@ export const VILLAGERS: { name: string; v: number; color: string }[] = [
 
 export function villager(i: number): Speaker {
   const v = VILLAGERS[i % VILLAGERS.length];
-  return { name: v.name, art: 'npc_villager', artOpts: { v: v.v }, color: v.color };
+  return { name: v.name, art: 'npc_villager', artOpts: { v: v.v }, color: v.color, voice: `v${v.v}` };
 }
 
 /** Người chơi (chân dung lấy từ hồ sơ – dùng tên "Bạn"). */
-export const ME: Speaker = { name: 'Bạn', color: '#7a63ff' };
+export const ME: Speaker = { name: 'Bạn', color: '#7a63ff', voice: 'kid' };
