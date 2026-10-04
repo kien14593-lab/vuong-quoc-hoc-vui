@@ -580,6 +580,11 @@
   animation: bob 1.2s ease-in-out infinite;
 }
 
+/* Bé trai: nền xanh dương (bé gái giữ màu hồng ở trên). */
+.wm-me.trai {
+  background: var(--blue-l);
+}
+
 .wm-side {
   flex: 1;
   min-width: 0;

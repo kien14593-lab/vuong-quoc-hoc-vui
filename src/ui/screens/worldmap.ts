@@ -77,7 +77,7 @@ export function openWorldMap(current: ZoneId, go: (z: ZoneId) => void): void {
       h('span.wm-name', m.name),
       lock ? h('span.wm-lock', '🔒') : null,
       goal ? h('span.wm-goal', '!') : null,
-      here ? avatarImg(profile().kid, profile().equipped, 'wm-me', { framing: 'head', size: 160, yaw: 16 }) : null,
+      here ? avatarImg(profile().kid, profile().equipped, `wm-me.${profile().kid}`, { framing: 'head', size: 160, yaw: 16 }) : null,
     );
     map.appendChild(node);
   }

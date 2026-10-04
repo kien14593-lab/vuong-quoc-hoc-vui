@@ -75,9 +75,10 @@ class Hud {
     e.title = h('div.hud-title');
     e.xpFill = h('div.hud-xp-fill');
     e.xpText = h('div.hud-xp-text');
+    e.avatarWrap = h('div.hud-avatar-wrap', e.avatar, e.level);
     const card = h(
       'div.hud-card',
-      h('div.hud-avatar-wrap', e.avatar, e.level),
+      e.avatarWrap,
       h('div.hud-card-info', e.name, e.title, h('div.hud-xp', e.xpFill, e.xpText)),
     );
 
@@ -287,6 +288,9 @@ class Hud {
     const p = profile();
     const e = this.els;
     setPlayerPortrait(e.avatar as HTMLImageElement, p.kid, p.equipped, { framing: 'head', size: 200, yaw: 16 });
+    // Nền khung ảnh theo bé: bé trai xanh dương, bé gái hồng.
+    e.avatarWrap.classList.toggle('trai', p.kid === 'trai');
+    e.avatarWrap.classList.toggle('gai', p.kid === 'gai');
     const lp = levelProgress(p.xp);
     e.level.textContent = String(lp.level);
     e.name.textContent = p.name;
