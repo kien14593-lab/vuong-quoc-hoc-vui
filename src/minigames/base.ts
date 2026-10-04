@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { audio, sfx } from '../core/audio';
 import { speak, stopSpeech } from '../core/speech';
 import { addCoins, addXp, playerLook, profile, recordMini, skill } from '../core/state';
-import { engine, type Quality, type Stage } from '../engine/core';
+import { engine, warmUp, type Quality, type Stage } from '../engine/core';
 import { Fx } from '../engine/fx';
 import { setupLights, setupSky, type LightRig } from '../engine/lighting';
 import { disposeTree } from '../engine/merge';
@@ -121,6 +121,8 @@ export abstract class MiniGame implements Stage {
   async begin(): Promise<void> {
     audio.music('mini');
     this.build();
+    // Biên dịch trước shader + đưa ảnh lên GPU trong lúc màn hướng dẫn hiện (vào chơi không bị khựng).
+    void warmUp(this.scene, { camera: this.camera, scene: this.scene });
     this.ui.setRound(0, this.info.rounds);
     this.ui.setScore(0);
     await this.ui.intro();
@@ -315,9 +317,12 @@ export abstract class MiniGame implements Stage {
         if (Math.hypot(e.clientX - sx, e.clientY - sy) < 14 && performance.now() - st < 800) fn(e);
       });
     } else {
-      on(`pointer${type}`, (e) => {
+      const fire = (e: PointerEvent) => {
         if (ok()) fn(e);
-      });
+      };
+      on(`pointer${type}`, fire);
+      // Ngón tay bị hủy giữa chừng (cử chỉ hệ thống, thông báo...) cũng tính là nhấc tay: không kẹt ở trạng thái đang kéo.
+      if (type === 'up') on('pointercancel', fire);
     }
     const off = () => offs.forEach((f) => f());
     this.offs.push(off);

@@ -1,7 +1,7 @@
 import { audio } from '../core/audio';
 import { KIDS, kidKey } from '../core/outfits';
 import { awardBadge, hasBadge, hasProfile, profile, saveNow, setPosition, takeRefundNotice, unloadProfile, type ZoneId } from '../core/state';
-import { engine } from '../engine/core';
+import { engine, warmUp } from '../engine/core';
 import { miniDef, miniTitle, runMini, type MiniResult } from '../minigames';
 import { ensureGlb, glbReady, lowerGlb, prefetchGlb } from '../models';
 import { h, nextFrame, wait } from '../ui/dom';
@@ -57,6 +57,8 @@ async function fade(on: boolean, text = ''): Promise<void> {
   if (on) (v.firstElementChild as HTMLElement).textContent = text;
   else v.querySelector('.fade-veil-load')?.classList.remove('on');
   v.classList.toggle('on', on);
+  // Sau màn che máy đang tải / dựng cảnh: khung hình chậm lúc này không tính khi tự chỉnh độ nét.
+  engine.setLoading(on);
   await wait(on ? 380 : 40);
 }
 
@@ -122,7 +124,11 @@ export async function goZone(id: ZoneId, spawn: Spawn = 'start'): Promise<void> 
     engine.setStage(z);
     zone = z;
     setPosition(z.id, z.player.pos.x, z.player.pos.z);
-    z.enter();
+    // Sau màn che (khu vực đứng yên tới lúc mở màn): biên dịch trước shader + đưa ảnh lên GPU cho cả khu vực,
+    // kể cả phần chưa nhìn thấy – bé bắt đầu đi, quay camera không bị khựng.
+    z.pause();
+    await warmUp(z.scene);
+    if (zone === z) z.enter();
     await nextFrame();
     await fade(false);
   } finally {

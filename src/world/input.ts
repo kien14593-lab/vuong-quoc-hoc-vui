@@ -23,9 +23,29 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('keyup', (e) => {
   down.delete(e.code);
 });
-window.addEventListener('blur', () => {
+
+/** Việc cần làm khi nhả hết điều khiển (cần điều khiển ảo, kéo camera...). */
+const resets = new Set<() => void>();
+
+/** Nhả hết phím, cần điều khiển ảo, ngón tay đang kéo – để bé không tự đi mãi khi chuyển ứng dụng / bị gián đoạn. */
+export function releaseAll(): void {
   down.clear();
   pressed.clear();
+  virt.x = 0;
+  virt.y = 0;
+  for (const fn of [...resets]) fn();
+}
+
+/** Đăng ký việc cần làm khi `releaseAll`. Trả về hàm hủy. */
+export function onInputReset(fn: () => void): () => void {
+  resets.add(fn);
+  return () => resets.delete(fn);
+}
+
+window.addEventListener('blur', releaseAll);
+window.addEventListener('pagehide', releaseAll);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) releaseAll();
 });
 
 export const keys = {

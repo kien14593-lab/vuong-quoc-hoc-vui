@@ -3,7 +3,8 @@ import './styles/main.css';
 import './styles/screens.css';
 import './styles/hud.css';
 import './styles/menus.css';
-import { getSettings } from './core/state';
+import { isTouchDevice } from './core/device';
+import { flushSave, getSettings } from './core/state';
 import { engine } from './engine/core';
 import { loadFonts } from './engine/text';
 import { showTitle } from './game/app';
@@ -11,7 +12,10 @@ import { installDebug } from './game/debug';
 import { modelsInStoryOrder, TITLE_MODELS } from './game/needs';
 import { startPlayTimer } from './game/playtime';
 import { glbKeys, prefetchGlb, preloadGlb } from './models';
+import { installFpsMeter } from './ui/fpsmeter';
+import { installContextLossGuard } from './ui/glLost';
 import { initUI } from './ui/root';
+import { installTouchGuards } from './ui/touch';
 
 /** Thanh tiến độ trên màn hình khởi động. */
 function bootProgress(pct: number, text?: string): void {
@@ -23,7 +27,18 @@ function bootProgress(pct: number, text?: string): void {
 
 async function main(): Promise<void> {
   bootProgress(0.1);
-  engine.init(document.getElementById('game')!, getSettings().quality);
+  // Điện thoại / máy tính bảng: cách vẽ 3D riêng (engine/core.ts), không làm mờ nền sau bảng (tốn sức vẽ), chặn phóng to trang.
+  const touch = isTouchDevice();
+  document.documentElement.classList.toggle('touch-gfx', touch);
+  installTouchGuards();
+  engine.init(document.getElementById('game')!, getSettings().quality, { touch });
+  installContextLossGuard();
+  installFpsMeter();
+  // Trang bị ẩn / đóng (iPhone, iPad có thể tắt trang đang chạy nền): ghi ngay phần đang chờ ghi.
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) flushSave();
+  });
+  window.addEventListener('pagehide', () => flushSave());
   initUI();
   bootProgress(0.3, 'Đang tải phông chữ...');
   await loadFonts();

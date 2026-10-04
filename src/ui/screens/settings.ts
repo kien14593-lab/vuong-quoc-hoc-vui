@@ -1,7 +1,8 @@
 import { sfx } from '../../core/audio';
 import { mobileOs } from '../../core/device';
 import { chosenVoiceKey, hasVietnameseVoice, onVoicesChanged, speak, speakParts, viVoiceLabel, viVoiceOptions } from '../../core/speech';
-import { getSettings, updateSettings } from '../../core/state';
+import { getSettings, updateSettings, type Settings } from '../../core/state';
+import { engine } from '../../engine/core';
 import { backToTitle } from '../../game/app';
 import { glbReport } from '../../models/glb';
 import { button, clear, h } from '../dom';
@@ -34,6 +35,38 @@ export async function toggleFullscreen(): Promise<void> {
 }
 
 const VOICE_SAMPLE = 'Xin chào! Mình sẽ đọc câu hỏi cho bạn nghe nhé.';
+
+const QUALITY_OPTS: [Settings['quality'], string][] = [
+  ['auto', 'Tự động'],
+  ['high', 'Đẹp'],
+  ['low', 'Nhẹ (mượt hơn)'],
+];
+
+/** Đồ họa: Tự động / Đẹp / Nhẹ – đổi ngay, không cần tải lại trang. */
+function qualityRow(): HTMLElement {
+  const btns = QUALITY_OPTS.map(([q, label]) => {
+    const b = button(
+      label,
+      () => {
+        updateSettings({ quality: q });
+        engine.setQuality(q);
+        paint();
+      },
+      'btn-small',
+    );
+    return [q, b] as const;
+  });
+  const paint = () => {
+    const cur = getSettings().quality;
+    for (const [q, b] of btns) {
+      b.classList.toggle('btn-green', q === cur);
+      b.classList.toggle('btn-soft', q !== cur);
+      b.setAttribute('aria-pressed', String(q === cur));
+    }
+  };
+  paint();
+  return h('div.set-row', h('span.set-label', '🎮 Đồ họa'), btns.map(([, b]) => b));
+}
 
 /** Nghe thử: Thỏ Bông (giọng nữ) rồi Chú Gấu (giọng nam). */
 function previewCharVoices(): void {
@@ -138,6 +171,8 @@ export function openSettings(o: { inGame: boolean }): void {
     voices,
     phoneVoiceTip(),
     h('div.set-row', h('span.set-label', '🖥️ Toàn màn hình'), button(isFullscreen() ? 'Thu nhỏ' : 'Phóng to', () => void toggleFullscreen(), 'btn-small btn-blue')),
+    qualityRow(),
+    h('div.set-sub', 'Tự động: máy tự chỉnh độ nét cho mượt. Hình vẫn bị giật thì chọn “Nhẹ”.'),
     h(
       'div.set-help',
       h('div.set-help-title', '🎮 Cách điều khiển'),

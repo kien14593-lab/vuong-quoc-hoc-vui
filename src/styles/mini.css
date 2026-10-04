@@ -40,6 +40,26 @@
   box-shadow: var(--lift);
 }
 
+/* Điện thoại, máy tính bảng: nền trắng đục hơn thay cho kính mờ (làm mờ cảnh 3D mỗi khung hình rất tốn sức). */
+.touch-gfx .layer > .mg-root {
+  --glass: rgba(255, 255, 255, 0.9);
+}
+
+.touch-gfx .mg-glass,
+.touch-gfx .mg-title,
+.touch-gfx .mg-score,
+.touch-gfx .mg-quit,
+.touch-gfx .mg-prompt,
+.touch-gfx .mg-card,
+.touch-gfx .mg-dots {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.touch-gfx .mg-dots {
+  background: rgba(255, 255, 255, 0.62);
+}
+
 /* ---------------- Thanh trên ---------------- */
 .mg-top {
   position: absolute;

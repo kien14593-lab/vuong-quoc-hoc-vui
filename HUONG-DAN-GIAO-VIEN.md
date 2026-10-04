@@ -1,7 +1,7 @@
 # 👩‍🏫 Hướng dẫn cho giáo viên – Vương Quốc Học Vui
 
 Tài liệu ngắn cho thầy cô và phụ huynh: cách để trò chơi đọc to bằng giọng hay nhất trên máy ở trường,
-trên điện thoại và máy tính bảng; cách chuyển hồ sơ của bé sang máy khác.
+trên điện thoại và máy tính bảng; cách chơi mượt trên iPhone / iPad; cách chuyển hồ sơ của bé sang máy khác.
 
 ## 🗣️ Giọng đọc
 
@@ -63,6 +63,36 @@ nếu cần.
 - Kiểm tra ⚙️ Cài đặt → 🗣️ Đọc câu hỏi đang **bật**, bấm **Nghe thử**.
 - Cửa sổ xem trước trong một số ứng dụng (không phải trình duyệt) không có giọng tiếng Việt – hãy mở bằng Edge,
   Chrome hoặc Safari.
+
+## 📱 Chơi trên iPhone / iPad
+
+- **Tắt Chế độ nguồn điện thấp** (Cài đặt → Pin): khi bật, Safari chỉ vẽ 30 hình mỗi giây nên bé đi, xoay, phóng to
+  trông giật hơn.
+- Trò chơi **tự chỉnh độ nét** cho mượt (⚙️ Cài đặt → 🎮 Đồ họa → **Tự động**, có sẵn). Vẫn thấy giật thì chọn
+  **Nhẹ (mượt hơn)**: hình bớt nét một chút nhưng nhẹ máy hơn. **Đẹp** là luôn vẽ nét nhất. Đổi là có tác dụng ngay.
+- Chụm hai ngón để phóng to / thu nhỏ **thế giới trong game**; trang web không còn bị phóng to nhầm khi bé chạm
+  hai lần hay chụm ngón.
+- Máy thiếu bộ nhớ thì hình 3D có thể tạm dừng, game hiện **"Hình 3D đang nghỉ một chút"** – bấm **🔄 Tải lại** để chơi
+  tiếp (tiến độ đã được lưu).
+
+### Xem số đo độ mượt (khi cần báo lỗi)
+
+Thêm **`?fps=1`** vào cuối địa chỉ trang rồi mở lại, ví dụ
+<https://kien14593-lab.github.io/vuong-quoc-hoc-vui/?fps=1>. Giữa mép trên màn hình hiện một ô chữ nhỏ, ví dụ:
+
+```
+51 hình/giây · 90%: 18.0 ms
+1500×684 · tỉ lệ 2.00 · Đẹp (tự động)
+265 lần vẽ · 380k tam giác · cảm ứng
+```
+
+- **hình/giây:** khoảng 50–60 là mượt; quanh 30 thường là máy đang bật Chế độ nguồn điện thấp hoặc cảnh quá nặng.
+- **90%: … ms:** 9 trên 10 hình được vẽ xong trong chừng ấy mili-giây – dưới 20 là mượt, càng lớn càng giật.
+- **1500×684 · tỉ lệ 2.00:** kích thước hình đang vẽ; máy nặng thì game tự giảm tỉ lệ (2 → 1,75 → 1,5 → 1,25 → 1)
+  rồi nâng lại khi máy rảnh. **Đẹp / Vừa / Nhẹ** là mức đồ họa đang dùng.
+- **lần vẽ · tam giác:** cảnh đang nặng tới đâu.
+
+Chụp màn hình ô này (ở đúng chỗ bị giật) gửi cho người hỗ trợ là đủ. Bỏ `?fps=1` thì ô này không hiện nữa.
 
 ## 💾 Chuyển hồ sơ sang máy khác
 

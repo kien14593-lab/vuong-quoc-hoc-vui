@@ -3,7 +3,7 @@ import { audio, sfx, type TrackId } from '../core/audio';
 import { bus } from '../core/events';
 import { playerKey } from '../core/outfits';
 import { addCoins, addKeys, addStars, addTickets, giveItem, hasProfile, isCollected, level, markCollected, profile, setPosition, type ZoneId } from '../core/state';
-import { engine, type Quality, type Stage } from '../engine/core';
+import { engine, warmUp, type Quality, type Stage } from '../engine/core';
 import { Fx } from '../engine/fx';
 import { setupLights, setupSky, type LightMood, type LightRig } from '../engine/lighting';
 import { bakeStatic, disposeTree } from '../engine/merge';
@@ -30,7 +30,7 @@ import { World, type Body } from './collide';
 import { K, keys } from './input';
 import { Labels, type Label } from './labels';
 import { nav } from './nav';
-import { Player } from './player';
+import { buildLook, disposeLook, Player } from './player';
 import { inArea, Terrain, TERRAIN_COLORS, waterUniforms, type Area } from './terrain';
 
 /**
@@ -1167,12 +1167,19 @@ export abstract class Zone implements Stage {
     const pet = new Follower(id, this.player, { x: p.x - 1, z: p.z + 0.8 });
     this.pet = pet;
     this.scene.add(pet.root);
-    // Mạng chậm (mới nhận nuôi, mô hình AI chưa tải): tạm dùng thú dựng bằng code, tải xong thì thay ngay tại chỗ.
+    // Mạng chậm (mới nhận nuôi, mô hình AI chưa tải): tạm dùng thú dựng bằng code, tải xong thì thay ngay tại chỗ
+    // (chuẩn bị trước ảnh + shader để lúc thay không bị khựng).
     if (!glbReady([id]))
-      void ensureGlb([id]).then((ok) => {
-        if (!ok || this.disposed || this.pet !== pet || !hasProfile() || profile().equipped.pet !== id) return;
+      void ensureGlb([id]).then(async (ok) => {
+        const live = () => !this.disposed && this.pet === pet && hasProfile() && profile().equipped.pet === id;
+        if (!ok || !live()) return;
         const next = buildModel(id);
-        disposeTree(next.userData.glb ? pet.swapModel(next) : next);
+        if (!next.userData.glb) {
+          disposeTree(next);
+          return;
+        }
+        await warmUp(next, { camera: this.camera, scene: this.scene });
+        disposeTree(live() ? pet.swapModel(next) : next);
       });
   }
 
@@ -1182,13 +1189,21 @@ export abstract class Zone implements Stage {
     // Bộ đồ mới chưa tải: chờ tải xong mới thay (không hiện tạm bé dựng bằng code); đổi liên tục thì chỉ lấy lần cuối.
     const key = playerKey(p.kid, p.equipped.outfit);
     const tok = ++this.lookTok;
-    const go = () => {
-      if (tok !== this.lookTok || this.disposed || !hasProfile()) return;
+    const ok = () => tok === this.lookTok && !this.disposed && hasProfile();
+    const go = async () => {
+      if (!ok()) return;
       const q = profile();
-      this.player.refresh(q.kid, q.equipped);
+      const next = buildLook(q.kid, q.equipped);
+      // Chuẩn bị trước ảnh + shader của bé mới: thay vào là đi tiếp ngay, không khựng.
+      await warmUp(next, { camera: this.camera, scene: this.scene });
+      if (!ok()) {
+        disposeLook(next);
+        return;
+      }
+      this.player.refresh(q.kid, q.equipped, next);
       this.makePet();
     };
-    if (glbReady([key])) go();
+    if (glbReady([key])) void go();
     else {
       this.makePet();
       void ensureGlb([key]).then(go);

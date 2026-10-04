@@ -41,6 +41,24 @@ body {
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: none;
+  /* iPhone/iPad: không hiện menu khi giữ ngón tay, không tự phóng to chữ khi xoay ngang, không kéo nảy cả trang. */
+  -webkit-touch-callout: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overscroll-behavior: none;
+}
+
+/* Ô nhập liệu vẫn chọn, dán chữ được. */
+input,
+textarea,
+[contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+img {
+  -webkit-user-drag: none;
 }
 
 #app {
@@ -297,6 +315,24 @@ textarea {
   overflow: auto;
   flex: 1;
   min-height: 0;
+}
+
+/* Vùng cuộn: kéo ngón tay để cuộn, không phóng to cả trang. */
+.modal-body,
+.shop-grid,
+.bag-content,
+.dash-content,
+.gl-lost-card {
+  touch-action: pan-x pan-y;
+}
+
+/* Điện thoại, máy tính bảng: cuộn hết thì không kéo theo trang (chỉ bật ở đây vì nó làm máy tính vẽ chữ trong vùng cuộn khác đi một chút). */
+.touch-gfx .modal-body,
+.touch-gfx .shop-grid,
+.touch-gfx .bag-content,
+.touch-gfx .dash-content,
+.gl-lost-card {
+  overscroll-behavior: contain;
 }
 
 .modal-footer {
@@ -1076,6 +1112,77 @@ textarea {
   font-size: 34px;
   font-weight: 800;
   color: #c2558c;
+}
+
+/* ---------------- Bảng số đo (?fps=1) – ngoài lớp giao diện nên cỡ chữ thật ---------------- */
+.fps-meter {
+  position: fixed;
+  top: max(4px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2147483000;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(20, 16, 40, 0.72);
+  color: #fff;
+  font: 600 12px/1.35 ui-monospace, Menlo, Consolas, monospace;
+  white-space: pre;
+  pointer-events: none;
+}
+
+/* ---------------- Hình 3D bị dừng (máy thiếu bộ nhớ) – cỡ chữ thật, đọc được trên điện thoại ---------------- */
+.gl-lost {
+  position: fixed;
+  inset: 0;
+  z-index: 2147482000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(251, 231, 240, 0.95);
+}
+
+.gl-lost-card {
+  max-width: min(92vw, 560px);
+  max-height: 100%;
+  overflow: auto;
+  padding: 20px 26px 26px;
+  text-align: center;
+  background: var(--paper);
+  border: 4px solid var(--ol);
+  border-radius: 26px;
+  box-shadow: var(--shadow);
+}
+
+.gl-lost-icon {
+  font-size: 54px;
+  line-height: 1.1;
+}
+
+.gl-lost-title {
+  margin-top: 6px;
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.gl-lost-text {
+  margin: 10px 0 18px;
+  font-size: 18px;
+  line-height: 1.45;
+}
+
+.gl-lost-btn {
+  min-height: 52px;
+  padding: 8px 32px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 2px 0 rgba(91, 74, 110, 0.35);
+  background: var(--green);
+  border: 4px solid var(--ol);
+  border-radius: 999px;
+  box-shadow: var(--shadow-s);
+  cursor: pointer;
 }
 
 /* ---------------- Hoạt ảnh ---------------- */

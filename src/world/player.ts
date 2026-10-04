@@ -81,6 +81,24 @@ function addXray(root: THREE.Object3D): void {
   }
 }
 
+/** Dựng mô hình bé (chưa gắn vào cảnh): có thể chuẩn bị trước (warmUp) rồi mới thay bằng `Player.refresh`. */
+export function buildLook(kid: Kid, eq: Equipped): THREE.Object3D {
+  const next = buildModel<PlayerOpts>('player', { kid, eq });
+  addXray(next);
+  return next;
+}
+
+/** Bỏ một mô hình bé: hủy vật liệu riêng (vật liệu dùng chung giữ lại). */
+export function disposeLook(old: THREE.Object3D): void {
+  old.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (m.isMesh && !m.userData.xray) {
+      const mats = Array.isArray(m.material) ? m.material : [m.material];
+      for (const mt of mats) if (!mt.userData.shared) mt.dispose();
+    }
+  });
+}
+
 export class Player extends Actor {
   vy = 0;
   grounded = true;
@@ -100,18 +118,9 @@ export class Player extends Actor {
     this.setBoard(!!eq.board, eq.board);
   }
 
-  /** Thay bé (trai/gái), bộ đồ, mũ, balo, phụ kiện. */
-  refresh(kid: Kid, eq: Equipped): void {
-    const next = buildModel<PlayerOpts>('player', { kid, eq });
-    addXray(next);
-    const old = this.swapModel(next);
-    old.traverse((o) => {
-      const m = o as THREE.Mesh;
-      if (m.isMesh && !m.userData.xray) {
-        const mats = Array.isArray(m.material) ? m.material : [m.material];
-        for (const mt of mats) if (!mt.userData.shared) mt.dispose();
-      }
-    });
+  /** Thay bé (trai/gái), bộ đồ, mũ, balo, phụ kiện. `next`: mô hình dựng sẵn bằng `buildLook` (đã chuẩn bị trước). */
+  refresh(kid: Kid, eq: Equipped, next = buildLook(kid, eq)): void {
+    disposeLook(this.swapModel(next));
     this.setBoard(!!eq.board, eq.board);
   }
 

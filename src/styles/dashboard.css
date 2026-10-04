@@ -132,6 +132,13 @@
   backdrop-filter: blur(16px);
 }
 
+/* Điện thoại, máy tính bảng: bỏ làm mờ nền (rất tốn sức khi cảnh 3D phía sau đang chạy). */
+.touch-gfx .dash-header,
+.touch-gfx .dash-metric,
+.touch-gfx .dash-card {
+  backdrop-filter: none;
+}
+
 .dash-metric {
   padding: 18px 20px;
 }

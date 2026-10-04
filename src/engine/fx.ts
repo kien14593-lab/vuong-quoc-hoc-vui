@@ -91,6 +91,12 @@ export class Fx {
   private pools: Record<string, Pool>;
   private kindPool: Record<FxKind, string>;
   private rings: { mesh: THREE.Mesh; age: number; dur: number; r0: number; r1: number; op: number }[] = [];
+  /**
+   * Vòng sáng dùng chung hình + vật liệu mẫu (mỗi vòng một bản sao – cùng chương trình shader). Vật liệu mẫu sống suốt đời `Fx`
+   * nên chương trình shader không bị xóa giữa hai lần nhặt đồ (xóa rồi lại phải biên dịch = khựng trên iPhone/iPad).
+   */
+  private ringGeo = new THREE.RingGeometry(0.8, 1, 40).rotateX(-Math.PI / 2);
+  private ringMat = new THREE.MeshBasicMaterial({ color: '#fff3a0', transparent: true, opacity: 0.85, depthWrite: false, toneMapped: false, side: THREE.DoubleSide });
   readonly root = new THREE.Group();
 
   constructor(private scene: THREE.Scene, cap = 400) {
@@ -106,6 +112,15 @@ export class Fx {
     };
     this.kindPool = { sparkle: 'oct', star: 'star', confetti: 'card', dust: 'puff', shard: 'rock', heart: 'heart', leaf: 'card', splash: 'oct' };
     for (const p of Object.values(this.pools)) this.root.add(p.mesh);
+    // Vòng mồi (tí hon, không thấy được): vẽ đúng một lần sau màn che lúc vào cảnh rồi tự ẩn – vòng sáng đầu tiên khi bé nhặt đồ
+    // không phải chờ biên dịch shader giữa lúc đang đi.
+    const primer = new THREE.Mesh(this.ringGeo, this.ringMat);
+    primer.scale.setScalar(1e-4);
+    primer.frustumCulled = false;
+    primer.onAfterRender = () => {
+      primer.visible = false;
+    };
+    this.root.add(primer);
     this.root.name = 'fx';
     this.root.userData.dynamic = true;
     scene.add(this.root);
@@ -147,8 +162,9 @@ export class Fx {
 
   /** Vòng sáng lan rộng trên mặt đất (khi nhặt đồ, mở khóa...). */
   ring(at: THREE.Vector3 | [number, number, number], o: { color?: string; r0?: number; r1?: number; dur?: number; y?: number } = {}): void {
-    const m = new THREE.MeshBasicMaterial({ color: o.color ?? '#fff3a0', transparent: true, opacity: 0.85, depthWrite: false, toneMapped: false, side: THREE.DoubleSide });
-    const mesh = new THREE.Mesh(new THREE.RingGeometry(0.8, 1, 40).rotateX(-Math.PI / 2), m);
+    const m = this.ringMat.clone();
+    if (o.color) m.color.set(o.color);
+    const mesh = new THREE.Mesh(this.ringGeo, m);
     const p = Array.isArray(at) ? new THREE.Vector3(...at) : at.clone();
     mesh.position.copy(p);
     mesh.position.y += o.y ?? 0.05;
@@ -218,7 +234,6 @@ export class Fx {
       (r.mesh.material as THREE.MeshBasicMaterial).opacity = r.op * (1 - k);
       if (k >= 1) {
         this.root.remove(r.mesh);
-        r.mesh.geometry.dispose();
         (r.mesh.material as THREE.Material).dispose();
         this.rings.splice(i, 1);
       }
@@ -232,10 +247,9 @@ export class Fx {
       (p.mesh.material as THREE.Material).dispose();
       p.mesh.dispose();
     }
-    for (const r of this.rings) {
-      r.mesh.geometry.dispose();
-      (r.mesh.material as THREE.Material).dispose();
-    }
+    for (const r of this.rings) (r.mesh.material as THREE.Material).dispose();
     this.rings = [];
+    this.ringGeo.dispose();
+    this.ringMat.dispose();
   }
 }

@@ -2,7 +2,7 @@ import { sfx } from '../core/audio';
 import { bus } from '../core/events';
 import { badgeDef, levelDef, levelProgress } from '../core/progression';
 import { hasProfile, profile } from '../core/state';
-import { setVirtualMove } from '../world/input';
+import { onInputReset, setVirtualMove } from '../world/input';
 import { button, h, type Child } from './dom';
 import { coinIcon } from './icons';
 import { openModal } from './modal';
@@ -159,9 +159,9 @@ class Hud {
     let id = -1;
     let cx = 0;
     let cy = 0;
-    const scale = () => base.getBoundingClientRect().width / 240 || 1;
+    // Tỉ lệ giao diện đo một lần lúc chạm (đo lại mỗi lần ngón tay di chuyển bắt trình duyệt tính lại bố cục – giật trên iPhone/iPad).
+    let s = 1;
     const set = (x: number, y: number) => {
-      const s = scale();
       let dx = (x - cx) / s;
       let dy = (y - cy) / s;
       const d = Math.hypot(dx, dy);
@@ -178,8 +178,13 @@ class Hud {
       ev.preventDefault();
       if (id !== -1) return;
       id = ev.pointerId;
-      base.setPointerCapture(ev.pointerId);
+      try {
+        base.setPointerCapture(ev.pointerId);
+      } catch {
+        /* bỏ qua */
+      }
       const r = base.getBoundingClientRect();
+      s = r.width / 240 || 1;
       cx = r.left + r.width / 2;
       cy = r.top + r.height / 2;
       base.classList.add('on');
@@ -188,15 +193,24 @@ class Hud {
     base.addEventListener('pointermove', (ev) => {
       if (ev.pointerId === id) set(ev.clientX, ev.clientY);
     });
-    const end = (ev: PointerEvent) => {
-      if (ev.pointerId !== id) return;
+    const release = () => {
       id = -1;
       base.classList.remove('on');
       knob.style.transform = '';
       setVirtualMove(0, 0);
     };
+    const end = (ev: PointerEvent) => {
+      if (ev.pointerId === id) release();
+    };
     base.addEventListener('pointerup', end);
     base.addEventListener('pointercancel', end);
+    // Mất ngón tay giữa chừng (thông báo, cử chỉ hệ thống, chuyển ứng dụng): thả cần ra, bé đứng lại.
+    base.addEventListener('lostpointercapture', end);
+    this.offs.push(
+      onInputReset(() => {
+        if (id !== -1) release();
+      }),
+    );
     return base;
   }
 

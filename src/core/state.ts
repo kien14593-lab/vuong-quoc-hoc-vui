@@ -353,6 +353,11 @@ export function save(): void {
   }, 400);
 }
 
+/** Ghi ngay nếu đang chờ ghi (trang sắp bị ẩn / đóng – iPhone, iPad có thể tắt trang bất cứ lúc nào). */
+export function flushSave(): void {
+  if (saveTimer !== null) saveNow();
+}
+
 /** Bản sao hồ sơ trên máy. Hồ sơ đang chơi được lưu ngay trước khi đọc để bản sao không bị cũ. */
 export function readProfile(id: string): Profile | null {
   if (current?.id === id) saveNow();

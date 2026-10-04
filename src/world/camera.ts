@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { engine } from '../engine/core';
 import { clamp, damp, dampAngle } from '../engine/tween';
 import { inputBlocked } from '../ui/root';
-import { keys } from './input';
+import { keys, onInputReset } from './input';
 
 /**
  * Camera nhìn chéo từ trên cao, bám theo nhân vật.
@@ -198,6 +198,11 @@ export class FollowCam {
     const el = engine.canvas;
     const down = (e: PointerEvent) => {
       if (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 2) return;
+      // Ngón tay / chuột đầu tiên của một lần chạm mới: bỏ các ngón cũ còn sót (lỡ mất sự kiện nhấc tay) để không bị "chụm" nhầm.
+      if (e.isPrimary) {
+        this.ptrs.clear();
+        this.dragging = false;
+      }
       try {
         el.setPointerCapture(e.pointerId);
       } catch {
@@ -252,14 +257,22 @@ export class FollowCam {
     el.addEventListener('pointermove', move);
     el.addEventListener('pointerup', up);
     el.addEventListener('pointercancel', cancel);
+    el.addEventListener('lostpointercapture', cancel);
     el.addEventListener('wheel', wheel, { passive: false });
-    this.offs.push(() => {
-      el.removeEventListener('pointerdown', down);
-      el.removeEventListener('pointermove', move);
-      el.removeEventListener('pointerup', up);
-      el.removeEventListener('pointercancel', cancel);
-      el.removeEventListener('wheel', wheel);
-    });
+    this.offs.push(
+      () => {
+        el.removeEventListener('pointerdown', down);
+        el.removeEventListener('pointermove', move);
+        el.removeEventListener('pointerup', up);
+        el.removeEventListener('pointercancel', cancel);
+        el.removeEventListener('lostpointercapture', cancel);
+        el.removeEventListener('wheel', wheel);
+      },
+      onInputReset(() => {
+        this.ptrs.clear();
+        this.dragging = false;
+      }),
+    );
   }
 
   dispose(): void {

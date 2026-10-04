@@ -58,6 +58,13 @@ Câu hỏi tự điều chỉnh độ khó theo lớp và theo kết quả làm 
   theo mục **💡 Giọng đọc chưa hay?** trong Cài đặt hoặc **[HUONG-DAN-GIAO-VIEN.md](HUONG-DAN-GIAO-VIEN.md)**.
 - Bản offline (tệp HTML) không có mạng thì dùng giọng cài trong Windows (ví dụ Microsoft An); Hoài My / Nam Minh cần mạng.
 
+### 📱 iPhone / iPad
+
+- **⚙️ Cài đặt → 🎮 Đồ họa:** **Tự động** (mặc định – máy cảm ứng tự hạ / nâng độ nét theo tốc độ khung hình),
+  **Đẹp**, **Nhẹ (mượt hơn)**. Máy tính vẫn vẽ như cũ.
+- Tắt **Chế độ nguồn điện thấp** (Safari bị giới hạn 30 hình/giây). Mở trang với **`?fps=1`** ở cuối địa chỉ để xem
+  số đo độ mượt. Chi tiết: **[HUONG-DAN-GIAO-VIEN.md](HUONG-DAN-GIAO-VIEN.md)** (mục *Chơi trên iPhone / iPad*).
+
 ## 🗺️ Nội dung
 
 **7 khu vực** (mở dần theo cốt truyện "Giúp chú Gấu đến sở thú"):
