@@ -175,6 +175,11 @@
   opacity: 0.85;
 }
 
+.pc-subj {
+  font-size: 22px;
+  color: #6b52b5;
+}
+
 .pc-del {
   position: absolute;
   top: -14px;
@@ -406,6 +411,16 @@
   background: var(--yellow);
 }
 
+.cr-options.subjects .cr-opt {
+  font-size: 26px;
+  padding: 6px 20px;
+}
+
+.cr-options.subjects .cr-opt.on {
+  background: var(--green-l);
+  border-color: #3f9d55;
+}
+
 /* ================= Cài đặt ================= */
 .settings {
   display: flex;
@@ -469,6 +484,21 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.set-voices:empty {
+  display: none;
+}
+
+.set-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.set-fixed {
+  font-size: 28px;
+  font-weight: 800;
 }
 
 .set-select {

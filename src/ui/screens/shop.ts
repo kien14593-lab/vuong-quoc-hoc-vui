@@ -3,6 +3,7 @@ import { bus } from '../../core/events';
 import { CAT_NAMES, item, ITEMS, type ItemCat, type ItemDef } from '../../core/items';
 import { DEFAULT_OUTFIT, kidOutfits } from '../../core/outfits';
 import { awardBadge, equip, giveItem, hasBadge, hasItem, itemCount, level, profile, spendCoins } from '../../core/state';
+import { st } from '../../game/subject-text';
 import { setPlayerPortrait } from '../portrait';
 import { button, h } from '../dom';
 import { coinIcon } from '../icons';
@@ -67,7 +68,7 @@ export function openShop(startTab = 0): Promise<void> {
     if (!stackable(d) && hasItem(d.id)) return;
     if (p.coins < d.price) {
       sfx('error');
-      toast(`Bạn cần thêm ${d.price - p.coins} xu nữa. Hãy giải toán hoặc chơi mini-game để có thêm xu nhé!`, { icon: coinIcon(), tone: 'warn', ms: 3600 });
+      toast(`Bạn cần thêm ${d.price - p.coins} xu nữa. ${st('shop.more')}`, { icon: coinIcon(), tone: 'warn', ms: 3600 });
       return;
     }
     if (!spendCoins(d.price)) return;

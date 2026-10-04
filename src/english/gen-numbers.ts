@@ -17,7 +17,7 @@ export function maxNumber(g: Grade, n: number | null): number {
 }
 
 /** Các số gần n, khác nhau (ưu tiên `first`, rồi ±1, ±2…). */
-function near(c: Ctx, n: number, lo: number, hi: number, first: number[] = []): number[] {
+export function near(c: Ctx, n: number, lo: number, hi: number, first: number[] = []): number[] {
   const out: number[] = [];
   const add = (x: number, force = false) => {
     if (out.length < c.k - 1 && x !== n && x >= 0 && !out.includes(x) && (force || (x >= lo && x <= hi))) out.push(x);
@@ -32,11 +32,11 @@ function near(c: Ctx, n: number, lo: number, hi: number, first: number[] = []): 
 }
 
 const reverse = (n: number) => (n >= 10 && n < 100 && n % 10 !== 0 ? (n % 10) * 10 + Math.floor(n / 10) : -1);
-const choiceList = (c: Ctx, xs: number[], label: (x: number) => string) =>
+export const choiceList = (c: Ctx, xs: number[], label: (x: number) => string) =>
   c.R.shuffle(xs.map((x) => ({ label: label(x), value: String(x) })));
 
 /** "one, two, three" – dài thì rút gọn để mỗi câu tiếng Anh không quá 8 từ. */
-function counting(n: number): string {
+export function counting(n: number): string {
   if (n <= 5) return Array.from({ length: n }, (_, i) => numberWord(i + 1)).join(', ');
   return `one, two, three, …, ${numberWord(n - 1)}, ${numberWord(n)}`;
 }

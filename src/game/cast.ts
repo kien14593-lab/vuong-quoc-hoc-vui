@@ -14,7 +14,7 @@ export interface CastMember extends Speaker {
 export const CAST = {
   tho: { name: 'Thỏ Bông', art: 'npc_rabbit', color: '#ff9ec4', role: 'Hướng dẫn viên ở Ngôi Làng Khởi Đầu' },
   meo: { name: 'Cô Mèo', art: 'npc_cat', color: '#ffb36b', role: 'Chủ cửa hàng trong làng' },
-  cu: { name: 'Bác Cú', art: 'npc_owl', color: '#b08cff', role: 'Người canh Cầu Phép Cộng trong rừng' },
+  cu: { name: 'Bác Cú', art: 'npc_owl', color: '#b08cff', role: 'Người canh cây cầu trong Rừng Thông Thái' },
   gau: { name: 'Chú Gấu', art: 'npc_bear', color: '#c98b5a', role: 'Bạn đồng hành muốn đến Sở Thú' },
   robot: { name: 'Robot Bíp', art: 'npc_robot', color: '#6cc6ff', role: 'Người gác Mê Cung Kỳ Bí' },
   he: { name: 'Chú Hề Bibo', art: 'npc_clown', color: '#ff7b7b', role: 'Chủ Khu Vui Chơi' },

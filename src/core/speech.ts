@@ -132,6 +132,12 @@ export function englishVoiceName(): string | null {
   return pick.en?.name ?? null;
 }
 
+/** Tên dễ đọc của giọng tiếng Anh đang dùng (vd. "Sonia (cần mạng)", "Zira"). */
+export function englishVoiceLabel(): string | null {
+  if (!ready) pickVoice();
+  return pick.en ? voiceLabels([pick.en])[0] : null;
+}
+
 /** Có thể ra câu hỏi nghe tiếng Anh: giọng đọc đang bật và máy có giọng tiếng Anh. */
 export function canListen(): boolean {
   return getSettings().voice && hasEnglishVoice();

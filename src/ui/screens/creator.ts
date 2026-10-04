@@ -2,16 +2,18 @@ import { sfx } from '../../core/audio';
 import { DEFAULT_OUTFIT, KID_NAMES, KIDS, type Kid } from '../../core/outfits';
 import { createProfile } from '../../core/state';
 import { enterWorld } from '../../game/app';
-import type { Grade } from '../../math/types';
+import { SUBJECT_MODES, subjectLabel } from '../../game/subject-text';
+import type { Grade, SubjectMode } from '../../math/types';
 import { avatarImg } from '../avatar';
 import { button, h } from '../dom';
 import { openModal } from '../modal';
 import { toast } from '../toast';
 
-/** Màn hình tạo nhân vật mới: chọn bé trai / bé gái, nhập tên, chọn lớp. */
+/** Màn hình tạo nhân vật mới: chọn bé trai / bé gái, nhập tên, chọn lớp và môn học. */
 export function openCreator(): void {
   let kid: Kid | null = null;
   let grade: Grade = 1;
+  let subject: SubjectMode = 'both';
 
   const nameInput = h<HTMLInputElement>('input.cr-name', { type: 'text', maxlength: 14, placeholder: 'Nhập tên của bạn...', spellcheck: false, autocomplete: 'off' });
   const refresh: (() => void)[] = [];
@@ -58,6 +60,28 @@ export function openCreator(): void {
   gradeBtns.forEach((b) => gradeRow.appendChild(b));
   refresh.push(() => gradeBtns.forEach((b, i) => b.classList.toggle('on', grade === i + 1)));
 
+  const subjectRow = h('div.cr-options.subjects');
+  const subjectBtns = SUBJECT_MODES.map((m) =>
+    h(
+      'button.cr-opt',
+      {
+        type: 'button',
+        onclick: () => {
+          subject = m;
+          sfx('pop');
+          update();
+        },
+      },
+      subjectLabel(m),
+    ),
+  );
+  subjectBtns.forEach((b) => subjectRow.appendChild(b));
+  const subjectNote = h('div.cr-hint');
+  refresh.push(() => {
+    subjectBtns.forEach((b, i) => b.classList.toggle('on', SUBJECT_MODES[i] === subject));
+    subjectNote.textContent = subject !== 'math' && grade <= 2 ? 'Tiếng Anh lớp 1–2: làm quen qua hình và âm thanh.' : 'Mọi câu đố trong game sẽ theo môn bạn chọn.';
+  });
+
   const section = (title: string, ...kids: (HTMLElement | null)[]) => h('div.cr-section', h('div.cr-label', title), ...kids);
 
   const body = h(
@@ -67,6 +91,7 @@ export function openCreator(): void {
       'div.cr-right',
       section('Tên của bạn', nameInput),
       section('Bạn học lớp mấy?', gradeRow, h('div.cr-hint', 'Câu hỏi trong game sẽ phù hợp với lớp của bạn.')),
+      section('Bạn muốn học môn gì?', subjectRow, subjectNote),
       h('div.cr-hint.cr-later', '👕 Sau này bạn có thể đổi bé và mặc bộ đồ mới trong Túi đồ.'),
     ),
   );
@@ -90,7 +115,7 @@ export function openCreator(): void {
       sfx('error');
       return;
     }
-    createProfile({ name, grade, kid });
+    createProfile({ name, grade, kid, subject });
     sfx('levelup');
     modal.close();
     void enterWorld();

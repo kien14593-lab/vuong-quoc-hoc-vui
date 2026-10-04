@@ -42,6 +42,8 @@ export interface GameEvents extends Record<string, unknown> {
   inventory: { id: string };
   profile: { id: string | null };
   settings: Record<string, never>;
+  /** Môn học hoặc "Đang học đến Unit N" của hồ sơ đang chơi vừa đổi. */
+  subject: { subject: string };
   /** Một câu trả lời vừa được ghi nhận. */
   answer: { topic: string; firstTry: boolean };
 }

@@ -1,6 +1,7 @@
 import { audio } from '../../core/audio';
 import { deleteProfile, listProfiles, loadProfile } from '../../core/state';
 import { enterWorld } from '../../game/app';
+import { subjectLabel, TAGLINE } from '../../game/subject-text';
 import { avatarImg } from '../avatar';
 import { button, h } from '../dom';
 import { confirmBox, openModal, type ModalHandle } from '../modal';
@@ -17,7 +18,7 @@ function logo(): HTMLElement {
   [...'Học Vui'].forEach((ch, i) => {
     big.appendChild(ch === ' ' ? h('span.sp', ' ') : h('span', { style: { color: colors[i % colors.length], animationDelay: `${i * 0.12}s` } }, ch));
   });
-  return h('div.title-logo', h('div.tl-small', '✨ Vương Quốc ✨'), big, h('div.tl-sub', 'Phiêu lưu · Khám phá · Học toán'));
+  return h('div.title-logo', h('div.tl-small', '✨ Vương Quốc ✨'), big, h('div.tl-sub', TAGLINE));
 }
 
 export function showTitleMenu(): void {
@@ -66,6 +67,7 @@ function openPicker(): void {
         h('div.pc-avatar', avatarImg(p.kid, p.equipped, 'pc-img')),
         h('div.pc-name', p.name),
         h('div.pc-info', `Lớp ${p.grade} · Cấp ${p.level} · ⭐ ${p.stars}`),
+        h('div.pc-info.pc-subj', subjectLabel(p.subject)),
         h(
           'span.pc-del',
           {

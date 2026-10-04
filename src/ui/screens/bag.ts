@@ -2,7 +2,7 @@ import { sfx } from '../../core/audio';
 import { bus } from '../../core/events';
 import { CAT_NAMES, item, ITEMS, type ItemCat } from '../../core/items';
 import { DEFAULT_OUTFIT, KID_NAMES, KIDS, OUTFITS, outfitFits } from '../../core/outfits';
-import { BADGES } from '../../core/progression';
+import { BADGES, badgeVisible } from '../../core/progression';
 import { equip, hasBadge, profile, setKid } from '../../core/state';
 import { button, h } from '../dom';
 import { coinIcon } from '../icons';
@@ -197,12 +197,14 @@ export function openBag(start: Tab = 'wear'): void {
       content.append(wallet, list.length ? grid : h('div.menu-empty', 'Túi đồ đang trống. Vật phẩm nhặt được sẽ nằm ở đây!'));
     } else {
       const grid = h('div.badge-grid');
-      for (const b of BADGES) {
+      // Huy hiệu riêng của một môn chỉ hiện khi bé học môn đó (huy hiệu đã nhận thì luôn hiện).
+      const shown = BADGES.filter((b) => badgeVisible(b, profile().subject, hasBadge(b.id)));
+      for (const b of shown) {
         const got = hasBadge(b.id);
         grid.appendChild(h(`div.badge-card${got ? '.got' : ''}`, { style: { '--bc': b.color } }, h('div.badge-medal', got ? b.icon : '❔'), h('div.badge-name', b.name), h('div.badge-desc', b.desc)));
       }
-      const n = BADGES.filter((b) => hasBadge(b.id)).length;
-      content.append(h('div.bag-section', `Bạn đã có ${n} / ${BADGES.length} huy hiệu`), grid);
+      const n = shown.filter((b) => hasBadge(b.id)).length;
+      content.append(h('div.bag-section', `Bạn đã có ${n} / ${shown.length} huy hiệu`), grid);
     }
     renderKids();
     refreshPreview();

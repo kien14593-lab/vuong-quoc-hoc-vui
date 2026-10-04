@@ -952,6 +952,95 @@ textarea {
   color: #c2558c;
 }
 
+/* ---- Tiếng Anh: hình, nút nghe, ô chữ ---- */
+b.en {
+  color: #3a7bd5;
+  font-weight: 800;
+}
+
+.vis-pic {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.vis-emoji {
+  font-size: 120px;
+  line-height: 1.05;
+}
+
+.vis-swatch {
+  width: 150px;
+  height: 110px;
+  border: 5px solid var(--ol);
+  border-radius: 26px;
+  box-shadow: var(--shadow-s);
+}
+
+.vis-caption {
+  font-size: 34px;
+  font-weight: 800;
+  color: #6d5bd0;
+}
+
+.vis-listen-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 36px;
+  font-size: 40px;
+  background: var(--blue-l);
+  border-radius: 99px;
+}
+
+.vis-listen-ic {
+  font-size: 64px;
+  line-height: 1;
+}
+
+.vis-tiles {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.vis-tiles .tile {
+  min-width: 70px;
+  height: 86px;
+  padding: 0 8px;
+  border: 5px solid var(--ol);
+  border-radius: 18px;
+  background: #fff;
+  font-size: 56px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-s);
+}
+
+.vis-tiles .tile.blank {
+  border-style: dashed;
+  background: #fff4cf;
+  color: #c2558c;
+}
+
+.vis-tiles .tile.gap {
+  min-width: 26px;
+  border: none;
+  background: none;
+  box-shadow: none;
+}
+
+.q-choices.emoji .q-choice {
+  font-size: 86px;
+  line-height: 1;
+  min-width: 200px;
+  min-height: 150px;
+}
+
 .vis-plates {
   display: flex;
   gap: 14px;

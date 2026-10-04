@@ -1,8 +1,9 @@
 import { sfx } from '../../core/audio';
 import { isCollected, profile, questState, setFlag, setQuestState } from '../../core/state';
 import { CAST, villager } from '../../game/cast';
-import { mixedQuestion, storyQuestion } from '../../game/challenge';
 import { bearStage, on, reward, starsQuestDone, villageStars, VILLAGE_STARS, zoneLock } from '../../game/story';
+import { mixedQ, pickSubject, storyQ } from '../../game/subject';
+import { siteText, st } from '../../game/subject-text';
 import { choose, say } from '../../ui/dialog';
 import { openQuestBoard } from '../../ui/screens/quests';
 import { openShop } from '../../ui/screens/shop';
@@ -22,15 +23,17 @@ const STAR_SPOTS: [number, number][] = [
 const BOX_C: [number, number] = [5.2, 5.6];
 const BEAR_AT: [number, number] = [3.2, -17.6];
 
-const TIPS = [
+/** Lời dân làng (lời nhắc tới môn học đổi theo môn của hồ sơ). */
+const tips = (): string[] => [
   'Chào bạn! Hôm nay trời đẹp quá!',
   'Bạn đã ghé Cửa hàng của Cô Mèo chưa? Ở đó có nhiều đồ đẹp lắm!',
-  'Nghe nói trong Rừng Thông Thái có cây cầu chỉ hạ xuống khi giải đúng phép cộng đấy!',
-  'Mình thích đếm hoa lắm: 1, 2, 3, 4, 5…',
+  siteText('village.tipBridge', 'forest.bridge'),
+  st('village.tipCount'),
   'Khu Vui Chơi ở phía đông chỉ mở khi bạn có 10 ngôi sao!',
   'Ngôi nhà mái xanh kia là nhà của bạn đó. Vào trang trí đi!',
-  'Muốn lên cấp nhanh thì hãy chơi mini-game và giải thật nhiều bài toán nhé!',
+  st('village.tipLevel'),
 ];
+const TIP_COUNT = 7;
 
 /** 🏡 NGÔI LÀNG KHỞI ĐẦU – khu hướng dẫn: di chuyển, nói chuyện, trả lời, nhặt vật phẩm. */
 export class VillageZone extends Zone {
@@ -124,12 +127,13 @@ export class VillageZone extends Zone {
       mark: () => (on('intro.done') && !on('shop.fruit') ? '!' : ''),
       talk: async () => {
         if (!on('shop.fruit')) {
-          await say(CAST.meo, ['Chào bạn! Mình là Cô Mèo, chủ cửa hàng này.', 'Ở đây bạn có thể dùng xu để mua áo, mũ, balo, thú cưng và đồ trang trí nhà.', 'Nhưng trước tiên, bạn giải giúp cô bài toán mua trái cây này nhé!']);
-          await this.quiz(storyQuestion('shopFruit'), { src: 'village:shop', speaker: CAST.meo, title: 'Mua trái cây', icon: '🍎' }, stand, 10);
+          const s = pickSubject();
+          await say(CAST.meo, ['Chào bạn! Mình là Cô Mèo, chủ cửa hàng này.', 'Ở đây bạn có thể dùng xu để mua áo, mũ, balo, thú cưng và đồ trang trí nhà.', st('village.shopAsk', s)]);
+          await this.quiz(storyQ('shopFruit', { s }), { src: 'village:shop', speaker: CAST.meo, title: 'Mua trái cây', icon: '🍎' }, stand, 10);
           setFlag('shop.fruit');
           reward({ items: { apple: 1, banana: 1 } });
           toast('Cô Mèo tặng bạn 1 quả táo và 1 quả chuối!', { icon: '🍎', tone: 'good' });
-          await say(CAST.meo, ['Giỏi quá! Bạn tính tiền rất nhanh.', 'Mời bạn xem hàng nhé!']);
+          await say(CAST.meo, [st('village.shopDone', s), 'Mời bạn xem hàng nhé!']);
         } else await say(CAST.meo, 'Mời bạn vào xem hàng nhé! Hôm nay có nhiều đồ mới lắm.');
         await openShop();
       },
@@ -236,11 +240,11 @@ export class VillageZone extends Zone {
         talk: async (npc) => {
           if (v === 4) {
             await say(sp, 'Bà có một câu đố nhỏ cho cháu đây!');
-            await this.quiz(mixedQuestion(), { src: 'village:riddle', speaker: sp, title: 'Câu đố của Bà Ba', icon: '🧩' }, npc.actor, 10);
+            await this.quiz(mixedQ(), { src: 'village:riddle', speaker: sp, title: 'Câu đố của Bà Ba', icon: '🧩' }, npc.actor, 10);
             await say(sp, 'Cháu giỏi quá! Lúc nào rảnh lại ghé chơi với bà nhé.');
             return;
           }
-          await say(sp, TIPS[(i * 2 + Math.floor(this.rnd() * TIPS.length)) % TIPS.length]);
+          await say(sp, tips()[(i * 2 + Math.floor(this.rnd() * TIP_COUNT)) % TIP_COUNT]);
         },
       });
     });
@@ -302,7 +306,7 @@ export class VillageZone extends Zone {
   private async countBoxes(): Promise<void> {
     this.player.face(BOX_C[0], BOX_C[1]);
     await say(CAST.tho, 'Bạn hãy đếm xem có tất cả bao nhiêu chiếc hộp nhé!');
-    await this.quiz(storyQuestion('villageBoxes'), { src: 'village:boxes', speaker: CAST.tho, title: 'Đếm hộp', icon: '📦', noVisual: true }, [BOX_C[0], 0.4, BOX_C[1]], 9);
+    await this.quiz(storyQ('villageBoxes'), { src: 'village:boxes', speaker: CAST.tho, title: 'Đếm hộp', icon: '📦', noVisual: true }, [BOX_C[0], 0.4, BOX_C[1]], 9);
     setFlag('village.boxes');
     this.boxSign?.show(false);
     sfx('correct');
@@ -344,7 +348,7 @@ export class VillageZone extends Zone {
   private async talkTho(): Promise<void> {
     if (!on('intro.done')) return this.intro();
     if (questState('stars') === 'done') {
-      await say(CAST.tho, starsQuestDone() && bearStage() === 'none' ? 'Chú Gấu đang đợi bạn ở cổng rừng phía bắc đấy!' : TIPS[Math.floor(Math.random() * TIPS.length)]);
+      await say(CAST.tho, starsQuestDone() && bearStage() === 'none' ? 'Chú Gấu đang đợi bạn ở cổng rừng phía bắc đấy!' : tips()[Math.floor(Math.random() * TIP_COUNT)]);
       return;
     }
     if (!on('village.boxes')) {
@@ -373,7 +377,7 @@ export class VillageZone extends Zone {
   }
 
   private async talkBear(): Promise<void> {
-    await say(CAST.gau, ['Chào bạn nhỏ! Mình là Chú Gấu.', 'Mình muốn đến Sở Thú thăm bạn Hươu cao cổ, nhưng đường đi có nhiều thử thách toán học quá.']);
+    await say(CAST.gau, ['Chào bạn nhỏ! Mình là Chú Gấu.', st('village.bear')]);
     const c = await choose(CAST.gau, 'Bạn đi cùng mình nhé?', ['Đi thôi! 🐻', 'Để lát nữa nhé']);
     if (c !== 0) {
       await say(CAST.gau, 'Không sao, mình sẽ đợi bạn ở đây!');

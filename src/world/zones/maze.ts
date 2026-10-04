@@ -2,8 +2,9 @@ import * as THREE from 'three';
 import { sfx } from '../../core/audio';
 import { profile, setFlag } from '../../core/state';
 import { CAST } from '../../game/cast';
-import { adaptiveQuestion, mixedQuestion, storyQuestion } from '../../game/challenge';
 import { mazeKeys, on, reward } from '../../game/story';
+import { labelQ, mathQ, mixedQ, siteSubject, storyQ } from '../../game/subject';
+import { siteText, st } from '../../game/subject-text';
 import { MAZE_TOPICS } from '../../math/curriculum';
 import type { Question } from '../../math/types';
 import { say } from '../../ui/dialog';
@@ -68,6 +69,8 @@ export class MazeZone extends Zone {
   }
 
   protected build(): void {
+    // "Cả hai": chọn môn của cổng cuối ngay khi dựng, để lời Robot Bíp khớp với câu hỏi ở cổng.
+    if (!on(EXIT_FLAG)) siteSubject(EXIT_FLAG);
     this.buildGround();
     this.buildWalls();
     this.buildJunctions();
@@ -188,7 +191,8 @@ export class MazeZone extends Zone {
     ];
 
     for (const cfg of configs) {
-      const q = adaptiveQuestion(topics[cfg.topicIndex % topics.length]);
+      // Cửa chỉ ghi được nhãn ngắn: Tiếng Anh dùng hình hoặc từ ngắn, số cửa = số đáp án (Lớp 1–2: 3 cửa).
+      const q = labelQ(siteSubject(FLAGS.j(cfg.id)), () => mathQ(topics[cfg.topicIndex % topics.length]), { count: cfg.id === 1 ? 3 : 4 });
       const j: Junction = { ...cfg, doors: [] };
       this.place('question_board', cfg.x, cfg.z - 2.5, { rot: 0, scale: 0.72, dynamic: true, collide: false, reserve: 1.2 });
       this.sign(cfg.x, cfg.z - 2.6, `🧩 ${cfg.title}`, { y: 2.5, cls: 'sign small', maxDist: 28 });
@@ -350,7 +354,7 @@ export class MazeZone extends Zone {
       return;
     }
     if (!on(EXIT_FLAG)) {
-      await say(CAST.robot, ['Đủ 3 chìa khóa rồi. Cổng cuối đang chờ bạn giải một phép tính nữa!', 'Hãy chạm vào cánh cổng lớn nhé.']);
+      await say(CAST.robot, [siteText('maze.exit', EXIT_FLAG), 'Hãy chạm vào cánh cổng lớn nhé.']);
       await this.showPoint(23.2, 1.5, -6.2, 1.1, 12);
       return;
     }
@@ -365,7 +369,7 @@ export class MazeZone extends Zone {
       if (next) await this.showPoint(next.x, 1.2, next.z, 1.2, 13);
       return;
     }
-    await this.quiz(storyQuestion('mazeDoor'), { src: 'maze:exit', speaker: CAST.robot, title: 'Mở cửa Mê Cung', icon: '🚪' }, this.exitGate ?? [23.2, 1.4, -6.2], 12);
+    await this.quiz(storyQ('mazeDoor', { site: EXIT_FLAG }), { src: 'maze:exit', speaker: CAST.robot, title: 'Mở cửa Mê Cung', icon: '🚪' }, this.exitGate ?? [23.2, 1.4, -6.2], 12);
     setFlag(EXIT_FLAG);
     this.openExitGate();
     reward({ tickets: 1, stars: 1, xp: 25, coins: 10, badge: 'vua-me-cung' });
@@ -411,7 +415,7 @@ export class MazeZone extends Zone {
       icon: '🧩',
       talk: async (npc) => {
         await say(CAST.rua, ['Chậm mà chắc là bí quyết đi mê cung.', 'Ông có một câu đố nhỏ cho cháu đây.']);
-        await this.quiz(mixedQuestion(MAZE_TOPICS[profile().grade]), { src: 'maze:turtle', speaker: CAST.rua, title: 'Câu đố của Ông Rùa', icon: '🧩' }, npc.actor, 10);
+        await this.quiz(mixedQ({ math: MAZE_TOPICS[profile().grade] }), { src: 'maze:turtle', speaker: CAST.rua, title: 'Câu đố của Ông Rùa', icon: '🧩' }, npc.actor, 10);
         await say(CAST.rua, 'Tuyệt lắm! Cháu nhớ nhìn biển chỉ dẫn và đi từng bước nhé.');
       },
     });
@@ -422,8 +426,8 @@ export class MazeZone extends Zone {
       action: 'Hỏi mẹo',
       icon: '💡',
       talk: async (npc) => {
-        await say(CAST.soc, ['Nếu gặp nhiều cửa, cháu đọc câu hỏi trước rồi nhìn số trên từng cửa.', 'Cô Sóc tặng cháu một bài luyện nhanh nhé!']);
-        await this.quiz(mixedQuestion(MAZE_TOPICS[profile().grade]), { src: 'maze:squirrel', speaker: CAST.soc, title: 'Mẹo đi mê cung', icon: '💡' }, npc.actor, 10);
+        await say(CAST.soc, [st('maze.tip'), 'Cô Sóc tặng cháu một bài luyện nhanh nhé!']);
+        await this.quiz(mixedQ({ math: MAZE_TOPICS[profile().grade] }), { src: 'maze:squirrel', speaker: CAST.soc, title: 'Mẹo đi mê cung', icon: '💡' }, npc.actor, 10);
       },
     });
   }
@@ -475,7 +479,7 @@ export class MazeZone extends Zone {
     this.bubble(this.robot.actor.root, 'Bíp bíp! Xin chào!', this.robot.actor.height + 0.8, 1800);
     await this.wait(0.8);
     this.robot.actor.waving = false;
-    await say(CAST.robot, ['Chào mừng bạn đến Mê Cung Kỳ Bí!', 'Ở mỗi ngã rẽ, bạn sẽ thấy nhiều cánh cửa có số.', 'Hãy giải câu hỏi rồi đi qua cánh cửa mang đáp án đúng.']);
+    await say(CAST.robot, ['Chào mừng bạn đến Mê Cung Kỳ Bí!', st('maze.doors'), 'Hãy giải câu hỏi rồi đi qua cánh cửa mang đáp án đúng.']);
     await this.showPoint(this.junctions[0].x, 1.2, this.junctions[0].z, 1.4, 13);
     await say(CAST.robot, ['Nếu chọn chưa đúng, không sao cả. Cửa đó chỉ là phòng cụt nhỏ.', 'Bạn quay lại và thử cánh cửa khác nhé. Mục tiêu là tìm đủ 3 chìa khóa!']);
   }

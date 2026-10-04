@@ -168,10 +168,44 @@ function compareItem(value: string, style: 'stones' | 'balls' | 'cards', i: numb
   return h(`div.cmp-item.cmp-${style}`, { style: { '--c': PASTEL[i % PASTEL.length] } as unknown as Partial<CSSStyleDeclaration> }, h('span', value));
 }
 
+/** Hình của một từ: emoji to, hoặc ô màu (câu hỏi về màu sắc). */
+function picture(emoji: string | undefined, hex: string | undefined, caption: string | undefined): HTMLElement {
+  return h(
+    'div.vis-pic',
+    hex ? h('span.vis-swatch', { style: { background: hex } }) : emoji ? h('span.vis-emoji', emoji) : null,
+    caption ? h('div.vis-caption', caption) : null,
+  );
+}
+
+export interface VisualOptions {
+  /** Thẻ "Nghe" (câu hỏi nghe tiếng Anh): bấm để nghe lại. */
+  onListen?: () => void;
+}
+
 /** Dựng phần tử minh họa cho một câu hỏi. */
-export function renderVisual(v: Visual): HTMLElement {
+export function renderVisual(v: Visual, o: VisualOptions = {}): HTMLElement {
   const wrap = h(`div.visual.vis-${v.kind}`);
   switch (v.kind) {
+    case 'picture':
+      wrap.appendChild(picture(v.emoji, v.hex, v.caption));
+      break;
+    case 'listen':
+      wrap.appendChild(
+        h(
+          'button.btn.vis-listen-btn',
+          { type: 'button', title: 'Nghe lại', onclick: () => o.onListen?.() },
+          h('span.vis-listen-ic', '🔊'),
+          h('span.vis-listen-tx', 'Nghe lại'),
+        ),
+      );
+      break;
+    case 'letters': {
+      if (v.emoji || v.caption) wrap.appendChild(picture(v.emoji, undefined, v.caption));
+      const row = h('div.vis-tiles', { lang: 'en' });
+      for (const t of v.tiles) row.appendChild(t === null ? h('span.tile.blank', '?') : t === ' ' ? h('span.tile.gap') : h('span.tile', t));
+      wrap.appendChild(row);
+      break;
+    }
     case 'objects': {
       if (v.op === '-' && v.groups.length === 1) {
         const total = v.groups[0];

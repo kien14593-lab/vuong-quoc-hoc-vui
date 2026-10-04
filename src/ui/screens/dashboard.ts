@@ -2,11 +2,12 @@ import '../../styles/dashboard.css';
 import { button, clear, h, type Child } from '../dom';
 import { alertBox, confirmBox, openModal, type ModalHandle } from '../modal';
 import { toast } from '../toast';
-import { GRADE_NAMES, GRADE_TOPICS, TOPICS, maxLevelFor, startLevel } from '../../math/curriculum';
-import type { Grade, Topic } from '../../math/types';
+import { EN_GRADE_TOPICS, GRADE_NAMES, GRADE_TOPICS, TOPICS, isEnTopic, maxLevelFor, startLevel } from '../../math/curriculum';
+import type { Grade, SubjectMode, Topic } from '../../math/types';
 import { badgeDef, levelDef, levelProgress } from '../../core/progression';
 import { importSummary, type ImportSide } from '../../core/backup';
 import {
+  applySubjectSettings,
   deleteProfile,
   exportProfile,
   hasProfile,
@@ -17,15 +18,19 @@ import {
   resetProfileProgress,
   save,
   setGrade,
+  setSubjectSettings,
   type AnswerLog,
   type Goal,
   type ImportCheck,
   type Profile,
+  type SubjectPatch,
   writeProfile,
   dayKey,
   weekKey,
 } from '../../core/state';
 import { goalProgress } from '../../core/goals';
+import { unitCount, unitTitle } from '../../english/units';
+import { SUBJECT_MODES, st, subjectLabel } from '../../game/subject-text';
 import { nav } from '../../world/nav';
 
 const TABS = [
@@ -193,9 +198,17 @@ function renderHeader(): void {
   headerEl.append(
     h('div.dash-kicker', 'Hồ sơ đang xem'),
     h('div.dash-child-name', activeProfile.name),
-    h('div.dash-child-meta', `${GRADE_NAMES[activeProfile.grade]} · ${levelDef(levelProgress(activeProfile.xp).level).title}`),
+    h('div.dash-child-meta', `${GRADE_NAMES[activeProfile.grade]} · ${levelDef(levelProgress(activeProfile.xp).level).title}`, h('br'), subjectMeta(activeProfile)),
     picker,
   );
+}
+
+/** "🔤 Tiếng Anh · đến Unit 5 · 🔒" */
+function subjectMeta(p: Profile): string {
+  const parts = [subjectLabel(p.subject)];
+  if (p.subject !== 'math') parts.push(p.enUnit ? `đến Unit ${p.enUnit}` : 'mọi Unit');
+  if (p.subjectLocked) parts.push('🔒');
+  return parts.join(' · ');
 }
 
 function renderRail(): void {
@@ -207,7 +220,7 @@ function renderRail(): void {
         activeTab = id;
         renderRail();
         renderContent();
-      }, `dash-tab ${activeTab === id ? 'active' : ''}`),
+      }, activeTab === id ? 'dash-tab active' : 'dash-tab'),
     );
   }
 }
@@ -253,17 +266,43 @@ function renderOverview(p: Profile): HTMLElement {
 }
 
 function renderTopics(p: Profile): HTMLElement {
-  const gradeTopics = GRADE_TOPICS[p.grade];
-  const rows = gradeTopics.map((topic) => topicSummary(p, topic));
-  const weak = rows.filter((r) => r.q >= 3 && (r.acc < 70 || r.avgAttempts >= 2)).sort((a, b) => a.acc - b.acc || b.q - a.q);
-  const learned = rows.filter((r) => r.q > 0).sort((a, b) => b.q - a.q);
-  const untouched = rows.filter((r) => r.q === 0);
   return h(
     'div.dash-section',
     titleBlock('Chủ đề đã học', 'Theo dõi từng mảng kiến thức phù hợp với lớp hiện tại.'),
-    h('div.dash-two', topicList('Chủ đề còn yếu', weak, true), topicList('Chủ đề đã luyện tập', learned, false)),
-    card('Chưa luyện tập', untouched.length ? h('div.dash-chip-list', untouched.map((r) => h('span.dash-chip.empty', TOPICS[r.topic].name))) : h('p.dash-muted', 'Bé đã thử tất cả chủ đề của lớp này.')),
+    topicGroups(p).map((g) => {
+      const rows = g.topics.map((topic) => topicSummary(p, topic));
+      const weak = rows.filter((r) => r.q >= 3 && (r.acc < 70 || r.avgAttempts >= 2)).sort((a, b) => a.acc - b.acc || b.q - a.q);
+      const learned = rows.filter((r) => r.q > 0).sort((a, b) => b.q - a.q);
+      const untouched = rows.filter((r) => r.q === 0);
+      return [
+        g.name ? h('h3.dash-group', g.name) : null,
+        h('div.dash-two', topicList('Chủ đề còn yếu', weak, true), topicList('Chủ đề đã luyện tập', learned, false)),
+        card('Chưa luyện tập', untouched.length ? h('div.dash-chip-list', untouched.map((r) => h('span.dash-chip.empty', TOPICS[r.topic].name))) : h('p.dash-muted', 'Bé đã thử tất cả chủ đề của lớp này.')),
+      ];
+    }),
   );
+}
+
+/**
+ * Chủ đề của lớp, chia theo môn. Một môn hiện ra khi hồ sơ đang học môn đó hoặc đã có câu trả lời của môn đó.
+ * Hồ sơ chỉ học Toán (chưa từng làm câu Tiếng Anh) giữ nguyên một danh sách như trước, không có tiêu đề nhóm.
+ */
+function topicGroups(p: Profile): { name: string | null; topics: Topic[] }[] {
+  const math: Topic[] = GRADE_TOPICS[p.grade];
+  const en: Topic[] = EN_GRADE_TOPICS[p.grade];
+  const used = (list: Topic[]) => list.some((t) => (p.stats[t]?.q ?? 0) > 0);
+  const showMath = p.subject !== 'english' || used(math);
+  const showEn = p.subject !== 'math' || used(en);
+  if (!showEn) return [{ name: null, topics: math }];
+  const out: { name: string | null; topics: Topic[] }[] = [];
+  if (showMath) out.push({ name: subjectLabel('math'), topics: math });
+  out.push({ name: subjectLabel('english'), topics: en });
+  return out;
+}
+
+/** Tên chủ đề; chủ đề Tiếng Anh ghi rõ môn (vd. "Số đếm (Tiếng Anh)" khác "Đếm số" của Toán). */
+function topicName(t: Topic): string {
+  return isEnTopic(t) ? `${TOPICS[t].name} (Tiếng Anh)` : TOPICS[t].name;
 }
 
 function renderProgress(p: Profile): HTMLElement {
@@ -276,14 +315,21 @@ function renderProgress(p: Profile): HTMLElement {
 }
 
 function renderGoals(p: Profile): HTMLElement {
-  const topicSelect = h<HTMLSelectElement>('select.dash-select', {}, h('option', { value: 'any' }, 'Tất cả chủ đề'), ...GRADE_TOPICS[p.grade].map((t) => h('option', { value: t }, TOPICS[t].name)));
+  const groups = topicGroups(p);
+  const options = (topics: Topic[]) => topics.map((t) => h('option', { value: t }, TOPICS[t].name));
+  const topicSelect = h<HTMLSelectElement>(
+    'select.dash-select',
+    {},
+    h('option', { value: 'any' }, 'Tất cả chủ đề'),
+    groups.map((g) => (g.name ? h('optgroup', { label: g.name }, options(g.topics)) : options(g.topics))),
+  );
   const targetInput = h<HTMLInputElement>('input.dash-input', { type: 'number', min: 1, max: 200, value: '20' });
   const titleInput = h<HTMLInputElement>('input.dash-input', { type: 'text', value: 'Tuần này hoàn thành 20 bài' });
   const create = () => {
     const target = Math.max(1, Math.floor(Number(targetInput.value) || 1));
     const topic = topicSelect.value as Topic | 'any';
-    const topicName = topic === 'any' ? 'toán' : TOPICS[topic].name.toLowerCase();
-    const goal: Goal = { id: `goal-${Date.now().toString(36)}`, topic, target, week: weekKey(), title: titleInput.value.trim() || `Tuần này hoàn thành ${target} bài ${topicName}`, created: Date.now() };
+    const topicName = topic === 'any' ? st('goal.any', p.subject) : isEnTopic(topic) ? `${TOPICS[topic].name.toLowerCase()} tiếng Anh` : TOPICS[topic].name.toLowerCase();
+    const goal: Goal = { id: `goal-${Date.now().toString(36)}`, topic, target, week: weekKey(), title: titleInput.value.trim() || ['Tuần này hoàn thành', target, 'bài', topicName].filter(Boolean).join(' '), created: Date.now() };
     p.goals.push(goal);
     persistActive(p);
     renderContent();
@@ -314,6 +360,8 @@ function renderManage(p: Profile): HTMLElement {
     if (!(await confirmBox(`Đổi sang ${GRADE_NAMES[next]}? Các mức thích ứng theo kỹ năng sẽ được đặt lại để phù hợp với lớp mới.`, { title: 'Đổi lớp học', icon: '🎓', yes: 'Đổi lớp' }))) return;
     p.grade = next;
     p.skills = {};
+    // Mỗi lớp có danh sách Unit Tiếng Anh riêng.
+    p.enUnit = null;
     if (playing(p.id)) setGrade(next);
     else writeProfile(p);
     activeProfile = liveProfile(p.id) ?? p;
@@ -326,8 +374,66 @@ function renderManage(p: Profile): HTMLElement {
       card('Sao lưu dữ liệu', h('p.dash-muted', 'Tải hồ sơ ra tệp JSON để lưu trữ hoặc gửi cho giáo viên.'), button('Xuất hồ sơ JSON', () => downloadProfile(p), 'btn-blue btn-small'), h('div.dash-import', button('Nhập hồ sơ JSON', () => fileInput.click(), 'btn-soft btn-small'), fileInput)),
       card('Lớp học', h('p.dash-muted', 'Đổi lớp sẽ đặt lại mức thích ứng, nhưng không xóa lịch sử câu hỏi.'), h('div.dash-inline', gradeSelect, button('Cập nhật lớp', changeGrade, 'btn-green btn-small'))),
     ),
+    subjectCard(p),
     card('Vùng nguy hiểm', h('div.dash-danger-row', button('Đặt lại tiến độ', () => resetProgress(p), 'btn-yellow btn-small'), button('Xóa hồ sơ', () => removeProfile(p), 'btn-primary btn-small'))),
   );
+}
+
+/** Môn học, "Đang học đến Unit N" và khóa đổi môn của hồ sơ; áp dụng được cho mọi hồ sơ cùng lớp trên máy. */
+function subjectCard(p: Profile): HTMLElement {
+  const subjectSelect = h<HTMLSelectElement>('select.dash-select', {}, SUBJECT_MODES.map((m) => h('option', { value: m, selected: m === p.subject }, subjectLabel(m))));
+  const unitSelect = h<HTMLSelectElement>(
+    'select.dash-select',
+    {},
+    h('option', { value: '', selected: !p.enUnit }, 'Tất cả các bài'),
+    Array.from({ length: unitCount(p.grade) }, (_, i) => h('option', { value: String(i + 1), selected: p.enUnit === i + 1 }, `Unit ${i + 1}: ${unitTitle(p.grade, i + 1)}`)),
+  );
+  const freeBox = h<HTMLInputElement>('input', { type: 'checkbox', checked: !p.subjectLocked });
+  const syncUnit = () => {
+    unitSelect.disabled = subjectSelect.value === 'math';
+  };
+  subjectSelect.addEventListener('change', syncUnit);
+  syncUnit();
+  const patch = (): SubjectPatch => ({
+    subject: subjectSelect.value as SubjectMode,
+    enUnit: unitSelect.value ? Number(unitSelect.value) : null,
+    subjectLocked: !freeBox.checked,
+  });
+  const saveOne = () => {
+    applyTo(p.id, patch());
+    activeProfile = liveProfile(p.id) ?? p;
+    renderAll();
+    toast('Đã lưu môn học.', { icon: '✓', tone: 'good' });
+  };
+  const saveClass = async () => {
+    const same = listProfiles().filter((q) => q.grade === p.grade);
+    const ok = await confirmBox(`Áp dụng môn học, Unit và quyền tự đổi môn này cho ${same.length} hồ sơ lớp ${p.grade} trên máy này?`, { title: 'Áp dụng cho cả lớp', icon: '📚', yes: 'Áp dụng' });
+    if (!ok) return;
+    const next = patch();
+    for (const q of same) applyTo(q.id, next);
+    activeProfile = liveProfile(p.id) ?? p;
+    renderAll();
+    toast(`Đã áp dụng cho ${same.length} hồ sơ lớp ${p.grade}.`, { icon: '✓', tone: 'good' });
+  };
+  return card(
+    'Môn học',
+    h('p.dash-muted', 'Mọi câu đố trong game theo môn đã chọn. "Đang học đến" giữ câu hỏi Tiếng Anh trong các Unit bé đã học trên lớp (theo sách Tiếng Anh Global Success).'),
+    h('div.dash-subject-grid', labelWrap('Môn học', subjectSelect), labelWrap('Tiếng Anh: đang học đến', unitSelect)),
+    h('label.dash-check', freeBox, h('span', 'Cho bé tự đổi môn trong Cài đặt')),
+    h('div.dash-inline.dash-subject-actions', button('Lưu môn học', saveOne, 'btn-green btn-small'), button(`Áp dụng cho mọi hồ sơ lớp ${p.grade} trên máy này`, () => void saveClass(), 'btn-soft btn-small')),
+  );
+}
+
+/** Hồ sơ đang chơi đổi ngay trong bộ nhớ (khu vực dựng lại theo môn mới khi đóng bảng); hồ sơ khác ghi xuống máy. */
+function applyTo(id: string, patch: SubjectPatch): void {
+  if (playing(id)) {
+    setSubjectSettings(patch);
+    return;
+  }
+  const q = readProfile(id);
+  if (!q) return;
+  applySubjectSettings(q, patch);
+  writeProfile(q);
 }
 
 function titleBlock(title: string, sub: string): HTMLElement {
@@ -360,12 +466,16 @@ function topicList(title: string, rows: ReturnType<typeof topicSummary>[], weak:
 }
 
 function skillBars(p: Profile): HTMLElement {
-  return h('div.dash-skill-list', GRADE_TOPICS[p.grade].map((topic) => {
-    const max = maxLevelFor(topic, p.grade);
-    const min = startLevel(topic, p.grade);
-    const lv = p.skills[topic]?.level ?? min;
-    return h('div.dash-skill-row', h('div', h('strong', TOPICS[topic].name), h('small', `Mức ${lv}/${max}`)), progress(max <= 1 ? 1 : lv / max));
-  }));
+  const bars = (topics: Topic[]) =>
+    h('div.dash-skill-list', topics.map((topic) => {
+      const max = maxLevelFor(topic, p.grade);
+      const min = startLevel(topic, p.grade);
+      const lv = p.skills[topic]?.level ?? min;
+      return h('div.dash-skill-row', h('div', h('strong', TOPICS[topic].name), h('small', `Mức ${lv}/${max}`)), progress(max <= 1 ? 1 : lv / max));
+    }));
+  const groups = topicGroups(p);
+  if (groups.length === 1 && !groups[0].name) return bars(groups[0].topics);
+  return h('div.dash-skill-groups', groups.map((g) => [h('h4.dash-group', g.name), bars(g.topics)]));
 }
 
 function goalItem(p: Profile, goal: Goal): HTMLElement {
@@ -375,7 +485,7 @@ function goalItem(p: Profile, goal: Goal): HTMLElement {
     persistActive(p);
     renderContent();
   };
-  return h('div.dash-goal-item', h('div.dash-goal-top', h('strong', goal.title), h('span', gp.completed ? 'Hoàn thành' : `${gp.done}/${gp.target}`)), progress(gp.pct), h('div.dash-goal-meta', h('span', `${goal.topic === 'any' ? 'Tất cả chủ đề' : TOPICS[goal.topic].name} · tuần ${goal.week}`), button('Xóa', del, 'btn-soft btn-small')));
+  return h('div.dash-goal-item', h('div.dash-goal-top', h('strong', goal.title), h('span', gp.completed ? 'Hoàn thành' : `${gp.done}/${gp.target}`)), progress(gp.pct), h('div.dash-goal-meta', h('span', `${goal.topic === 'any' ? 'Tất cả chủ đề' : topicName(goal.topic)} · tuần ${goal.week}`), button('Xóa', del, 'btn-soft btn-small')));
 }
 
 function weekChart(p: Profile): SVGSVGElement {
@@ -425,7 +535,7 @@ function dayBars(p: Profile): SVGSVGElement {
 }
 
 function activityRow(e: AnswerLog): HTMLElement {
-  return h('tr', h('td', formatDateTime(e.t)), h('td', TOPICS[e.topic].name), h('td', String(e.lv)), h('td', `${e.a} lần`), h('td', sourceName(e.src)));
+  return h('tr', h('td', formatDateTime(e.t)), h('td', topicName(e.topic)), h('td', String(e.lv)), h('td', `${e.a} lần`), h('td', sourceName(e.src)));
 }
 
 function labelWrap(label: string, el: HTMLElement): HTMLElement {

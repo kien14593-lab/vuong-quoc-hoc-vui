@@ -758,7 +758,7 @@ export abstract class Zone implements Stage {
   }
 
   /**
-   * Hỏi một câu toán ngay trong thế giới (camera nhìn vào đồ vật liên quan). Luôn kết thúc khi trẻ chọn đúng.
+   * Hỏi một câu hỏi ngay trong thế giới (camera nhìn vào đồ vật liên quan). Luôn kết thúc khi trẻ chọn đúng.
    * `focus` là NPC (`npc.actor`) thì camera nhìn vào chỗ NPC đang đứng, đứng chéo sau vai bé (thấy mặt NPC 3/4)
    * và né vật che (tán cây, hàng rào...); hỏi xong camera xoay về hướng cũ.
    */

@@ -1,9 +1,10 @@
 import { sfx } from '../core/audio';
-import { speak, stopSpeech } from '../core/speech';
+import { speak, speakEnglish, speakParts, stopSpeech } from '../core/speech';
 import { AttemptTracker, finishQuestion, type Stage, type SubmitResult } from '../game/challenge';
 import type { Question } from '../math/types';
 import { speakerArt, type Speaker } from './dialog';
 import { h, wait } from './dom';
+import { rich } from './rich';
 import { layer, popBlock, pushBlock, uiScale } from './root';
 import { confetti } from './toast';
 import { renderVisual } from './visuals';
@@ -65,14 +66,14 @@ function helperBubble(): { el: HTMLElement; show(msg: string, tone: string, step
     async show(msg, tone, steps) {
       el.className = `q-helper show tone-${tone}`;
       el.innerHTML = '';
-      el.appendChild(h('div.q-helper-msg', msg));
+      el.appendChild(h('div.q-helper-msg', rich(msg)));
       reveal();
       if (steps && steps.length) {
         const ol = h('ol.q-steps');
         el.appendChild(ol);
         for (const s of steps) {
           await wait(650);
-          ol.appendChild(h('li', s));
+          ol.appendChild(h('li', rich(s)));
           sfx('pop');
           reveal();
         }
@@ -82,6 +83,29 @@ function helperBubble(): { el: HTMLElement; show(msg: string, tone: string, step
       el.className = 'q-helper';
     },
   };
+}
+
+/** Nhãn chỉ gồm emoji (chọn hình): hiện to hơn. Số và chữ không tính. */
+const EMOJI_ONLY = /^(?:\p{Extended_Pictographic}|\p{Regional_Indicator}|[\u200d\ufe0f\u{1f3fb}-\u{1f3ff}]|\s)+$/u;
+export function emojiChoices(q: Question): boolean {
+  return q.choices.every((c) => EMOJI_ONLY.test(c.label));
+}
+
+/** Lời khen khi trả lời đúng; câu Tiếng Anh đọc lại đáp án bằng giọng tiếng Anh. */
+function praise(q: Question): void {
+  if (q.en) speakParts([{ text: 'Chính xác!', lang: 'vi' }, { text: q.en, lang: 'en' }]);
+  else speak('Chính xác! Tuyệt vời!');
+}
+
+/** Thời gian chờ sau khi đúng (đủ để nghe hết đáp án tiếng Anh). */
+function praiseMs(q: Question): number {
+  return q.en ? Math.min(3200, 1500 + q.en.length * 40) : 1300;
+}
+
+/** Thẻ minh họa; câu hỏi nghe có nút "Nghe lại" chỉ đọc phần tiếng Anh. */
+function visualOf(q: Question): HTMLElement | null {
+  if (!q.visual) return null;
+  return h('div.q-visual', renderVisual(q.visual, { onListen: () => q.en && speakEnglish(q.en, { force: true }) }));
 }
 
 /** Hiện bảng câu hỏi (nửa dưới màn hình – thế giới vẫn hiện phía trên). Kết thúc khi trẻ chọn đúng. */
@@ -95,13 +119,14 @@ export function ask(q: Question, o: AskOptions): Promise<AskResult> {
     const choicesEl = h('div.q-choices');
     const longLabels = q.choices.some((c) => c.label.length > 9);
     if (longLabels) choicesEl.classList.add('long');
+    else if (emojiChoices(q)) choicesEl.classList.add('emoji');
     const replay = h('button.btn.btn-round.q-speak', { type: 'button', title: 'Nghe lại', onclick: () => speak(q.speech, { force: true }) }, '🔊');
     const panel = h(
       `div.qpanel${o.compact ? '.compact' : ''}`,
       h('div.q-head', speakerChip(o.speaker), o.title ? h('div.q-title', o.icon ? `${o.icon} ` : '', o.title) : h('div.q-title'), replay),
-      q.context ? h('div.q-context', q.context) : null,
-      h('div.q-prompt', q.prompt),
-      q.visual && !o.noVisual ? h('div.q-visual', renderVisual(q.visual)) : null,
+      q.context ? h('div.q-context', rich(q.context)) : null,
+      h('div.q-prompt', rich(q.prompt)),
+      !o.noVisual || q.visual?.kind === 'listen' ? visualOf(q) : null,
       choicesEl,
       feedback,
       helper.el,
@@ -115,19 +140,19 @@ export function ask(q: Question, o: AskOptions): Promise<AskResult> {
       const btn = buttons[i];
       if (!c || btn.disabled) return;
       const r: SubmitResult = tracker.submit(c.value);
-      feedback.textContent = r.message;
+      feedback.replaceChildren(...[rich(r.message)].flat());
       feedback.className = `q-feedback show stage-${r.stage}`;
       if (r.correct) {
         busy = true;
         btn.classList.add('correct');
         sfx('correct');
-        speak('Chính xác! Tuyệt vời!');
+        praise(q);
         const rect = btn.getBoundingClientRect();
         const root = layer('fx').getBoundingClientRect();
         const s = uiScale();
         confetti(40, { x: (rect.left + rect.width / 2 - root.left) / s, y: (rect.top - root.top) / s });
         helper.hide();
-        await wait(1300);
+        await wait(praiseMs(q));
         stopSpeech();
         backdrop.classList.add('out');
         await wait(220);
@@ -209,10 +234,10 @@ export function promptCard(q: Question, o: { src: string; speaker?: Speaker | nu
   const helper = helperBubble();
   const el = h(
     'div.prompt-card',
-    h('div.q-head', speakerChip(o.speaker), h('div.q-title', o.icon ? `${o.icon} ` : '', o.title ?? ''), h('button.btn.btn-round.q-speak', { type: 'button', onclick: () => speak(q.speech, { force: true }) }, '🔊')),
-    q.context ? h('div.q-context', q.context) : null,
-    h('div.q-prompt', q.prompt),
-    o.showVisual && q.visual ? h('div.q-visual', renderVisual(q.visual)) : null,
+    h('div.q-head', speakerChip(o.speaker), h('div.q-title', o.icon ? `${o.icon} ` : '', o.title ?? ''), h('button.btn.btn-round.q-speak', { type: 'button', title: 'Nghe lại', onclick: () => speak(q.speech, { force: true }) }, '🔊')),
+    q.context ? h('div.q-context', rich(q.context)) : null,
+    h('div.q-prompt', rich(q.prompt)),
+    o.showVisual || q.visual?.kind === 'listen' ? visualOf(q) : null,
     feedback,
     helper.el,
   );
@@ -224,11 +249,11 @@ export function promptCard(q: Question, o: { src: string; speaker?: Speaker | nu
     tracker,
     submit(value: string) {
       const r = tracker.submit(value);
-      feedback.textContent = r.message;
+      feedback.replaceChildren(...[rich(r.message)].flat());
       feedback.className = `q-feedback show stage-${r.stage}`;
       if (r.correct) {
         sfx('correct');
-        speak('Chính xác! Tuyệt vời!');
+        praise(q);
         helper.hide();
       } else {
         sfx('wrong');

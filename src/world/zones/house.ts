@@ -2,9 +2,10 @@ import * as THREE from 'three';
 import { sfx } from '../../core/audio';
 import { DECOR_SLOT_NAMES, ITEMS, PLANTS, item as itemDef, type DecorSlot } from '../../core/items';
 import { flag, giveItem, hasItem, itemCount, profile, save, setDecor, setFlag, takeItem } from '../../core/state';
-import { BADGES } from '../../core/progression';
+import { BADGES, badgeDef } from '../../core/progression';
 import { ME } from '../../game/cast';
 import { reward } from '../../game/story';
+import { st } from '../../game/subject-text';
 import { button, h } from '../../ui/dom';
 import { say } from '../../ui/dialog';
 import { openModal } from '../../ui/modal';
@@ -32,6 +33,7 @@ function v3(a: readonly number[]): [number, number, number] {
 }
 
 function badgeIcon(id: string): BadgeIcon {
+  if (badgeDef(id)?.subject === 'english') return 'scholar';
   if (id.includes('me-cung')) return 'maze';
   if (id.includes('nhan')) return 'times';
   if (id.includes('toan') || id.includes('hiep-si')) return 'scholar';
@@ -159,7 +161,7 @@ export class HouseZone extends Zone {
 
   private async welcome(): Promise<void> {
     setFlag('house.welcome');
-    await say(ME, ['Đây là nhà của mình!', 'Mình có thể trang trí phòng, trồng cây ở vườn nhỏ, xem huy hiệu và luyện tập toán ở bàn học.', 'Mình thử trồng hạt hướng dương đầu tiên nhé!']);
+    await say(ME, ['Đây là nhà của mình!', st('house.intro'), 'Mình thử trồng hạt hướng dương đầu tiên nhé!']);
     await this.showPoint(0, 1.2, 6.6, 1.3, 11);
   }
 
@@ -331,7 +333,7 @@ export class HouseZone extends Zone {
     const def = PLANTS[pl.seed];
     if (!def) return;
     if (pl.growth < def.stages) {
-      toast(`${def.name} đang lớn: ${pl.growth}/${def.stages}. Giải thêm bài toán để cây lớn nhé!`, { icon: '🌱', tone: 'good', ms: 3400 });
+      toast(`${def.name} đang lớn: ${pl.growth}/${def.stages}. ${st('house.grow')}`, { icon: '🌱', tone: 'good', ms: 3400 });
       return;
     }
     reward({ ...def.harvest, badge: 'nha-lam-vuon' }, { x: 0.5, y: 0.4 });
@@ -408,7 +410,7 @@ export class HouseZone extends Zone {
   }
 
   private async bedTalk(): Promise<void> {
-    await say(ME, ['Chiếc giường êm quá!', 'Nghỉ một chút rồi mình sẽ học toán tiếp.']);
+    await say(ME, ['Chiếc giường êm quá!', st('house.bed')]);
     this.fx.burst('heart', [-3.55, 1.2, 2.25], { count: 12, spread: 0.7 });
   }
 

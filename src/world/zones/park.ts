@@ -2,8 +2,9 @@ import * as THREE from 'three';
 import { sfx } from '../../core/audio';
 import { profile, setFlag } from '../../core/state';
 import { CAST, villager } from '../../game/cast';
-import { mixedQuestion, storyQuestion } from '../../game/challenge';
 import { checkBadges, on, reward, zoneLock, ZOO_TICKETS } from '../../game/story';
+import { mixedQ, pickSubject, storyQ } from '../../game/subject';
+import { st } from '../../game/subject-text';
 import type { Question } from '../../math/types';
 import { say } from '../../ui/dialog';
 import { toast } from '../../ui/toast';
@@ -162,7 +163,7 @@ export class ParkZone extends Zone {
   }
 
   protected override buddyTalk(): Promise<void> {
-    return say(CAST.gau, [`Mỗi trò chơi toán học cho mình 1 vé.`, `Mình đang có ${profile().tickets}/${ZOO_TICKETS} vé để mở cổng Sở Thú.`, 'Bạn chọn trò nào trước cũng được!']);
+    return say(CAST.gau, [st('park.tickets'), `Mình đang có ${profile().tickets}/${ZOO_TICKETS} vé để mở cổng Sở Thú.`, 'Bạn chọn trò nào trước cũng được!']);
   }
 
   private decorate(): void {
@@ -192,7 +193,7 @@ export class ParkZone extends Zone {
 
     const tipTexts = [
       'Giải đúng một trò là được 1 vé đó!',
-      'Ném bóng: số nào đúng thì mục tiêu bật tung!',
+      st('park.balls'),
       'Vòng quay ở phía đông nam, đẹp nhất lúc trời nắng!',
       'Có đủ 5 vé thì đi Sở Thú nhé!',
     ];
@@ -308,13 +309,14 @@ export class ParkZone extends Zone {
     const lock = this.gate.getObjectByName('lock');
     if (lock) lock.visible = false;
     setFlag('park.intro');
-    await say(CAST.he, ['Chào mừng đến Khu Vui Chơi!', 'Mỗi điểm vui chơi là một thử thách toán. Giải đúng thì bạn nhận 1 vé.', `Có ${ZOO_TICKETS} vé là mở được Sở Thú. Bibo sẽ tặng huy chương khi bạn hoàn thành 4 trò ở đây!`]);
+    await say(CAST.he, ['Chào mừng đến Khu Vui Chơi!', st('park.welcome'), `Có ${ZOO_TICKETS} vé là mở được Sở Thú. Bibo sẽ tặng huy chương khi bạn hoàn thành 4 trò ở đây!`]);
     this.clown.actor.waving = false;
   }
 
   private async coasterChallenge(): Promise<void> {
-    await say(CAST.he, 'Tàu lượn có 3 toa, mỗi toa 6 chỗ. Mình cùng tính số ghế nhé!');
-    const q = storyQuestion('coaster');
+    const s = pickSubject();
+    await say(CAST.he, st('park.coaster', s));
+    const q = storyQ('coaster', { s });
     await this.quiz(q, { src: 'park:coaster', speaker: CAST.he, title: 'Tàu lượn', icon: '🎢', rewards: false }, this.coaster, 16);
     await this.runTrain();
     this.completeAttraction('park.coaster', [this.coaster.position.x, 1.5, this.coaster.position.z]);
@@ -347,7 +349,7 @@ export class ParkZone extends Zone {
     if (this.activePick) return;
     this.activePick = 'balls';
     this.clearBallChoices();
-    const q = storyQuestion('balls');
+    const q = storyQ('balls');
     const slots = (this.booth.userData.slots as [number, number, number][] | undefined) ?? [];
     const spots: PickSpot[] = q.choices.map((c, i) => {
       const local = new THREE.Vector3(...(slots[i] ?? [-1.6 + i * 0.8, 1.5, -0.38]));
@@ -401,7 +403,7 @@ export class ParkZone extends Zone {
     if (this.activePick) return;
     this.activePick = 'wheel';
     this.clearWheelChoices();
-    const q = storyQuestion('wheel');
+    const q = storyQ('wheel');
     const spots: PickSpot[] = q.choices.map((c, i) => {
       const x = 8.8 + i * 2.15;
       const z = -3.05;
@@ -467,8 +469,8 @@ export class ParkZone extends Zone {
     if (!on('park.clown')) {
       await say(CAST.he, ['Bibo có 2 câu đố tung hứng đây!', 'Trả lời đúng cả hai câu, bạn nhận thêm 1 vé nhé.']);
       this.clown.actor.celebrate(0.8);
-      await this.quiz(mixedQuestion(), { src: 'park:clown:1', speaker: CAST.he, title: 'Câu đố của Bibo', icon: '🤹', rewards: false }, this.clown.actor.root, 10);
-      await this.quiz(mixedQuestion(), { src: 'park:clown:2', speaker: CAST.he, title: 'Câu đố của Bibo', icon: '🤹', rewards: false }, this.clown.actor.root, 10);
+      await this.quiz(mixedQ(), { src: 'park:clown:1', speaker: CAST.he, title: 'Câu đố của Bibo', icon: '🤹', rewards: false }, this.clown.actor.root, 10);
+      await this.quiz(mixedQ(), { src: 'park:clown:2', speaker: CAST.he, title: 'Câu đố của Bibo', icon: '🤹', rewards: false }, this.clown.actor.root, 10);
       this.completeAttraction('park.clown', [this.clown.actor.pos.x, 1.6, this.clown.actor.pos.z]);
       await say(CAST.he, 'Tuyệt vời! Bạn nhận 1 vé từ Bibo.');
       return;

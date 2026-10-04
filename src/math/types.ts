@@ -3,6 +3,15 @@ export type Grade = 1 | 2 | 3 | 4 | 5;
 /** Môn học của một câu hỏi. */
 export type Subject = 'math' | 'english';
 
+/** Môn học của hồ sơ: Toán, Tiếng Anh hay cả hai. */
+export type SubjectMode = Subject | 'both';
+
+export const SUBJECT_MODES: readonly SubjectMode[] = ['math', 'english', 'both'];
+
+export function isSubjectMode(v: unknown): v is SubjectMode {
+  return v === 'math' || v === 'english' || v === 'both';
+}
+
 /** Chủ đề Tiếng Anh (bộ câu hỏi ở src/english/). */
 export type EnTopic = 'en_vocab' | 'en_listen' | 'en_phonics' | 'en_spell' | 'en_sentence' | 'en_numbers' | 'en_time';
 

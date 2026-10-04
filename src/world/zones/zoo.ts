@@ -2,8 +2,9 @@ import * as THREE from 'three';
 import { sfx } from '../../core/audio';
 import { addTickets, giveItem, hasItem, profile, setFlag, takeItem } from '../../core/state';
 import { CAST, villager } from '../../game/cast';
-import { mixedQuestion, storyQuestion } from '../../game/challenge';
 import { bearStage, checkBadges, on, reward, ZOO_TICKETS, zoneLock } from '../../game/story';
+import { mixedQ, storyQ } from '../../game/subject';
+import { st } from '../../game/subject-text';
 import { glbLoaded, glbReady } from '../../models/glb';
 import { buildModel, collectTicks } from '../../models/registry';
 import { say } from '../../ui/dialog';
@@ -29,7 +30,7 @@ const PENGUIN_SWIM: [number, number][] = [
   [4.5, -14.6], [5.15, -14.45], [4.6, -13.95], [5.25, -13.95],
 ];
 
-/** 🦁 SỞ THÚ KỲ DIỆU – chăm sóc muông thú bằng toán học và kết thúc hành trình Chú Gấu. */
+/** 🦁 SỞ THÚ KỲ DIỆU – giải đố, chăm sóc muông thú và kết thúc hành trình Chú Gấu. */
 export class ZooZone extends Zone {
   private gate!: THREE.Object3D;
   private giraffes: THREE.Object3D[] = [];
@@ -68,7 +69,7 @@ export class ZooZone extends Zone {
         id: 'zoo',
         title: 'Sở Thú Kỳ Diệu',
         icon: '🦁',
-        sub: 'Chăm sóc động vật bằng toán học',
+        sub: st('sub.zooZone'),
         music: 'zoo',
         area: { hw: 30, hd: 28, r: 11 },
         margin: 16,
@@ -466,7 +467,7 @@ export class ZooZone extends Zone {
       wander: 1.9,
       talk: async () => {
         if (!on('zoo.open')) await say(keeper, 'Bác Voi ở quầy vé sẽ mở cổng khi bạn có đủ vé nhé!');
-        else await say(keeper, 'Bạn hãy ghé từng chuồng, giải toán rồi cho các bạn thú ăn. Các bạn ấy thích bạn lắm!');
+        else await say(keeper, st('zoo.keeper'));
       },
     });
     this.npc(CAST.nai.art, 7.6, 4.7, {
@@ -475,7 +476,7 @@ export class ZooZone extends Zone {
       wander: 2.4,
       talk: async (npc) => {
         await say(CAST.nai, 'Mình có một câu đố nhỏ về các con vật đây!');
-        await this.quiz(mixedQuestion(), { src: 'zoo:riddle', speaker: CAST.nai, title: 'Câu đố sở thú', icon: '🧩' }, npc.actor, 10);
+        await this.quiz(mixedQ(), { src: 'zoo:riddle', speaker: CAST.nai, title: 'Câu đố sở thú', icon: '🧩' }, npc.actor, 10);
         await say(CAST.nai, 'Bạn thông minh quá! Khám phá tiếp nhé.');
       },
     });
@@ -562,7 +563,7 @@ export class ZooZone extends Zone {
       addTickets(-ZOO_TICKETS);
       setFlag('zoo.open');
       await this.openGateScene();
-      await say(CAST.voi, ['Mời bạn vào! Hãy giúp các bạn hươu, khỉ và chim cánh cụt nhé.', 'Nhớ: giải toán xong thì tự tay cho các bạn ấy ăn trong thế giới nha!']);
+      await say(CAST.voi, ['Mời bạn vào! Hãy giúp các bạn hươu, khỉ và chim cánh cụt nhé.', st('zoo.gate')]);
     } else {
       await say(CAST.voi, [`Để mở cổng cần ${ZOO_TICKETS} vé. Bạn đang có ${have} vé.`, 'Bốn vé ở Khu Vui Chơi, một vé ở cửa ra Mê Cung. Cố lên nhé!']);
       toast(`Cần thêm ${ZOO_TICKETS - have} vé nữa`, { icon: '🎟️', tone: 'warn' });
@@ -594,7 +595,7 @@ export class ZooZone extends Zone {
       monkey: { speaker: CAST.nai, title: 'Chuẩn bị chuối', icon: '🍌', item: BANANA_ITEM, obj: this.bananaBunch, line: 'Tuyệt vời! Nải chuối đã sẵn sàng. Mang tới cho các bạn khỉ nhé.' },
       penguins: { speaker: CAST.nai, title: 'Chuẩn bị cá', icon: '🐟', item: FISH_ITEM, obj: this.fishBucket, line: 'Chính xác! Xô cá đã sẵn sàng. Hãy cho các bạn cánh cụt ăn nhé.' },
     }[kind];
-    await this.quiz(storyQuestion(kind), { src: `zoo:${kind}`, speaker: data.speaker, title: data.title, icon: data.icon }, data.obj, 11);
+    await this.quiz(storyQ(kind), { src: `zoo:${kind}`, speaker: data.speaker, title: data.title, icon: data.icon }, data.obj, 11);
     giveItem(data.item, 1);
     data.obj.visible = true;
     this.fx.burst('sparkle', data.obj.position.clone().add(new THREE.Vector3(0, 0.8, 0)), { count: 24, spread: 0.8 });
@@ -604,7 +605,7 @@ export class ZooZone extends Zone {
 
   private async feedGiraffes(): Promise<void> {
     if (!hasItem(APPLE_ITEM)) {
-      await say(CAST.nai, 'Mình cần chuẩn bị giỏ táo trước. Hãy giải bài toán ở chuồng hươu nhé!');
+      await say(CAST.nai, st('zoo.giraffe'));
       return;
     }
     takeItem(APPLE_ITEM);
@@ -693,7 +694,7 @@ export class ZooZone extends Zone {
 
   private async feedMonkeys(): Promise<void> {
     if (!hasItem(BANANA_ITEM)) {
-      await say(CAST.nai, 'Hãy chuẩn bị nải chuối bằng bài toán ở sân khỉ trước nhé!');
+      await say(CAST.nai, st('zoo.monkey'));
       return;
     }
     takeItem(BANANA_ITEM);
@@ -723,7 +724,7 @@ export class ZooZone extends Zone {
 
   private async feedPenguins(): Promise<void> {
     if (!hasItem(FISH_ITEM)) {
-      await say(CAST.nai, 'Hãy chuẩn bị xô cá bằng bài toán ở hồ cánh cụt trước nhé!');
+      await say(CAST.nai, st('zoo.penguins'));
       return;
     }
     takeItem(FISH_ITEM);

@@ -4,8 +4,9 @@ import { isCollected, setFlag } from '../../core/state';
 import { ball, box, cone, cyl, dodeca, group, rbox, tube } from '../../engine/kit';
 import { mat, PAL } from '../../engine/materials';
 import { CAST } from '../../game/cast';
-import { mixedQuestion, storyQuestion } from '../../game/challenge';
 import { on, reward, zoneLock } from '../../game/story';
+import { mixedQ, siteSubject, storyQ } from '../../game/subject';
+import { deerTip, siteText, st } from '../../game/subject-text';
 import type { Question } from '../../math/types';
 import { say } from '../../ui/dialog';
 import { toast } from '../../ui/toast';
@@ -27,7 +28,7 @@ type LockBridge = {
   chain: THREE.Object3D;
 };
 
-/** 🌳 RỪNG THÔNG THÁI – nơi Bác Cú sống: cầu phép cộng, đá chắn đường và hành trình của Chú Gấu. */
+/** 🌳 RỪNG THÔNG THÁI – nơi Bác Cú sống: cây cầu của Bác Cú, đá chắn đường và hành trình của Chú Gấu. */
 export class ForestZone extends Zone {
   private owl!: Npc;
   private squirrel!: Npc;
@@ -46,7 +47,7 @@ export class ForestZone extends Zone {
         id: 'forest',
         title: 'Rừng Thông Thái',
         icon: '🌳',
-        sub: 'Cộng, trừ và thử thách trực quan',
+        sub: st('sub.forest'),
         music: 'forest',
         area: { hw: 24, hd: 32, r: 10 },
         margin: 18,
@@ -67,7 +68,9 @@ export class ForestZone extends Zone {
   }
 
   protected build(): void {
-    this.stoneQuestion = storyQuestion('bearStones');
+    // "Cả hai": chọn môn cho các thử thách chưa qua ngay khi dựng, để biển báo và lời thoại khớp với câu hỏi.
+    for (const site of FOREST_FLAGS) if (!on(site)) siteSubject(site);
+    this.stoneQuestion = storyQ('bearStones', { site: 'forest.stones' });
     this.buildTerrain();
     this.buildStoryBeats();
     this.buildSideContent();
@@ -85,18 +88,18 @@ export class ForestZone extends Zone {
   }
 
   override objective(): { text: string; icon?: string } | null {
-    if (!on('forest.bridge')) return { text: 'Mở Cầu Phép Cộng', icon: '🌉' };
+    if (!on('forest.bridge')) return { text: siteText('bridge.obj', 'forest.bridge'), icon: '🌉' };
     if (!on('forest.rock')) return { text: 'Dọn tảng đá chặn đường', icon: '⛏️' };
     if (!on('forest.bearBridge')) return { text: 'Mở cây cầu bị khóa cho Chú Gấu', icon: '🔒' };
-    if (!on('forest.stones')) return { text: 'Chọn viên đá lớn nhất để qua suối', icon: '👣' };
+    if (!on('forest.stones')) return { text: siteText('stones.obj', 'forest.stones'), icon: '👣' };
     return { text: 'Đi tiếp tới Mê Cung Kỳ Bí', icon: '🌀' };
   }
 
   protected override async buddyTalk(): Promise<void> {
     if (!on('forest.bridge')) return say(CAST.gau, 'Mình thấy cây cầu phía trước. Hãy hỏi Bác Cú nhé!');
-    if (!on('forest.rock')) return say(CAST.gau, 'Tảng đá to quá! Chắc phép trừ sẽ làm nó vỡ ra.');
-    if (!on('forest.bearBridge')) return say(CAST.gau, 'Cây cầu này bị khóa. Mình nhớ là cần 7 tấm ván và thêm 5 tấm nữa!');
-    if (!on('forest.stones')) return say(CAST.gau, 'Mình sẽ đứng sau bạn. Hãy chọn viên đá có số lớn nhất nhé!');
+    if (!on('forest.rock')) return say(CAST.gau, siteText('rock.buddy', 'forest.rock'));
+    if (!on('forest.bearBridge')) return say(CAST.gau, siteText('bearBridge.buddy', 'forest.bearBridge'));
+    if (!on('forest.stones')) return say(CAST.gau, siteText('stones.buddy', 'forest.stones'));
     return say(CAST.gau, 'Tuyệt vời! Đường tới mê cung đã mở rồi.');
   }
 
@@ -135,13 +138,13 @@ export class ForestZone extends Zone {
       mark: () => (!on('forest.bridge') ? '!' : ''),
       talk: () => this.solveBridge(),
     });
-    this.sign(2.8, BRIDGE_Z + 4.8, '🌉 Cầu Phép Cộng', { y: 2.3 });
+    this.sign(2.8, BRIDGE_Z + 4.8, siteText('bridge.sign', 'forest.bridge'), { y: 2.3 });
     this.interact({
       id: 'forest:bridge',
       x: 0,
       z: BRIDGE_Z + 3.3,
       r: 3.3,
-      label: 'Giải để hạ cầu',
+      label: siteText('bridge.label', 'forest.bridge'),
       icon: '🌉',
       obj: this.drawBridge,
       enabled: () => !on('forest.bridge'),
@@ -153,7 +156,7 @@ export class ForestZone extends Zone {
       x: 0,
       z: ROCK_Z + 2.0,
       r: 3.4,
-      label: 'Giải để phá đá',
+      label: siteText('rock.label', 'forest.rock'),
       icon: '⛏️',
       obj: this.rock ?? undefined,
       enabled: () => on('forest.bridge') && !on('forest.rock'),
@@ -179,13 +182,13 @@ export class ForestZone extends Zone {
       x: 0,
       z: STONE_Z + 3.2,
       r: 2.2,
-      label: 'Chọn đá lớn nhất',
+      label: siteText('stones.label', 'forest.stones'),
       icon: '👣',
       enabled: () => on('forest.bearBridge') && !on('forest.stones') && !this.stonesStarted,
       auto: true,
       run: () => this.startStonePick(),
     });
-    this.sign(-3.2, STONE_Z + 3.1, 'Chọn viên đá lớn nhất', { y: 2.0 });
+    this.sign(-3.2, STONE_Z + 3.1, siteText('stones.sign', 'forest.stones'), { y: 2.0 });
 
     this.place('gate_arch', 0, -28.2, { opts: { text: 'Mê Cung', color: '#b197fc', w: 4.4 }, rot: 180 });
   }
@@ -243,7 +246,7 @@ export class ForestZone extends Zone {
       mark: () => '?',
       talk: async (npc) => {
         await say(CAST.soc, 'Mình có một câu đố hạt dẻ. Bạn thử nhé!');
-        await this.quiz(mixedQuestion(), { src: 'forest:squirrel', speaker: CAST.soc, title: 'Câu đố của Cô Sóc', icon: '🌰' }, npc.actor.root, 10);
+        await this.quiz(mixedQ(), { src: 'forest:squirrel', speaker: CAST.soc, title: 'Câu đố của Cô Sóc', icon: '🌰' }, npc.actor.root, 10);
         npc.actor.celebrate(1.2);
       },
     });
@@ -252,7 +255,7 @@ export class ForestZone extends Zone {
       color: CAST.nai.color,
       rot: -70,
       wander: 2.2,
-      talk: async () => say(CAST.nai, ['Mẹo nhỏ: phép cộng là gộp thêm, phép trừ là bớt đi.', 'Nếu bí, hãy nghe gợi ý trên bảng câu hỏi nhé!']),
+      talk: async () => say(CAST.nai, deerTip()),
     });
     this.npc(CAST.rua.art, 10.8, -10.3, {
       name: CAST.rua.name,
@@ -262,7 +265,7 @@ export class ForestZone extends Zone {
       radius: 0.7,
       talk: async (npc) => {
         await say(CAST.rua, 'Chậm mà chắc! Ông có một câu hỏi rừng xanh cho cháu.');
-        await this.quiz(mixedQuestion(), { src: 'forest:turtle', speaker: CAST.rua, title: 'Câu hỏi bên hồ', icon: '🐢' }, npc.actor.root, 10);
+        await this.quiz(mixedQ(), { src: 'forest:turtle', speaker: CAST.rua, title: 'Câu hỏi bên hồ', icon: '🐢' }, npc.actor.root, 10);
       },
     });
     this.miniSpot('fishing', 13.5, -14.0, { model: 'fish_bucket', rot: -20, r: 2.8 });
@@ -492,8 +495,8 @@ export class ForestZone extends Zone {
   private async solveBridge(): Promise<void> {
     if (on('forest.bridge')) return say(CAST.cu, 'Cầu đã mở rồi. Con đi tiếp nhé!');
     this.player.face(0, BRIDGE_Z);
-    await say(CAST.cu, 'Muốn hạ Cầu Phép Cộng, con hãy giải phép tính trên bảng nhé!');
-    await this.quiz(storyQuestion('forestBridge'), { src: 'forest:bridge', speaker: CAST.cu, title: 'Cầu Phép Cộng', icon: '🌉', rewards: false, quiet: true }, this.drawBridge, 12);
+    await say(CAST.cu, siteText('bridge.owl', 'forest.bridge'));
+    await this.quiz(storyQ('forestBridge', { site: 'forest.bridge' }), { src: 'forest:bridge', speaker: CAST.cu, title: siteText('bridge.title', 'forest.bridge'), icon: '🌉', rewards: false, quiet: true }, this.drawBridge, 12);
     setFlag('forest.bridge');
     await this.lowerDrawBridge();
     this.openDrawBridgeTerrain();
@@ -505,7 +508,7 @@ export class ForestZone extends Zone {
 
   private async solveRock(): Promise<void> {
     if (!this.rock || on('forest.rock')) return;
-    await this.quiz(storyQuestion('forestRock'), { src: 'forest:rock', speaker: CAST.gau, title: 'Tảng đá chặn đường', icon: '⛏️', rewards: false, quiet: true }, this.rock, 11);
+    await this.quiz(storyQ('forestRock', { site: 'forest.rock' }), { src: 'forest:rock', speaker: CAST.gau, title: 'Tảng đá chặn đường', icon: '⛏️', rewards: false, quiet: true }, this.rock, 11);
     setFlag('forest.rock');
     await this.shatterRock();
     this.unblockRockTerrain();
@@ -516,8 +519,8 @@ export class ForestZone extends Zone {
 
   private async solveBearBridge(): Promise<void> {
     if (on('forest.bearBridge')) return;
-    await say(CAST.gau, 'Cầu này cần 7 tấm ván và thêm 5 tấm nữa. Bạn giúp mình nhé!');
-    await this.quiz(storyQuestion('bearBridge'), { src: 'forest:bearBridge', speaker: CAST.gau, title: 'Cây cầu bị khóa', icon: '🔒', rewards: false, quiet: true }, this.lockBridge.root, 11);
+    await say(CAST.gau, siteText('bearBridge.ask', 'forest.bearBridge'));
+    await this.quiz(storyQ('bearBridge', { site: 'forest.bearBridge' }), { src: 'forest:bearBridge', speaker: CAST.gau, title: 'Cây cầu bị khóa', icon: '🔒', rewards: false, quiet: true }, this.lockBridge.root, 11);
     setFlag('forest.bearBridge');
     await this.unlockBearBridge();
     this.openLockBridgeTerrain();
@@ -610,9 +613,6 @@ export class ForestZone extends Zone {
         plank.position.y = -0.9 * (1 - k) + 0.12;
         plank.rotation.z = (1 - k) * -0.8;
       }, { ease: 'outBack' });
-      if (i === 6) {
-        this.buddy && this.bubble(this.buddy.root, '7 tấm ván...', this.buddy.height + 0.6, 1200);
-      }
     }
     planks.forEach((p) => (p.visible = false));
     deck.visible = true;

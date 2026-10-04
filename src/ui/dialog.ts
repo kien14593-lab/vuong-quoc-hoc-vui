@@ -1,5 +1,5 @@
 import { sfx } from '../core/audio';
-import { speak, stopSpeech } from '../core/speech';
+import { plainText, speak, stopSpeech } from '../core/speech';
 import { modelDef } from '../models/registry';
 import { h, wait } from './dom';
 import { modelPortrait } from './portrait';
@@ -113,7 +113,7 @@ async function runSay(sp: Speaker | null, lines: string[]): Promise<void> {
       ui.next.classList.remove('show');
       let typing = true;
       speak(line, { who: sp?.voice });
-      const finish = typewrite(ui.text, line, () => {
+      const finish = typewrite(ui.text, plainText(line), () => {
         typing = false;
         ui.next.classList.add('show');
       });
@@ -149,7 +149,7 @@ async function runChoose(sp: Speaker | null, text: string, options: string[]): P
   ui.el.classList.add('has-choices');
   layer('dialog').appendChild(ui.el);
   speak(text, { who: sp?.voice });
-  const finish = typewrite(ui.text, text, () => undefined);
+  const finish = typewrite(ui.text, plainText(text), () => undefined);
   try {
     return await new Promise<number>((resolve) => {
       options.forEach((opt, i) => {

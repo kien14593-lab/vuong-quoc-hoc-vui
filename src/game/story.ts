@@ -1,8 +1,12 @@
 import { sfx } from '../core/audio';
+import { EN_BADGE_GOAL, levelDef } from '../core/progression';
 import { addCoins, addKeys, addStars, addTickets, addXp, awardBadge, flag, giveItem, hasBadge, hasProfile, isCollected, level, profile, questState, setFlag, type ZoneId } from '../core/state';
+import { TOPICS } from '../math/curriculum';
+import type { Topic } from '../math/types';
 import type { Child } from '../ui/dom';
 import { coinIcon } from '../ui/icons';
 import { rewardBurst } from '../ui/toast';
+import { siteText, st } from './subject-text';
 
 /**
  * CỐT TRUYỆN & TIẾN TRÌNH
@@ -11,13 +15,16 @@ import { rewardBurst } from '../ui/toast';
  * chỉ cần đọc/ghi cờ. Danh sách cờ chính (theo thứ tự chơi):
  *
  *  Làng      intro.done · (5 sao: village.star.box, village.star.1..4) · quest "stars" = done · bear.start
- *  Rừng      forest.bridge (4+3) · forest.rock (8−3) · forest.bearBridge (7+5) · forest.stones (12/8/15)
+ *  Rừng      forest.bridge · forest.rock · forest.bearBridge · forest.stones
  *  Mê cung   maze.key1..3 (3 chìa khóa) · maze.exit (nhận vé + huy hiệu Vua Mê Cung)
  *  Vui chơi  park.coaster · park.balls · park.wheel · park.clown (mỗi trò 1 vé)
  *  Sở thú    zoo.open (đưa 5 vé) · zoo.giraffe · zoo.monkey · zoo.penguins · bear.done
  *  Lâu đài   castle.mul · castle.frac · castle.geo · castle.king
  *  Nhà       house.harvest (thu hoạch lần đầu)
- *  Chung     visited.<zone> · shop.fruit (bài toán mua trái cây)
+ *  Chung     visited.<zone> · shop.fruit (câu đố mua trái cây của Cô Mèo)
+ *
+ * Câu hỏi theo môn của hồ sơ (game/subject.ts). Chế độ "Cả hai": môn của mỗi thử thách cố định (cầu, đá, cổng,
+ * phòng lâu đài) được chọn một lần và lưu ở `profile().picks`, để biển báo, mục tiêu và câu hỏi luôn khớp nhau.
  */
 
 export interface ZoneMeta {
@@ -33,10 +40,37 @@ export interface ZoneMeta {
 export const ZONE_META: Record<ZoneId, ZoneMeta> = {
   village: { id: 'village', name: 'Ngôi Làng Khởi Đầu', icon: '🏡', sub: 'Khu hướng dẫn', map: { x: 0.43, y: 0.7 }, color: '#ffd6a5' },
   house: { id: 'house', name: 'Ngôi Nhà Của Bạn', icon: '🏠', sub: 'Trang trí, trồng cây, huy hiệu', map: { x: 0.19, y: 0.84 }, color: '#ffc8dd' },
-  forest: { id: 'forest', name: 'Rừng Thông Thái', icon: '🌳', sub: 'Cộng, trừ và thử thách trực quan', map: { x: 0.36, y: 0.42 }, color: '#b9fbc0' },
-  maze: { id: 'maze', name: 'Mê Cung Kỳ Bí', icon: '🌀', sub: 'Giải toán để chọn đúng đường', map: { x: 0.56, y: 0.2 }, color: '#cdb4db' },
+  forest: {
+    id: 'forest',
+    name: 'Rừng Thông Thái',
+    icon: '🌳',
+    get sub() {
+      return st('sub.forest');
+    },
+    map: { x: 0.36, y: 0.42 },
+    color: '#b9fbc0',
+  },
+  maze: {
+    id: 'maze',
+    name: 'Mê Cung Kỳ Bí',
+    icon: '🌀',
+    get sub() {
+      return st('sub.maze');
+    },
+    map: { x: 0.56, y: 0.2 },
+    color: '#cdb4db',
+  },
   park: { id: 'park', name: 'Khu Vui Chơi', icon: '🎡', sub: 'Mini-game và phần thưởng', map: { x: 0.7, y: 0.66 }, color: '#a0e7ff' },
-  zoo: { id: 'zoo', name: 'Sở Thú Kỳ Diệu', icon: '🦁', sub: 'Bài toán về động vật', map: { x: 0.8, y: 0.36 }, color: '#fdffb6' },
+  zoo: {
+    id: 'zoo',
+    name: 'Sở Thú Kỳ Diệu',
+    icon: '🦁',
+    get sub() {
+      return st('sub.zoo');
+    },
+    map: { x: 0.8, y: 0.36 },
+    color: '#fdffb6',
+  },
   castle: { id: 'castle', name: 'Lâu Đài Trí Tuệ', icon: '🏰', sub: 'Thử thách nâng cao', map: { x: 0.14, y: 0.22 }, color: '#e2ece9' },
 };
 
@@ -101,13 +135,13 @@ export function bearFollows(zone: ZoneId): boolean {
 /** Các bước hành trình (để hiện danh sách nhiệm vụ). */
 export function bearSteps(): { text: string; done: boolean }[] {
   return [
-    { text: 'Mở cây cầu bị khóa: 7 + 5', done: on('forest.bearBridge') },
-    { text: 'Chọn viên đá lớn nhất: 12, 8, 15', done: on('forest.stones') },
+    { text: 'Mở cây cầu bị khóa', done: on('forest.bearBridge') },
+    { text: siteText('stones.step', 'forest.stones'), done: on('forest.stones') },
     { text: `Thu thập 3 chìa khóa trong Mê Cung (${mazeKeys()}/3)`, done: mazeKeys() >= 3 },
     { text: 'Ra khỏi Mê Cung và nhận vé sở thú', done: on('maze.exit') },
     { text: `Đưa ${ZOO_TICKETS} vé cho Bác Voi để mở cổng Sở Thú`, done: on('zoo.open') },
-    { text: 'Giúp hươu cao cổ giải bài toán về số quả táo', done: on('zoo.giraffe') },
-    { text: 'Nhận 50 XP, 20 xu và huy hiệu Nhà Thám Hiểm', done: on('bear.done') },
+    { text: st('zoo.giraffeStep'), done: on('zoo.giraffe') },
+    { text: 'Nhận 50 XP, 20 xu và huy hiệu Nhà Thám Hiểm Vương Quốc', done: on('bear.done') },
   ];
 }
 
@@ -128,7 +162,7 @@ export function zoneLock(z: ZoneId): string | null {
     case 'zoo':
       return visited('zoo') || on('maze.exit') || visited('park') ? null : 'Đường tới Sở Thú đi qua Mê Cung hoặc Khu Vui Chơi.';
     case 'castle':
-      return level() >= CASTLE_LEVEL ? null : `Lâu Đài mở khi bạn đạt cấp ${CASTLE_LEVEL} (Thợ săn con số). Hãy giải toán và chơi mini-game để lên cấp nhé!`;
+      return level() >= CASTLE_LEVEL ? null : `Lâu Đài mở khi bạn đạt cấp ${CASTLE_LEVEL} (${levelDef(CASTLE_LEVEL).title}). ${st('lock.castleDo')}`;
     default:
       return null;
   }
@@ -160,11 +194,11 @@ export function storyObjective(): Objective | null {
     case 'none':
       return { text: 'Nói chuyện với Chú Gấu ở cổng rừng', icon: '🐻', zone: 'village' };
     case 'bridge':
-      if (!on('forest.bridge')) return { text: 'Mở Cầu Phép Cộng trong rừng', icon: '🌉', zone: 'forest' };
+      if (!on('forest.bridge')) return { text: siteText('bridge.objStory', 'forest.bridge'), icon: '🌉', zone: 'forest' };
       if (!on('forest.rock')) return { text: 'Dọn tảng đá chặn đường', icon: '⛏️', zone: 'forest' };
       return { text: 'Mở cây cầu bị khóa cho chú Gấu', icon: '🔒', zone: 'forest' };
     case 'stones':
-      return { text: 'Chọn viên đá lớn nhất để qua suối', icon: '👣', zone: 'forest' };
+      return { text: siteText('stones.obj', 'forest.stones'), icon: '👣', zone: 'forest' };
     case 'maze':
       return { text: `Tìm 3 chìa khóa trong Mê Cung (${mazeKeys()}/3)`, icon: '🗝️', zone: 'maze' };
     case 'exit':
@@ -181,7 +215,7 @@ export function storyObjective(): Objective | null {
       break;
   }
   if (!(on('zoo.giraffe') && on('zoo.monkey') && on('zoo.penguins'))) return { text: 'Chăm sóc các con vật ở Sở Thú', icon: '🐒', zone: 'zoo' };
-  if (level() < CASTLE_LEVEL) return { text: `Lên cấp ${CASTLE_LEVEL} để mở Lâu Đài (chơi mini-game, giải toán)`, icon: '🏰' };
+  if (level() < CASTLE_LEVEL) return { text: `Lên cấp ${CASTLE_LEVEL} để mở Lâu Đài ${st('obj.levelUp')}`, icon: '🏰' };
   if (!(on('castle.mul') && on('castle.frac') && on('castle.geo'))) return { text: 'Vượt qua 3 phòng thử thách ở Lâu Đài', icon: '🛡️', zone: 'castle' };
   if (!on('castle.king')) return { text: 'Nhận thử thách của Nhà Vua', icon: '👑', zone: 'castle' };
   return { text: 'Khám phá thế giới và chơi mini-game!', icon: '🎮' };
@@ -234,8 +268,16 @@ export function checkBadges(): void {
   if (!hasProfile()) return;
   const p = profile();
   let total = 0;
-  for (const st of Object.values(p.stats)) total += st?.q ?? 0;
+  let english = 0;
+  for (const [t, s] of Object.entries(p.stats)) {
+    total += s?.q ?? 0;
+    if (TOPICS[t as Topic]?.subject === 'english') english += s?.q ?? 0;
+  }
+  const first = (...ts: Topic[]): number => ts.reduce((n, t) => n + (p.stats[t]?.first ?? 0), 0);
   if (total >= 100 && !hasBadge('tram-cau')) awardBadge('tram-cau');
+  if (english >= 100 && !hasBadge('tram-tu')) awardBadge('tram-tu');
+  if (first('en_listen') >= EN_BADGE_GOAL && !hasBadge('doi-tai-vang')) awardBadge('doi-tai-vang');
+  if (first('en_spell', 'en_phonics') >= EN_BADGE_GOAL && !hasBadge('bac-thay-danh-van')) awardBadge('bac-thay-danh-van');
   if (Object.keys(p.days).length >= 3 && !hasBadge('cham-chi')) awardBadge('cham-chi');
   if (Object.values(p.mini).filter((m) => m.plays > 0).length >= 6 && !hasBadge('nha-vo-dich')) awardBadge('nha-vo-dich');
   if (on('park.coaster') && on('park.balls') && on('park.wheel') && on('park.clown') && !hasBadge('vua-tro-choi')) awardBadge('vua-tro-choi');

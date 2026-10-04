@@ -1,6 +1,8 @@
 import { goalProgress, goalsForWeek } from '../../core/goals';
 import { profile, weekKey } from '../../core/state';
+import { currentRooms } from '../../game/castle-rooms';
 import { bearStage, bearSteps, mazeKeys, on, storyObjective, villageStars, ZONE_META, ZOO_TICKETS, PARK_STARS } from '../../game/story';
+import { siteText, st } from '../../game/subject-text';
 import type { ZoneId } from '../../core/state';
 import { button, h } from '../dom';
 import { openModal } from '../modal';
@@ -12,23 +14,24 @@ interface Task {
 
 function zoneTasks(): { zone: ZoneId; tasks: Task[] }[] {
   const p = profile();
+  const rooms = currentRooms();
   return [
     {
       zone: 'village',
       tasks: [
         { text: 'Đếm những chiếc hộp', done: on('village.boxes') },
         { text: `Tìm 5 ngôi sao cho Thỏ Bông (${villageStars()}/5)`, done: villageStars() >= 5 },
-        { text: 'Giải bài toán mua trái cây của Cô Mèo', done: on('shop.fruit') },
+        { text: st('quest.shop'), done: on('shop.fruit') },
         { text: 'Nói chuyện với Chú Gấu ở cổng rừng', done: on('bear.start') },
       ],
     },
     {
       zone: 'forest',
       tasks: [
-        { text: 'Mở Cầu Phép Cộng của Bác Cú', done: on('forest.bridge') },
+        { text: siteText('bridge.quest', 'forest.bridge'), done: on('forest.bridge') },
         { text: 'Dọn tảng đá chặn đường', done: on('forest.rock') },
         { text: 'Mở cây cầu bị khóa cho Chú Gấu', done: on('forest.bearBridge') },
-        { text: 'Chọn viên đá lớn nhất để qua suối', done: on('forest.stones') },
+        { text: siteText('stones.obj', 'forest.stones'), done: on('forest.stones') },
       ],
     },
     {
@@ -43,7 +46,7 @@ function zoneTasks(): { zone: ZoneId; tasks: Task[] }[] {
       tasks: [
         { text: `Có ${PARK_STARS} ⭐ để vào cổng (${Math.min(p.stars, PARK_STARS)}/${PARK_STARS})`, done: p.stars >= PARK_STARS || on('visited.park') },
         { text: 'Tàu lượn siêu tốc', done: on('park.coaster') },
-        { text: 'Ném bóng trúng số', done: on('park.balls') },
+        { text: st('quest.balls'), done: on('park.balls') },
         { text: 'Vòng quay may mắn', done: on('park.wheel') },
         { text: 'Câu đố của Chú Hề', done: on('park.clown') },
       ],
@@ -60,9 +63,9 @@ function zoneTasks(): { zone: ZoneId; tasks: Task[] }[] {
     {
       zone: 'castle',
       tasks: [
-        { text: 'Phòng Bảng Nhân', done: on('castle.mul') },
-        { text: 'Phòng Phân Số', done: on('castle.frac') },
-        { text: 'Phòng Hình Học', done: on('castle.geo') },
+        { text: rooms.mul.title, done: on('castle.mul') },
+        { text: rooms.frac.title, done: on('castle.frac') },
+        { text: rooms.geo.title, done: on('castle.geo') },
         { text: 'Thử thách của Nhà Vua', done: on('castle.king') },
       ],
     },

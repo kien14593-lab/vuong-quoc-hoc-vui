@@ -1,6 +1,7 @@
 import { SAVE_VERSION } from '../config';
+import { clampUnit } from '../english/units';
 import { initialSkill, updateSkill, type SkillChange, type SkillState } from '../math/adaptive';
-import type { Grade, Topic } from '../math/types';
+import { isSubjectMode, type Grade, type Subject, type SubjectMode, type Topic } from '../math/types';
 import { isOlder, playedAt, type ImportCompare, type ImportSide } from './backup';
 import { bus } from './events';
 import { item, RETIRED_WEAR, type DecorSlot, type WearSlot } from './items';
@@ -99,6 +100,17 @@ export interface Profile {
   mini: Record<string, { best: number; plays: number }>;
   /** Số xu vừa trả lại cho áo, quần, giày cũ – báo cho bé một lần rồi xóa. */
   refund?: number;
+  /** Môn học: Toán, Tiếng Anh hay cả hai (hồ sơ có từ trước khi có Tiếng Anh: Toán). */
+  subject: SubjectMode;
+  /** "Đang học đến Unit N" của môn Tiếng Anh (null = mọi Unit của lớp). */
+  enUnit: number | null;
+  /** Thầy cô / phụ huynh đã chọn môn: bé không tự đổi môn trong Cài đặt. */
+  subjectLocked: boolean;
+  /**
+   * Môn đã chọn cho từng thử thách cố định (cầu, tảng đá, cửa mê cung, phòng lâu đài…) để biển báo,
+   * nhiệm vụ và câu hỏi luôn khớp nhau, kể cả sau khi tải lại.
+   */
+  picks: Record<string, Subject>;
 }
 
 export interface ProfileSummary {
@@ -112,6 +124,7 @@ export interface ProfileSummary {
   equipped: Equipped;
   level: number;
   stars: number;
+  subject: SubjectMode;
 }
 
 export interface Settings {
@@ -201,7 +214,7 @@ function uid(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
 
-export function newProfile(opts: { name: string; grade: Grade; kid: Kid; look?: Look; equipped?: Partial<Equipped> }): Profile {
+export function newProfile(opts: { name: string; grade: Grade; kid: Kid; look?: Look; equipped?: Partial<Equipped>; subject?: SubjectMode }): Profile {
   const now = Date.now();
   const equipped: Equipped = {
     outfit: DEFAULT_OUTFIT,
@@ -247,6 +260,10 @@ export function newProfile(opts: { name: string; grade: Grade; kid: Kid; look?: 
     totalMs: 0,
     pos: null,
     mini: {},
+    subject: isSubjectMode(opts.subject) ? opts.subject : 'math',
+    enUnit: null,
+    subjectLocked: false,
+    picks: {},
   };
 }
 
@@ -286,34 +303,85 @@ function refundRetired(p: Profile): number {
   return coins;
 }
 
+/**
+ * Các bước chuyển hồ sơ lưu ở bản cũ, theo thứ tự phiên bản. Bước `v` chỉ chạy cho hồ sơ cũ hơn phiên bản đó;
+ * thêm phiên bản mới = thêm một bước vào cuối danh sách. Mỗi bước chạy lại cũng không sai (hồ sơ có thể bị một bản
+ * game cũ hơn ghi đè số phiên bản, ví dụ hai tệp HTML khác bản mở trên cùng một máy).
+ */
+const STEPS: { v: number; run: (p: Profile) => void }[] = [
+  { v: 2, run: toV2 },
+  { v: 3, run: toV3 },
+];
+
+/** v2 – bé AI (bé trai/bé gái đã đoán khi đọc hồ sơ): bỏ chỗ mặc áo, quần, giày; trả xu cho đồ cũ đã mua. */
+function toV2(p: Profile): void {
+  const eq = p.equipped as unknown as Record<string, unknown>;
+  for (const s of OLD_SLOTS) delete eq[s];
+  refundRetired(p);
+}
+
+/** v3 – môn học: hồ sơ có từ trước học Toán như cũ, mọi Unit, bé được tự đổi môn. */
+function toV3(p: Profile): void {
+  if (!isSubjectMode(p.subject)) p.subject = 'math';
+  if (p.enUnit === undefined) p.enUnit = null;
+  if (typeof p.subjectLocked !== 'boolean') p.subjectLocked = false;
+  if (!p.picks || typeof p.picks !== 'object') p.picks = {};
+}
+
+/** Kiểm tra mọi lần tải: dữ liệu vẫn hợp lệ với bản game hiện tại. */
+function repair(p: Profile): void {
+  if (!outfitFits(p.kid, p.equipped.outfit)) p.equipped.outfit = DEFAULT_OUTFIT;
+  if (!p.inventory[DEFAULT_OUTFIT]) p.inventory[DEFAULT_OUTFIT] = 1;
+  if (!isSubjectMode(p.subject)) p.subject = 'math';
+  p.enUnit = typeof p.enUnit === 'number' && [1, 2, 3, 4, 5].includes(p.grade) ? clampUnit(p.grade, p.enUnit) : null;
+  p.subjectLocked = p.subjectLocked === true;
+  prunePicks(p);
+}
+
+/**
+ * Bỏ môn đã chọn cho các thử thách cố định mà môn học hiện tại không còn cho phép (ví dụ Cả hai → Toán bỏ các
+ * chọn Tiếng Anh). Cờ hoàn thành giữ nguyên.
+ */
+function prunePicks(p: Profile): void {
+  const out: Record<string, Subject> = {};
+  for (const [k, v] of Object.entries(p.picks && typeof p.picks === 'object' ? p.picks : {})) {
+    if ((v === 'math' || v === 'english') && (p.subject === 'both' || p.subject === v)) out[k] = v;
+  }
+  p.picks = out;
+}
+
 function migrate(raw: Profile): Profile {
+  const from = typeof raw.v === 'number' && raw.v >= 1 ? raw.v : 1;
   const kid = isKid(raw.kid) ? raw.kid : guessKid(raw);
   const base = newProfile({ name: raw.name, grade: raw.grade, kid });
   const p: Profile = {
     ...base,
     ...raw,
-    v: SAVE_VERSION,
     kid,
     look: raw.look ?? base.look,
     inventory: { ...(raw.inventory ?? base.inventory) },
     equipped: { ...base.equipped, ...raw.equipped },
+    picks: { ...(raw.picks ?? {}) },
   };
-  const eq = p.equipped as unknown as Record<string, unknown>;
-  for (const s of OLD_SLOTS) delete eq[s];
-  refundRetired(p);
-  if (!outfitFits(kid, p.equipped.outfit)) p.equipped.outfit = DEFAULT_OUTFIT;
-  if (!p.inventory[DEFAULT_OUTFIT]) p.inventory[DEFAULT_OUTFIT] = 1;
+  for (const s of STEPS) if (from < s.v) s.run(p);
+  repair(p);
+  p.v = Math.max(from, SAVE_VERSION);
   return p;
 }
 
 function summary(p: Profile): ProfileSummary {
-  return { id: p.id, name: p.name, grade: p.grade, created: p.created, lastPlayed: p.lastPlayed, kid: p.kid, look: p.look, equipped: p.equipped, level: levelFromXp(p.xp), stars: p.stars };
+  return { id: p.id, name: p.name, grade: p.grade, created: p.created, lastPlayed: p.lastPlayed, kid: p.kid, look: p.look, equipped: p.equipped, level: levelFromXp(p.xp), stars: p.stars, subject: p.subject };
 }
 
 export function listProfiles(): ProfileSummary[] {
   return storage
     .getJSON<ProfileSummary[]>('profiles', [])
-    .map((s) => (isKid(s.kid) && s.equipped?.outfit ? s : { ...s, kid: isKid(s.kid) ? s.kid : guessKid(s), equipped: { ...s.equipped, outfit: s.equipped?.outfit ?? DEFAULT_OUTFIT } }))
+    .map((s) => ({
+      ...s,
+      kid: isKid(s.kid) ? s.kid : guessKid(s),
+      equipped: s.equipped?.outfit ? s.equipped : { ...s.equipped, outfit: DEFAULT_OUTFIT },
+      subject: isSubjectMode(s.subject) ? s.subject : 'math',
+    }))
     .sort((a, b) => b.lastPlayed - a.lastPlayed);
 }
 
@@ -734,6 +802,48 @@ export function setGrade(grade: Grade): void {
   const p = profile();
   p.grade = grade;
   p.skills = {};
+  // Mỗi lớp có danh sách Unit riêng.
+  p.enUnit = null;
+  save();
+}
+
+/* ------------------------------------------------------------------ */
+/* Môn học                                                              */
+/* ------------------------------------------------------------------ */
+export interface SubjectPatch {
+  subject?: SubjectMode;
+  /** "Đang học đến Unit N" (null = mọi Unit). */
+  enUnit?: number | null;
+  subjectLocked?: boolean;
+}
+
+/**
+ * Đổi môn học, Unit, khóa môn của một hồ sơ (cả hồ sơ không đang chơi – bảng giáo viên). Thử thách cố định đã chọn
+ * môn mà môn mới không còn cho phép sẽ được chọn lại; cờ hoàn thành giữ nguyên.
+ */
+export function applySubjectSettings(p: Profile, patch: SubjectPatch): void {
+  if (isSubjectMode(patch.subject)) p.subject = patch.subject;
+  if (patch.enUnit !== undefined) p.enUnit = clampUnit(p.grade, patch.enUnit);
+  if (patch.subjectLocked !== undefined) p.subjectLocked = patch.subjectLocked === true;
+  prunePicks(p);
+}
+
+/** Đổi môn học / Unit / khóa môn của hồ sơ đang chơi. */
+export function setSubjectSettings(patch: SubjectPatch): void {
+  const p = profile();
+  const before = `${p.subject}|${p.enUnit}`;
+  applySubjectSettings(p, patch);
+  saveNow();
+  if (`${p.subject}|${p.enUnit}` !== before) bus.emit('subject', { subject: p.subject });
+}
+
+/** Môn đã chọn cho một thử thách cố định (undefined = chưa chọn). */
+export function sitePick(site: string): Subject | undefined {
+  return profile().picks[site];
+}
+
+export function setSitePick(site: string, s: Subject): void {
+  profile().picks[site] = s;
   save();
 }
 
@@ -762,14 +872,18 @@ export function writeProfile(p: Profile): void {
   const next = migrate({ ...p, v: SAVE_VERSION });
   storage.setJSON(`p.${next.id}`, next);
   writeIndex(next);
-  if (current?.id === next.id) current = next;
+  if (current?.id === next.id) {
+    const changed = current.subject !== next.subject || current.enUnit !== next.enUnit;
+    current = next;
+    if (changed) bus.emit('subject', { subject: next.subject });
+  }
 }
 
-/** Đặt lại tiến độ học tập, giữ tên, lớp, ngoại hình và trang bị cơ bản. */
+/** Đặt lại tiến độ học tập, giữ tên, lớp, ngoại hình, trang bị cơ bản và môn học. */
 export function resetProfileProgress(id: string): Profile | null {
   const old = readProfile(id);
   if (!old) return null;
-  const fresh = newProfile({ name: old.name, grade: old.grade, kid: old.kid, look: old.look, equipped: old.equipped });
+  const fresh = newProfile({ name: old.name, grade: old.grade, kid: old.kid, look: old.look, equipped: old.equipped, subject: old.subject });
   const reset: Profile = {
     ...fresh,
     id: old.id,
@@ -784,6 +898,8 @@ export function resetProfileProgress(id: string): Profile | null {
     collected: [],
     quests: {},
     pos: old.pos,
+    enUnit: old.enUnit,
+    subjectLocked: old.subjectLocked,
   };
   storage.setJSON(`p.${reset.id}`, reset);
   writeIndex(reset);

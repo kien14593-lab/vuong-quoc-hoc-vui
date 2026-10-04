@@ -3,9 +3,11 @@
  * Câu hỏi có cùng dạng Question với Toán nên bảng câu hỏi, gợi ý, các bước giải và phần thưởng dùng chung.
  */
 import { maxLevelFor } from '../math/curriculum';
+import type { BeatId } from '../math/scripted';
 import type { EnTopic, Question } from '../math/types';
 import { qid } from '../math/util';
 import { type Word, conflicts } from './bank';
+import { BEATS } from './beats';
 import { type Ctx, type EnOptions, forgetRecent, hasAny, makeCtx, remember, valid, wordLabel } from './gen-core';
 import { phonics, spell } from './gen-letters';
 import { numbers } from './gen-numbers';
@@ -110,6 +112,46 @@ export function englishQuestion(topic: EnTopic, level: number, o: EnOptions): Qu
     }
   }
   return fallback();
+}
+
+/* ---------------- Tình huống trong truyện ---------------- */
+
+/** Tùy chọn riêng của một tình huống (nhãn ngắn trên đá 3D, chỉ hỏi đồ ăn…). */
+export function beatOptions(beat: BeatId): Partial<EnOptions> {
+  return BEATS[beat].opts ?? {};
+}
+
+/** Kĩ năng Tiếng Anh của một tình huống (null = bộ chọn môn tự chọn kĩ năng cần luyện). */
+export function beatTopic(beat: BeatId, o: EnOptions): EnTopic | null {
+  const s = BEATS[beat];
+  return s.topic ? resolveTopic(s.topic, { ...o, ...s.opts }) : null;
+}
+
+/**
+ * Câu hỏi Tiếng Anh cho một tình huống trong truyện, cùng cách chơi với câu hỏi Toán của tình huống đó
+ * (đếm hộp, ném bóng vào nhiều đáp án đúng…). `topic` = kĩ năng được hỏi. Không bao giờ ném lỗi.
+ */
+export function beatQuestion(beat: BeatId, topic: EnTopic, level: number, o: EnOptions): Question {
+  const s = BEATS[beat];
+  const opts: EnOptions = { ...o, ...s.opts };
+  const t = resolveTopic(topic, opts);
+  if (s.build && s.topic && t === resolveTopic(s.topic, opts)) {
+    const top = Math.max(1, Math.min(Math.round(level) || 1, maxLevelFor(t, o.grade)));
+    for (let i = 0; i < 8; i++) {
+      const c = makeCtx(opts, t);
+      let q: Question | null = null;
+      try {
+        q = s.build(c, top);
+      } catch (e) {
+        if (strict) throw e;
+      }
+      if (q && valid(q, c)) {
+        remember(c.target);
+        return q;
+      }
+    }
+  }
+  return englishQuestion(t, level, opts);
 }
 
 export interface SetOptions {

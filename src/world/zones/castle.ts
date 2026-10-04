@@ -1,37 +1,19 @@
 import * as THREE from 'three';
 import { sfx } from '../../core/audio';
+import { canListen } from '../../core/speech';
 import { profile, setFlag } from '../../core/state';
 import { CAST, villager } from '../../game/cast';
-import { adaptiveQuestion, mixedQuestion } from '../../game/challenge';
+import { currentRooms, ROOM_IDS, roomList, type RoomCfg, type RoomId } from '../../game/castle-rooms';
 import { checkBadges, on, reward } from '../../game/story';
+import { englishQ, kingPlan, labelQ, mathQ, mixedQ, pickEnTopic } from '../../game/subject';
 import { GRADE_TOPICS } from '../../math/curriculum';
-import type { MathTopic, Question } from '../../math/types';
+import type { MathTopic, Question, WordTheme } from '../../math/types';
 import { say } from '../../ui/dialog';
 import { toast } from '../../ui/toast';
 import { Zone, type Npc, type PickSpot, type Spawn } from '../zone';
 
-type RoomId = 'mul' | 'frac' | 'geo';
-
-interface RoomCfg {
-  id: RoomId;
-  flag: `castle.${RoomId}`;
-  title: string;
-  short: string;
-  icon: string;
-  symbol: string;
-  bannerSym: string;
-  color: string;
-  x: number;
-  z: number;
-}
-
-const ROOMS: Record<RoomId, RoomCfg> = {
-  mul: { id: 'mul', flag: 'castle.mul', title: 'Phòng Bảng Nhân', short: 'Bảng Nhân', icon: '✖️', symbol: '×', bannerSym: '×', color: '#c7b3ff', x: -18, z: 5.2 },
-  frac: { id: 'frac', flag: 'castle.frac', title: 'Phòng Phân Số', short: 'Phân Số', icon: '½', symbol: '½', bannerSym: '½', color: '#8fd3ff', x: 18, z: 5.2 },
-  geo: { id: 'geo', flag: 'castle.geo', title: 'Phòng Hình Học', short: 'Hình Học', icon: '△', symbol: '△', bannerSym: '△', color: '#9be09b', x: -18, z: -8.2 },
-};
-
-const ROOM_IDS: RoomId[] = ['mul', 'frac', 'geo'];
+const ROOM_THEME: WordTheme = { who: 'Hiệp Sĩ Thỏ', item: 'viên ngọc', unit: 'viên', emoji: '💎' };
+const KING_THEME: WordTheme = { who: 'Nhà Vua', item: 'viên sao', unit: 'viên', emoji: '⭐' };
 const CHOICE_COLORS = ['#8fd3ff', '#ffd166', '#ff9ec7', '#9be09b', '#c7b3ff'];
 const CASTLE_STYLE = { stone: '#fff2dc', trim: '#e8c5ff', roof: '#b197fc', flag: '#ff7aa8', accent: '#ffd166' };
 const HALL_STYLE = { stone: '#fff2dc', trim: '#e8c5ff', floor: '#fff8ee', carpet: '#d6b5ff' };
@@ -50,6 +32,8 @@ export class CastleZone extends Zone {
   private king!: Npc;
   private roomRunning: RoomId | null = null;
   private kingRunning = false;
+  /** Ba phòng theo môn của hồ sơ (dựng lại khu vực khi đổi môn). */
+  private rooms!: Record<RoomId, RoomCfg>;
 
   constructor(spawn: Spawn) {
     super(
@@ -77,6 +61,7 @@ export class CastleZone extends Zone {
   }
 
   protected build(): void {
+    this.rooms = currentRooms();
     this.buildTerrain();
     this.buildApproach();
     this.buildCourtyard();
@@ -88,7 +73,7 @@ export class CastleZone extends Zone {
   }
 
   objective(): { text: string; icon?: string } | null {
-    const left = ROOM_IDS.filter((id) => !on(ROOMS[id].flag));
+    const left = ROOM_IDS.filter((id) => !on(`castle.${id}`));
     if (left.length) return { text: `Vượt qua 3 phòng thử thách (${3 - left.length}/3)`, icon: '🛡️' };
     if (!on('castle.king')) return { text: 'Vào đại sảnh gặp Nhà Vua', icon: '👑' };
     return { text: 'Chơi mini-game hoặc trò chuyện trong lâu đài', icon: '🏰' };
@@ -112,7 +97,7 @@ export class CastleZone extends Zone {
     t.plaza(0, -5.5, 5.4);
     t.plaza(0, 18.2, 6.6);
     for (const r of ROOM_IDS) {
-      const cfg = ROOMS[r];
+      const cfg = this.rooms[r];
       t.path([[0, cfg.z + 8.2], [cfg.x * 0.62, cfg.z + 8.2], [cfg.x, cfg.z + 6.5]], 2.55, { kind: 'stone' });
       t.plaza(cfg.x, cfg.z + 3.1, 4.6);
       t.patch(cfg.x, cfg.z + 2.8, 4.6, cfg.color, 0.28);
@@ -128,11 +113,13 @@ export class CastleZone extends Zone {
     this.portal(33.2, 13.5, 'village', 'from_castle', { label: 'Ngôi Làng', r: 1.6, rot: -90 });
     this.place('gate_arch', 25.4, 13.3, { rot: -90, opts: { text: 'Lâu Đài', color: '#d0c4f7', w: 4.8 } });
     this.sign(25.4, 13.3, '🏰 Lâu Đài Trí Tuệ', { y: 4.4, maxDist: 44 });
+    // Cờ dọc đường vào mang ký hiệu của ba phòng (Toán: × ½ △ ×).
+    const syms = [...ROOM_IDS, 'mul' as const].map((id) => this.rooms[id].bannerSym);
     for (const [x, z, rot, sym, color] of [
-      [28.7, 10.9, -90, '×', '#c7b3ff'],
-      [22.5, 14.8, -90, '½', '#8fd3ff'],
-      [15.2, 10.2, -65, '△', '#9be09b'],
-      [8.2, 6.0, -45, '×', '#ffd166'],
+      [28.7, 10.9, -90, syms[0], '#c7b3ff'],
+      [22.5, 14.8, -90, syms[1], '#8fd3ff'],
+      [15.2, 10.2, -65, syms[2], '#9be09b'],
+      [8.2, 6.0, -45, syms[3], '#ffd166'],
     ] as [number, number, number, string, string][]) {
       this.place('banner', x, z, { rot, opts: { sym, color }, collide: false });
       this.place('torch', x, z + 1.0, { opts: { standing: true }, collide: false });
@@ -164,7 +151,7 @@ export class CastleZone extends Zone {
 
   private buildRooms(): void {
     for (const id of ROOM_IDS) {
-      const r = ROOMS[id];
+      const r = this.rooms[id];
       const solved = on(r.flag);
       const wallOpts = { ...CASTLE_STYLE, len: 9.0, trim: solved ? '#ffd166' : CASTLE_STYLE.trim };
       this.place('castle_tower', r.x - 5.2, r.z - 1.6, { scale: 0.62, opts: { ...CASTLE_STYLE, roof: r.color, flag: solved ? '#ffd166' : r.color }, collide: true });
@@ -223,7 +210,7 @@ export class CastleZone extends Zone {
 
   private buildPeople(): void {
     for (const id of ROOM_IDS) {
-      const r = ROOMS[id];
+      const r = this.rooms[id];
       this.knights[id] = this.npc(CAST.hiepsi.art, r.x - 3.7, r.z + 8.8, {
         name: CAST.hiepsi.name,
         color: CAST.hiepsi.color,
@@ -271,8 +258,8 @@ export class CastleZone extends Zone {
       wander: 1.0,
       talk: async (npc) => {
         await say({ name: 'Thị vệ Mây', color: '#ffb38a', voice: 'v3' }, 'Mình có một câu đố trong sân lâu đài!');
-        await this.quiz(mixedQuestion(GRADE_TOPICS[profile().grade]), { src: 'castle:riddle', speaker: { name: 'Thị vệ Mây', color: '#ffb38a' }, title: 'Câu đố trong sân', icon: '🧩' }, npc.actor, 10);
-        await say({ name: 'Thị vệ Mây', color: '#ffb38a', voice: 'v3' }, 'Hay quá! Bạn suy luận như một hiệp sĩ toán học.');
+        await this.quiz(mixedQ({ math: GRADE_TOPICS[profile().grade] }), { src: 'castle:riddle', speaker: { name: 'Thị vệ Mây', color: '#ffb38a' }, title: 'Câu đố trong sân', icon: '🧩' }, npc.actor, 10);
+        await say({ name: 'Thị vệ Mây', color: '#ffb38a', voice: 'v3' }, 'Hay quá! Bạn suy luận như một hiệp sĩ thông thái.');
       },
     });
     this.npc('npc_villager', 6.8, 7.6, {
@@ -301,7 +288,7 @@ export class CastleZone extends Zone {
     await this.wait(0.4);
     await say(CAST.hiepsi, ['Chào mừng đến Lâu Đài Trí Tuệ!', 'Bạn đã đủ cấp để thử sức với các phòng nâng cao.']);
     await this.showPoint(0, 2.0, 4.6, 1.2, 18);
-    await say(CAST.hiepsi, ['Có ba phòng thử thách: Bảng Nhân, Phân Số và Hình Học.', 'Hoàn thành cả ba, cửa đại sảnh sẽ mở để gặp Nhà Vua.']);
+    await say(CAST.hiepsi, [`Có ba phòng thử thách: ${roomList(this.rooms)}.`, 'Hoàn thành cả ba, cửa đại sảnh sẽ mở để gặp Nhà Vua.']);
     setFlag('castle.intro');
   }
 
@@ -322,7 +309,7 @@ export class CastleZone extends Zone {
   }
 
   private async runRoom(id: RoomId): Promise<void> {
-    const cfg = ROOMS[id];
+    const cfg = this.rooms[id];
     if (on(cfg.flag)) {
       await say(CAST.hiepsi, `${cfg.title} đã hoàn thành rồi. Cờ vàng đang bay rất đẹp!`);
       return;
@@ -334,21 +321,28 @@ export class CastleZone extends Zone {
       await this.openGate(id);
       await this.showPoint(cfg.x, 1.4, cfg.z + 2.8, 0.8, 12);
       for (let i = 0; i < 3; i++) {
-        const topic = this.pickTopic(id, i);
-        const q = adaptiveQuestion(topic, { levelDelta: i === 2 ? 1 : 0, theme: { who: 'Hiệp Sĩ Thỏ', item: 'viên ngọc', unit: 'viên', emoji: '💎' } });
-        if (i === 1) await this.pickChallenge(cfg, q, i);
-        else await this.quiz(q, { src: `castle:${id}:${i}`, speaker: CAST.hiepsi, title: `${cfg.title} ${i + 1}/3`, icon: cfg.icon }, [cfg.x, 1.1, cfg.z + 2.2], 11);
+        const levelDelta = i === 2 ? 1 : 0;
+        const math = () => mathQ(this.pickTopic(id, i), { levelDelta, theme: ROOM_THEME });
+        const topic = cfg.en[0];
+        if (i === 1) {
+          // Đáp án hiện trên đá: Tiếng Anh dùng hình hoặc từ ngắn; phòng Lắng Nghe vẫn được hỏi câu nghe.
+          const q = labelQ(cfg.subject, math, { topic, levelDelta, en: topic === 'en_listen' ? { listen: canListen() } : undefined });
+          await this.pickChallenge(cfg, q, i);
+        } else {
+          const q = cfg.subject === 'math' ? math() : englishQ(topic, { levelDelta });
+          await this.quiz(q, { src: `castle:${id}:${i}`, speaker: CAST.hiepsi, title: `${cfg.title} ${i + 1}/3`, icon: cfg.icon }, [cfg.x, 1.1, cfg.z + 2.2], 11);
+        }
         this.fx.burst('sparkle', [cfg.x, 1.3, cfg.z + 2.2], { count: 16 + i * 4 });
         sfx('correct');
         await this.wait(0.35);
       }
       setFlag(cfg.flag);
-      if (id === 'mul') reward({ stars: 1, xp: 20, coins: 10, badge: 'bang-nhan' });
+      if (id === 'mul') reward({ stars: 1, xp: 20, coins: 10, badge: cfg.subject === 'math' ? 'bang-nhan' : 'nha-ngon-ngu-nhi' });
       else reward({ stars: 1, xp: 20, coins: 10 });
       checkBadges();
       this.knights[id]?.actor.celebrate(1.8);
       this.fx.burst('confetti', [cfg.x, 2.0, cfg.z + 4.5], { count: 48 });
-      this.bubble(this.knights[id]?.actor.root ?? this.gates[id]!, 'Chào hiệp sĩ toán học! 🛡️', 2.8, 2600);
+      this.bubble(this.knights[id]?.actor.root ?? this.gates[id]!, 'Chào hiệp sĩ thông thái! 🛡️', 2.8, 2600);
       toast(`Hoàn thành ${cfg.title}!`, { icon: cfg.icon, tone: 'gold' });
       if (this.roomsDone()) {
         this.setThroneDoors(true);
@@ -404,12 +398,12 @@ export class CastleZone extends Zone {
   private async runKing(): Promise<void> {
     if (!this.roomsDone()) {
       await say(CAST.vua, ['Cửa đại sảnh còn đóng.', 'Hãy hoàn thành đủ ba phòng thử thách, rồi ta sẽ trao thử thách cuối cùng.']);
-      const next = ROOM_IDS.find((id) => !on(ROOMS[id].flag));
-      if (next) await this.showPoint(ROOMS[next].x, 2, ROOMS[next].z + 6.2, 1.1, 16);
+      const next = ROOM_IDS.find((id) => !on(this.rooms[id].flag));
+      if (next) await this.showPoint(this.rooms[next].x, 2, this.rooms[next].z + 6.2, 1.1, 16);
       return;
     }
     if (on('castle.king')) {
-      await say(CAST.vua, ['Nhà Toán Học nhỏ tuổi đã trở lại!', 'Hãy đội vương miện trong túi và đặt cúp ở nhà nhé.']);
+      await say(CAST.vua, ['Nhà Thông Thái nhỏ tuổi đã trở lại!', 'Hãy đội vương miện trong túi và đặt cúp ở nhà nhé.']);
       return;
     }
     if (this.kingRunning) return;
@@ -418,9 +412,13 @@ export class CastleZone extends Zone {
       this.setThroneDoors(true);
       await say(CAST.vua, ['Con đã vượt qua ba phòng thử thách.', 'Bây giờ là Thử thách của Nhà Vua: 5 câu hỏi tổng hợp!']);
       const topics = GRADE_TOPICS[profile().grade];
+      const plan = kingPlan();
       for (let i = 0; i < 5; i++) {
-        const topic = topics[(Math.floor(this.rnd() * topics.length) + i) % topics.length];
-        const q = adaptiveQuestion(topic, { levelDelta: 1, theme: { who: 'Nhà Vua', item: 'viên sao', unit: 'viên', emoji: '⭐' } });
+        let q: Question;
+        if (plan[i] === 'math') {
+          const topic = topics[(Math.floor(this.rnd() * topics.length) + i) % topics.length];
+          q = mathQ(topic, { levelDelta: 1, theme: KING_THEME });
+        } else q = englishQ(pickEnTopic(), { levelDelta: 1 });
         // Ngắm ngang ngực vua để mặt, râu và cổ áo hiện trọn phía trên thẻ câu hỏi (cả màn hình điện thoại xoay ngang).
         await this.quiz(q, { src: `castle:king:${i}`, speaker: CAST.vua, title: `Thử thách Nhà Vua ${i + 1}/5`, icon: '👑' }, [KING_SPOT.x, KING_SPOT.y + 1.0, KING_SPOT.z], 13);
         this.king.actor.celebrate(0.8);
@@ -432,7 +430,7 @@ export class CastleZone extends Zone {
       this.king.actor.celebrate(3);
       sfx('star');
       toast('Bạn nhận vương miện và cúp vàng! Hãy mở túi để đội vương miện, rồi về nhà đặt cúp nhé.', { icon: '👑', tone: 'gold', ms: 5200 });
-      await say(CAST.vua, ['Ta tuyên dương con là Nhà Toán Học của Vương quốc!', 'Vương miện nằm trong túi. Chiếc cúp có thể đặt ở nhà của con.']);
+      await say(CAST.vua, ['Ta tuyên dương con là Nhà Thông Thái của Vương quốc!', 'Vương miện nằm trong túi. Chiếc cúp có thể đặt ở nhà của con.']);
     } finally {
       this.kingRunning = false;
       this.refreshMarks();
@@ -440,7 +438,7 @@ export class CastleZone extends Zone {
   }
 
   private roomsDone(): boolean {
-    return ROOM_IDS.every((id) => on(ROOMS[id].flag));
+    return ROOM_IDS.every((id) => on(`castle.${id}`));
   }
 
   private setGateOpen(id: RoomId, open: boolean): void {

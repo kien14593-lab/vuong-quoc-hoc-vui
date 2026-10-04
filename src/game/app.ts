@@ -1,4 +1,5 @@
 import { audio } from '../core/audio';
+import { bus } from '../core/events';
 import { KIDS, kidKey } from '../core/outfits';
 import { awardBadge, hasBadge, hasProfile, profile, saveNow, setPosition, takeRefundNotice, unloadProfile, type ZoneId } from '../core/state';
 import { engine, warmUp } from '../engine/core';
@@ -21,6 +22,7 @@ import type { Spawn, Zone } from '../world/zone';
 import { createZone } from '../world/zones';
 import { miniModels, playerModels, zoneModels, type PlayerNeed } from './needs';
 import { checkBadges, zoneLock, ZONE_META } from './story';
+import { ensureEnglish } from './subject';
 
 /**
  * ĐIỀU PHỐI TRÒ CHƠI: màn hình tiêu đề ↔ thế giới (các khu vực) ↔ trò chơi nhỏ.
@@ -106,8 +108,11 @@ export async function goZone(id: ZoneId, spawn: Spawn = 'start'): Promise<void> 
     lowerGlb();
     const me = playerNeed();
     const models = waitModels(zoneModels(id, null, me), playerModels(me));
+    // Bộ câu hỏi Tiếng Anh (tải một lần, khi hồ sơ học Tiếng Anh / Cả hai) – biển báo, lời thoại dựng theo môn.
+    const lessons = ensureEnglish();
     await fade(true, `${meta.icon} ${meta.name}`);
     await models;
+    await lessons;
     closeAllModals();
     hud.setAction(null);
     await nextFrame();
@@ -205,6 +210,22 @@ function bindHud(): void {
 nav.go = (to, spawn) => void goZone(to, spawn ?? 'start');
 nav.mini = (id) => playMini(id);
 nav.title = () => backToTitle();
+
+/**
+ * Đổi môn / Unit khi đang chơi (Cài đặt, bảng giáo viên): dựng lại khu vực tại chỗ khi đã đóng hết bảng,
+ * để biển báo, mục tiêu và câu hỏi theo môn mới.
+ */
+let subjectDirty = false;
+bus.on('subject', () => {
+  if (!zone || subjectDirty) return;
+  subjectDirty = true;
+  void (async () => {
+    while (zone && !menuOk()) await wait(300);
+    subjectDirty = false;
+    const z = zone;
+    if (z) await goZone(z.id, { x: z.player.pos.x, z: z.player.pos.z });
+  })();
+});
 
 /** Vào thế giới với hồ sơ đang chọn. */
 export async function enterWorld(o: EnterOpts = {}): Promise<void> {
