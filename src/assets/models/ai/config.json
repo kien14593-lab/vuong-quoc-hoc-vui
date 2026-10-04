@@ -17,6 +17,12 @@
     "material": "lambert",
     "credit": "Tencent HY 3D (hy3d.tencent.ai)"
   },
+  "npc_deer": {
+    "height": 1.55,
+    "rotY": 0,
+    "material": "lambert",
+    "credit": "Tencent HY 3D (hy3d.tencent.ai)"
+  },
   "npc_elephant": {
     "height": 2.1,
     "rotY": 0,

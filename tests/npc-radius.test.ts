@@ -53,6 +53,7 @@ describe('modelRadius', () => {
     expect(modelRadius('npc_bear')).toBe(0.65);
     expect(modelRadius('npc_king')).toBe(0.55);
     expect(modelRadius('npc_rabbit')).toBe(0.45);
+    expect(modelRadius('npc_deer')).toBe(0.6);
     expect(modelRadius('npc_villager')).toBe(0.44);
   });
 });

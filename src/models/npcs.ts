@@ -378,7 +378,8 @@ reg('npc_robot', buildRobot, 1.45, 0.5, 'Robot Bíp: antenna và hoverJet có ti
 reg('npc_cat', buildCat, 1.45, 0.45, 'Cô Mèo: earL/earR, tail, tạp dề shop.');
 reg('npc_squirrel', buildSquirrel, 1.55, 0.5, 'Cô Sóc: tail lớn cuộn, acorn cầm tay, kẹp lá.');
 reg('npc_turtle', buildTurtle, 1.45, 0.52, 'Ông Rùa: shell, glasses, walkingStick; cadence chậm.', undefined, { portrait: 'bust' });
-reg('npc_deer', buildDeer, 1.55, 0.45, 'Bạn Nai: tai earL/earR, nụ sừng, đốm trắng, tail.');
+// Bạn Nai: đôi tai xòe ngang ≈1.05 m ngang tầm mặt bé → vật cản 0.6 (không phải 0.45) để tai không lẹm vào mặt khi đứng cạnh.
+reg('npc_deer', buildDeer, 1.55, 0.6, 'Bạn Nai: tai earL/earR, nụ sừng, đốm trắng, tail.', undefined, { portrait: 'bust' });
 reg('npc_clown', buildClown, 1.8, 0.48, 'Chú Hề Bibo: buildCharacter + red nose, wig tufts, ruffle, jugglingBall.', undefined, { portrait: 'bust' });
 reg('npc_elephant', buildElephant, 2.2, 0.7, 'Bác Voi: tai earL/earR, trunk custom sway, mũ/áo keeper.', undefined, { portrait: 'bust' });
 reg('npc_owl', buildOwl, 1.55, 0.5, 'Bác Cú: wings as armL/armR, glasses, mortarboard.');

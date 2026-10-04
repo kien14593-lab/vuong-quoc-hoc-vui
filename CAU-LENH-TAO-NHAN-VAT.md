@@ -155,7 +155,7 @@ xương và động tác thật** (đi, chạy, vẫy tay…).
 
 1. **Chú Gấu** ✅, **Thỏ Bông** ✅, **Cô Mèo** ✅, **Bác Cú** ✅ (đã xong – Tencent HY 3D).
 2. **Robot Bíp** ✅, **Chú Hề Bibo** ✅, **Bác Voi** ✅, **Nhà Vua** ✅, **Hiệp Sĩ Thỏ** ✅ (đã xong – Tencent HY 3D).
-3. Cô Sóc, **Ông Rùa** ✅ (đã xong – Tencent HY 3D), Bạn Nai (+ thú Sở Thú nếu muốn).
+3. Cô Sóc, **Ông Rùa** ✅, **Bạn Nai** ✅ (đã xong – Tencent HY 3D), thêm thú Sở Thú nếu muốn.
 
 **Không nên thay:**
 
@@ -282,9 +282,11 @@ Kính **gọng nâu đậm, dày** (gọng mảnh dễ bị thủng khi tạo 3D
 A kind, wise grandpa turtle standing upright on two legs: soft green skin, smooth round head with no ears, round glasses with thick dark brown frames, thick bushy white eyebrows, a short thick rounded white beard under the chin (one soft puff, not thin strands), pale yellow-green belly plate with big soft rounded segments, a big brown dome shell on his back with a thick rounded golden-tan rim and big soft hexagon patterns, the shell is wider than his body so its rim shows clearly on both sides, round feet. Cute chibi 3D cartoon for a kids game: big round head, small round body, short thick limbs, big shiny eyes, warm closed-mouth smile, rosy cheeks, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from body with a clear gap between the arms and the shell, legs apart, facing front, empty hands, no walking stick, no base, no ground, no shadow. He is a turtle, not a bear: smooth skin, no fur, no ears.
 ```
 
-### 5.12. Bạn Nai – Rừng Thông Thái, Sở Thú
+### 5.12. Bạn Nai – Rừng Thông Thái, Sở Thú ✅ đã có mô hình AI (Tencent HY 3D)
 
 Tệp: `nai-dung.glb` · `nai-di.glb` · `nai-noi.glb` · `nai-vay-tay.glb` · `nai-vui.glb`
+
+Mô hình đã có: tai **to, dày**, lòng tai hồng (tai mảnh dễ bị thủng khi tạo 3D), nụ sừng nhỏ, đốm trắng ở tay; đuôi trắng hơi lệch xuống hông phải (giống ảnh mẫu) – trong trò chơi nhìn không thấy lỗi. Thân tròn, ít chi tiết mảnh nên chỉ cần 30 000 tam giác (`"tam-giac": 30000`, xem `HUONG-DAN-MO-HINH-AI.md`).
 
 ```text
 A shy baby deer (fawn) standing upright on two legs: light caramel fur with small white spots, cream belly and muzzle, big pointy ears with pink inside, tiny brown antler nubs, small white fluffy tail. Cute chibi 3D cartoon for a kids game: big round head, small round body, short limbs, big shiny eyes, friendly smile, rosy cheeks, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from body, legs apart, facing front, empty hands, no base, no background.

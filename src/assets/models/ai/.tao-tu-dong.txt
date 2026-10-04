@@ -4,6 +4,7 @@
     "npc_bear.glb",
     "npc_cat.glb",
     "npc_clown.glb",
+    "npc_deer.glb",
     "npc_elephant.glb",
     "npc_king.glb",
     "npc_knight.glb",
@@ -22,6 +23,9 @@
     ],
     "npc_clown": [
       "he.glb"
+    ],
+    "npc_deer": [
+      "nai.glb"
     ],
     "npc_elephant": [
       "voi.glb"
