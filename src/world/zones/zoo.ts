@@ -1,16 +1,35 @@
 import * as THREE from 'three';
 import { sfx } from '../../core/audio';
-import { addTickets, giveItem, hasItem, profile, setFlag, takeItem } from '../../core/state';
+import { addTickets, giveItem, hasItem, hasProfile, profile, setFlag, takeItem } from '../../core/state';
 import { CAST, villager } from '../../game/cast';
 import { mixedQuestion, storyQuestion } from '../../game/challenge';
+import { zoneLateModels, zoneModels } from '../../game/needs';
 import { bearStage, checkBadges, on, reward, ZOO_TICKETS, zoneLock } from '../../game/story';
+import { ensureGlb, glbLoaded, glbReady } from '../../models/glb';
+import { buildModel, collectTicks } from '../../models/registry';
 import { say } from '../../ui/dialog';
+import { wait } from '../../ui/dom';
 import { toast } from '../../ui/toast';
+import { addLod } from '../lod';
 import { Zone, type Spawn } from '../zone';
 
 const APPLE_ITEM = 'apple_basket';
 const BANANA_ITEM = 'banana_bunch';
 const FISH_ITEM = 'fish_bucket';
+
+/** Cỡ mô hình AI so với mỏ neo (hươu: mỏ neo phóng 1.34 cho đàn dựng bằng code cao ≈4.2 m). */
+const GLB_FIT: Record<string, number> = { animal_giraffe: 0.92 };
+/** Hồ cánh cụt (penguin_pool phóng 1.85: mặt đá cao 0.66, mặt nước 0.68–0.73): tảng băng nổi trên mặt nước, cánh cụt đứng trên băng. */
+const FLOE_Y = 0.66;
+const PENGUIN_Y = FLOE_Y + 0.134;
+/** Đã cho ăn: cánh cụt bơi dưới nước, nhô đầu và vai. */
+const PENGUIN_SWIM_Y = 0.3;
+/** Chỗ bơi của từng bạn (theo thứ tự nhóm): mặt nước trống giữa các tảng băng, xa cầu trượt. */
+const PENGUIN_SWIM: [number, number][] = [
+  [5.75, -15.65], [6.4, -15.8], [5.85, -15.0], [6.5, -15.15],
+  [0.35, -16.95], [0.95, -16.95], [1.55, -16.95], [2.15, -16.95],
+  [4.5, -14.6], [5.15, -14.45], [4.6, -13.95], [5.25, -13.95],
+];
 
 /** 🦁 SỞ THÚ KỲ DIỆU – chăm sóc muông thú bằng toán học và kết thúc hành trình Chú Gấu. */
 export class ZooZone extends Zone {
@@ -36,6 +55,11 @@ export class ZooZone extends Zone {
     beak: THREE.InstancedMesh;
     feet: THREE.InstancedMesh;
   };
+  private lions: THREE.Object3D[] = [];
+  private zebras: THREE.Object3D[] = [];
+  /** Đàn dựng bằng code (một lưới chung cho cả đàn) – thay bằng mô hình AI khi tải xong. */
+  private flocks = new Map<string, { root: THREE.Object3D; off: () => void }>();
+  private gone = false;
   private appleBasket!: THREE.Object3D;
   private bananaBunch!: THREE.Object3D;
   private fishBucket!: THREE.Object3D;
@@ -92,6 +116,128 @@ export class ZooZone extends Zone {
     this.buildPortals();
     this.buildDecoration();
     this.applySolvedState();
+  }
+
+  protected afterBuild(): void {
+    void this.loadAnimals();
+  }
+
+  dispose(): void {
+    this.gone = true;
+    super.dispose();
+  }
+
+  /**
+   * Thú AI trong chuồng (game/needs.ts ZONE_LATE_MODELS) không chờ lúc vào khu vực: tạm dùng thú dựng bằng code,
+   * tải lần lượt sau nhân vật của khu vực, thú cưng và bé, rồi thay ngay tại chỗ.
+   * Đang chơi trò chơi nhỏ thì chưa tải con tiếp theo; rời khu vực thì thôi (phần còn lại tải dần ở nền).
+   */
+  private async loadAnimals(): Promise<void> {
+    const late = zoneLateModels('zoo');
+    if (glbReady(late)) return;
+    const p = hasProfile() ? profile() : null;
+    const must = zoneModels('zoo', p?.equipped.pet, p ? { kid: p.kid, outfit: p.equipped.outfit } : null);
+    while (!glbReady(must)) {
+      await wait(300);
+      if (this.gone) return;
+    }
+    for (const key of late) {
+      while (!glbLoaded(key) && (this.paused || this.leaving)) {
+        await wait(300);
+        if (this.gone) return;
+      }
+      if (!glbLoaded(key)) {
+        await ensureGlb([key]);
+        // Chưa xong mà thôi tải (rời khu vực): dừng hẳn.
+        if (this.gone || !glbReady([key])) return;
+      }
+      if (glbLoaded(key)) this.swapIn(key);
+    }
+  }
+
+  /** Mỏ neo của một con thú: vị trí, hướng, cỡ và tư thế; mô hình (AI hoặc dựng bằng code) là con của mỏ neo. */
+  private spot(x: number, z: number, o: { y?: number; rot?: number; scale?: number } = {}): THREE.Object3D {
+    const a = new THREE.Object3D();
+    a.position.set(x, o.y ?? 0, z);
+    a.rotation.y = THREE.MathUtils.degToRad(o.rot ?? 0);
+    a.scale.setScalar(o.scale ?? 1);
+    a.userData.dynamic = true;
+    this.dynamics.add(a);
+    return a;
+  }
+
+  /** Mô hình một con thú: mô hình AI nếu đã tải xong, không thì mô hình dựng bằng code. */
+  private animal(key: string): THREE.Object3D {
+    const m = buildModel(key);
+    if (m.userData.glb) m.scale.multiplyScalar(GLB_FIT[key] ?? 1);
+    return m;
+  }
+
+  /**
+   * Đàn thú chỉ để ngắm (không va chạm). Không có mô hình AI (tắt GLB / tải lỗi): đặt tĩnh như cũ (gộp lưới, ít lệnh vẽ);
+   * có thì đặt trong mỏ neo để thay tại chỗ khi tải xong.
+   */
+  private herdOf(key: string, list: THREE.Object3D[], spots: [number, number, { y?: number; rot?: number; scale?: number }][]): void {
+    const never = glbReady([key]) && !glbLoaded(key);
+    for (const [x, z, o] of spots) {
+      if (never) {
+        this.place(key, x, z, { ...o, collide: false });
+        continue;
+      }
+      const a = this.spot(x, z, o);
+      this.fill(a, this.animal(key));
+      list.push(a);
+    }
+  }
+
+  /** Đặt (hoặc thay) mô hình trong mỏ neo, kèm hoạt cảnh riêng của mô hình; mô hình AI được gắn LOD (world/lod.ts). */
+  private fill(anchor: THREE.Object3D, model: THREE.Object3D): void {
+    for (const off of (anchor.userData.offs as (() => void)[] | undefined) ?? []) off();
+    const old = anchor.userData.model as THREE.Object3D | undefined;
+    if (old) this.removeObj(old);
+    anchor.add(model);
+    anchor.userData.model = model;
+    anchor.userData.offs = collectTicks(model).map((fn) => this.addTick(fn));
+    if (model.userData.glb) void addLod(model, () => !this.gone && !!model.parent);
+  }
+
+  private herd(key: string): THREE.Object3D[] {
+    switch (key) {
+      case 'animal_lion':
+        return this.lions;
+      case 'animal_zebra':
+        return this.zebras;
+      case 'animal_giraffe':
+        return this.giraffes;
+      case 'animal_monkey':
+        return this.monkeys;
+      case 'animal_penguin':
+        return this.penguins;
+      default:
+        return [];
+    }
+  }
+
+  /** Mô hình AI vừa tải xong: thay thú dựng bằng code ngay tại chỗ (giữ mỏ neo – tư thế, nhiệm vụ, hoạt cảnh vẫn như cũ). */
+  private swapIn(key: string): void {
+    this.dropFlock(key);
+    for (const a of this.herd(key)) {
+      const cur = a.userData.model as THREE.Object3D | undefined;
+      if (!cur?.userData.glb) this.fill(a, this.animal(key));
+    }
+  }
+
+  private dropFlock(key: string): void {
+    const f = this.flocks.get(key);
+    if (!f) return;
+    this.flocks.delete(key);
+    f.off();
+    f.root.traverse((o) => {
+      if ((o as THREE.InstancedMesh).isInstancedMesh) (o as THREE.InstancedMesh).dispose();
+    });
+    this.removeObj(f.root);
+    if (key === 'animal_giraffe') this.giraffeFlock = undefined;
+    if (key === 'animal_penguin') this.penguinFlock = undefined;
   }
 
   protected wantsBuddy(): boolean {
@@ -167,17 +313,17 @@ export class ZooZone extends Zone {
     const spots: [number, number, number][] = [
       [-18.9, -7.6, 38],
       [-16.0, -9.7, -8],
-      [-13.2, -6.2, -48],
+      // Bạn hươu ở bục cho ăn: đứng gần bục, mặt nhìn về bục (người chơi).
+      [-12.6, -5.6, 50],
     ];
-    this.giraffes = spots.map(([x, z, r]) => {
-      const p = new THREE.Object3D();
-      p.position.set(x, 0, z);
-      p.rotation.y = THREE.MathUtils.degToRad(r);
-      p.scale.setScalar(1.34);
-      this.dynamics.add(p);
-      return p;
+    this.giraffes = spots.map(([x, z, rot]) => {
+      const g = this.spot(x, z, { rot, scale: 1.34 });
+      // Cúi/nhún theo hướng mặt của chính bạn hươu (xoay quanh trục dọc trước).
+      g.rotation.order = 'YXZ';
+      return g;
     });
-    this.buildGiraffeFlock();
+    if (glbLoaded('animal_giraffe')) for (const g of this.giraffes) this.fill(g, this.animal('animal_giraffe'));
+    else this.buildGiraffeFlock();
     this.interact({
       id: 'zoo:giraffe:quiz',
       x: -11.2,
@@ -213,14 +359,17 @@ export class ZooZone extends Zone {
     this.bananaBunch = this.place('banana_bunch', 12.1, -1.5, { dynamic: true, collide: false, scale: 1.15 });
     this.bananaBunch.visible = hasItem(BANANA_ITEM) && !on('zoo.monkey');
     this.monkeys = [
-      this.place('animal_monkey', 14.7, -3.8, { rot: 30, scale: 1.05, dynamic: true, collide: false }),
-      this.place('animal_monkey', 17.8, -4.5, { y: 1.55, rot: -20, scale: 0.95, dynamic: true, collide: false }),
-      this.place('animal_monkey', 19.5, -5.8, { y: 0.95, rot: -80, scale: 0.9, dynamic: true, collide: false }),
+      this.spot(14.7, -3.8, { rot: 30, scale: 1.05 }),
+      // Ngồi vắt vẻo trên dây (mặt trên dây cao 1.65 m) và trên bục cao của khung leo (mặt bục cao 2.05 m).
+      this.spot(17.8, -4.5, { y: 1.64, rot: -20, scale: 0.95 }),
+      this.spot(18.19, -3.37, { y: 2.05, rot: -25, scale: 0.9 }),
     ];
+    this.monkeys[2].rotation.order = 'YXZ';
+    for (const m of this.monkeys) this.fill(m, this.animal('animal_monkey'));
     this.addTick((_dt, tt) => {
-      this.monkeys[1].position.y = 1.55 + Math.sin(tt * 2.2) * 0.08;
+      this.monkeys[1].position.y = 1.64 + Math.abs(Math.sin(tt * 2.2)) * 0.07;
       this.monkeys[1].rotation.z = Math.sin(tt * 2.2) * 0.14;
-      this.monkeys[2].rotation.x = 0.25 + Math.sin(tt * 1.8) * 0.16;
+      this.monkeys[2].rotation.x = 0.1 + Math.sin(tt * 1.8) * 0.1;
     });
     this.interact({
       id: 'zoo:monkey:quiz',
@@ -254,20 +403,19 @@ export class ZooZone extends Zone {
     this.fishBucket = this.place('fish_bucket', -1.2, -11.3, { dynamic: true, collide: false, scale: 1.05 });
     this.fishBucket.visible = hasItem(FISH_ITEM) && !on('zoo.penguins');
     const base: [number, number, number][] = [];
-    const centers: [number, number][] = [[-1.8, -16.0], [1.0, -18.1], [4.0, -16.05]];
-    for (let g = 0; g < 3; g++) {
-      const [gx, gz] = centers[g];
-      this.place('penguin_ice_floe', gx + 0.25, gz + 0.2, { rot: g === 1 ? 12 : -8, collide: false, scale: 1.05 });
-      for (let i = 0; i < 4; i++) base.push([gx + (i % 2) * 0.55, gz + Math.floor(i / 2) * 0.5, g]);
+    // Ba nhóm trên ba tảng băng nổi (nhóm bên phải cách xa cầu trượt bên trái hồ): [x, z, góc tảng băng, hướng nhìn của nhóm].
+    const floes: [number, number, number, number][] = [[6.15, -16.8, -8, -20], [1.25, -17.9, 12, 10], [4.25, -15.85, -8, 24]];
+    // Mỗi nhóm 4 bạn đứng so le hai hàng trên mặt băng để không chen vào nhau và đếm được đủ (câu đố 3 nhóm × 4 bạn).
+    const slots: [number, number, number][] = [[-0.58, 0.2, -8], [-0.14, -0.28, 6], [0.3, 0.2, -4], [0.74, -0.28, 10]];
+    for (const [fx, fz, rot, look] of floes) {
+      this.place('penguin_ice_floe', fx, fz, { y: FLOE_Y, rot, collide: false, scale: 1.05 });
+      const c = Math.cos(THREE.MathUtils.degToRad(rot));
+      const s = Math.sin(THREE.MathUtils.degToRad(rot));
+      for (const [lx, lz, turn] of slots) base.push([fx + lx * c + lz * s, fz - lx * s + lz * c, look + turn]);
     }
-    this.penguins = base.map(([x, z, group]) => {
-      const p = new THREE.Object3D();
-      p.position.set(x, 0, z);
-      p.rotation.y = THREE.MathUtils.degToRad([-20, 10, 24][group] ?? 0);
-      this.dynamics.add(p);
-      return p;
-    });
-    this.buildPenguinFlock();
+    this.penguins = base.map(([x, z, rot]) => this.spot(x, z, { y: PENGUIN_Y, rot }));
+    if (glbLoaded('animal_penguin')) for (const p of this.penguins) this.fill(p, this.animal('animal_penguin'));
+    else this.buildPenguinFlock();
     this.interact({
       id: 'zoo:penguin:quiz',
       x: -1.4,
@@ -299,19 +447,24 @@ export class ZooZone extends Zone {
     this.sign(-17.5, 11.8, '🦁 Sư tử thân thiện', { y: 2.1 });
     this.place('rock_big', -16.2, 7.0, { scale: 1.15, collide: false });
     this.place('rock', -15.2, 6.4, { scale: 1.5, collide: false });
-    this.place('animal_lion', -16.4, 7.5, { y: 0.55, rot: 180, scale: 1.05, collide: false });
-    this.place('animal_lion', -19.2, 8.2, { rot: 25, scale: 0.95, collide: false });
-    this.place('animal_lion', -14.9, 9.2, { rot: -40, scale: 0.58, collide: false });
+    // Mặt các bạn thú hướng ra lối đi (camera nhìn từ phía +Z); sư tử con nhìn về phía mẹ. Sư tử lớn đứng trên cỏ trước tảng đá (mặt đá nghiêng, không đủ chỗ đứng).
+    this.herdOf('animal_lion', this.lions, [
+      [-16.2, 8.9, { rot: 15, scale: 1.05 }],
+      [-19.2, 8.2, { rot: 35, scale: 0.95 }],
+      [-14.9, 9.2, { rot: -20, scale: 0.58 }],
+    ]);
     this.place('tree_round', -20.7, 5.7, { scale: 1.15, collide: false });
     this.place('hay_bale', -18.8, 5.3, { rot: 12, collide: false });
 
     this.place('enclosure', 16.8, 9.0, { opts: { w: 10, d: 7 }, reserve: 5.8 });
     this.terrain.patch(16.8, 9.0, 4.8, '#dfc777', 0.72);
     this.sign(16.8, 13.0, '🦓 Đồng cỏ ngựa vằn', { y: 2.1 });
-    this.place('animal_zebra', 14.2, 8.2, { rot: 110, scale: 0.9, collide: false });
-    this.place('animal_zebra', 18.7, 9.5, { rot: -60, scale: 0.82, collide: false });
-    this.place('animal_zebra', 16.7, 6.4, { rot: 25, scale: 0.78, collide: false });
-    this.place('animal_zebra', 19.1, 7.2, { rot: -120, scale: 0.72, collide: false });
+    this.herdOf('animal_zebra', this.zebras, [
+      [14.2, 8.2, { rot: 50, scale: 0.9 }],
+      [18.7, 9.5, { rot: -40, scale: 0.82 }],
+      [16.7, 6.4, { rot: 20, scale: 0.78 }],
+      [19.1, 7.2, { rot: -70, scale: 0.72 }],
+    ]);
     for (const [x, z, r] of [[13.2, 10.9, 18], [20.8, 7.8, -20]] as [number, number, number][]) this.place('tree_round', x, z, { rot: r, scale: 0.88, collide: false });
     this.place('hay_bale', 15.2, 11.1, { rot: 20, collide: false });
     this.place('hay_bale', 15.9, 11.4, { rot: -8, collide: false });
@@ -495,7 +648,8 @@ export class ZooZone extends Zone {
   private poseGiraffesFed(finalK: number): void {
     this.giraffes.forEach((g, i) => {
       const start = g.rotation.x;
-      const end = -0.18 - i * 0.035;
+      // Cúi về phía trước (theo hướng mặt) để ăn táo.
+      const end = 0.12 + i * 0.03;
       if (finalK >= 1) g.rotation.x = end;
       else void this.tween(0.75, (k) => {
         g.rotation.x = start + (end - start) * k;
@@ -527,7 +681,7 @@ export class ZooZone extends Zone {
     this.dynamics.add(root);
     this.giraffeFlock = { body, neck, head, muzzle, legs, spots, eyes, ossicones };
     this.updateGiraffeFlock();
-    this.addTick(() => this.updateGiraffeFlock());
+    this.flocks.set('animal_giraffe', { root, off: this.addTick(() => this.updateGiraffeFlock()) });
   }
 
   private updateGiraffeFlock(): void {
@@ -536,8 +690,8 @@ export class ZooZone extends Zone {
     const dummy = new THREE.Object3D();
     const setPart = (mesh: THREE.InstancedMesh, i: number, g: THREE.Object3D, off: [number, number, number], scale: [number, number, number], extraRot: [number, number, number] = [0, 0, 0]) => {
       const s = g.scale.x;
-      const e = new THREE.Euler(g.rotation.x + extraRot[0], g.rotation.y + extraRot[1], g.rotation.z + extraRot[2]);
-      const o = new THREE.Vector3(off[0] * s, off[1] * s, off[2] * s).applyEuler(new THREE.Euler(g.rotation.x, g.rotation.y, g.rotation.z));
+      const e = new THREE.Euler(g.rotation.x + extraRot[0], g.rotation.y + extraRot[1], g.rotation.z + extraRot[2], g.rotation.order);
+      const o = new THREE.Vector3(off[0] * s, off[1] * s, off[2] * s).applyEuler(g.rotation);
       dummy.position.set(g.position.x + o.x, g.position.y + o.y, g.position.z + o.z);
       dummy.rotation.copy(e);
       dummy.scale.set(scale[0] * s, scale[1] * s, scale[2] * s);
@@ -585,7 +739,7 @@ export class ZooZone extends Zone {
       }
       const y0 = m.position.y;
       void this.tween(0.85, (k) => {
-        m.position.y = y0 + Math.sin(k * Math.PI * 2) * 0.5 * (1 - k * 0.2);
+        m.position.y = y0 + Math.abs(Math.sin(k * Math.PI * 2)) * 0.5 * (1 - k * 0.2);
         m.rotation.z = Math.sin(k * Math.PI * 4) * 0.25;
       }, { delay: i * 0.12, ease: 'outCubic' });
     });
@@ -609,19 +763,19 @@ export class ZooZone extends Zone {
 
   private posePenguinsFed(finalK: number): void {
     this.penguins.forEach((p, i) => {
-      const tx = 1.1 + (i % 4) * 0.55;
-      const tz = -16.9 + Math.floor(i / 4) * 0.7;
+      const [tx, tz] = PENGUIN_SWIM[i] ?? [2.8, -16.2];
       if (finalK >= 1) {
-        p.position.set(tx, 0.08, tz);
+        p.position.set(tx, PENGUIN_SWIM_Y, tz);
         p.rotation.y = (i % 3 - 1) * 0.18;
         return;
       }
       const sx = p.position.x;
+      const sy = p.position.y;
       const sz = p.position.z;
       void this.tween(1.05, (k) => {
         p.position.x = sx + (tx - sx) * k;
         p.position.z = sz + (tz - sz) * k;
-        p.position.y = Math.sin(k * Math.PI) * 0.18;
+        p.position.y = sy + (PENGUIN_SWIM_Y - sy) * k + Math.sin(k * Math.PI) * 0.25;
         p.rotation.z = Math.sin(k * Math.PI * 4) * 0.1;
       }, { delay: (i % 4) * 0.05, ease: 'inOutCubic' });
     });
@@ -647,7 +801,7 @@ export class ZooZone extends Zone {
     this.dynamics.add(root);
     this.penguinFlock = { body, belly, head, face, beak, feet };
     this.updatePenguinFlock();
-    this.addTick(() => this.updatePenguinFlock());
+    this.flocks.set('animal_penguin', { root, off: this.addTick(() => this.updatePenguinFlock()) });
   }
 
   private updatePenguinFlock(): void {
@@ -681,7 +835,7 @@ export class ZooZone extends Zone {
       setFlag('bear.done');
       this.fx.burst('confetti', [-12.3, 1.8, -2.8], { count: 55, spread: 2 });
       this.fx.burst('heart', [-15.8, 2.8, -7.6], { count: 30, spread: 2 });
-      this.giraffes.forEach((g, i) => void this.tween(0.7, (k) => (g.position.y = Math.sin(k * Math.PI * 2) * 0.08), { delay: i * 0.1 }));
+      this.giraffes.forEach((g, i) => void this.tween(0.7, (k) => (g.position.y = Math.abs(Math.sin(k * Math.PI * 2)) * 0.08), { delay: i * 0.1 }));
       sfx('star');
       this.refreshMarks();
       await say(CAST.gau, 'Từ giờ mình sẽ ở lại Sở Thú để chơi với các bạn thú. Khi nào rảnh bạn ghé thăm mình nhé!');

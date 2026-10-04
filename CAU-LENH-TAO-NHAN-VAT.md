@@ -156,10 +156,11 @@ xương và động tác thật** (đi, chạy, vẫy tay…).
 
 1. **Chú Gấu** ✅, **Thỏ Bông** ✅, **Cô Mèo** ✅, **Bác Cú** ✅ (đã xong – Tencent HY 3D).
 2. **Robot Bíp** ✅, **Chú Hề Bibo** ✅, **Bác Voi** ✅, **Nhà Vua** ✅, **Hiệp Sĩ Thỏ** ✅ (đã xong – Tencent HY 3D).
-3. Cô Sóc, **Ông Rùa** ✅, **Bạn Nai** ✅ (đã xong – Tencent HY 3D), thêm thú Sở Thú nếu muốn.
+3. Cô Sóc, **Ông Rùa** ✅, **Bạn Nai** ✅ (đã xong – Tencent HY 3D).
 4. **Bé trai** ✅, **Bé gái** ✅ (nhân vật chính, đã xong – Tencent HY 3D), rồi thêm **bộ đồ** cho bé dần dần, mỗi lần
    một bộ (mục 8).
 5. **Thú cưng** ✅ – cả 7 con: Cún, Mèo, Thỏ, Gấu trúc, Cáo, Chim cánh cụt, Khủng long (đã xong – Tencent HY 3D).
+6. **Thú Sở Thú** ✅ – cả 6 con: Hươu cao cổ, Khỉ, Chim cánh cụt, Ngựa vằn, Hà mã, Sư tử (đã xong – Tencent HY 3D).
 
 **Không nên thay:**
 
@@ -335,27 +336,27 @@ nhún nhảy, lắc lư. (Meshy gắn xương được thú 4 chân nhưng ít �
 
 **Thú Sở Thú** (đứng trong chuồng):
 
-- `huou-cao-co.glb` – Hươu cao cổ
+- `huou-cao-co.glb` – Hươu cao cổ ✅ đã có mô hình AI (Tencent HY 3D)
   ```text
   A gentle giraffe standing on four legs: long neck, yellow fur with brown patches, small horns, cream muzzle. Cute chibi 3D cartoon for a kids game: big round head, small round body, big shiny eyes, happy smile, soft rounded shapes, pastel matte vinyl toy look. Full body, facing front, no base, no background.
   ```
-- `khi.glb` – Khỉ
+- `khi.glb` – Khỉ ✅ đã có mô hình AI (Tencent HY 3D)
   ```text
   A playful little monkey standing on two legs: brown fur, beige face, belly and ears, long curled tail. Cute chibi 3D cartoon for a kids game: big round head, small round body, big shiny eyes, happy smile, soft rounded shapes, pastel matte vinyl toy look. Full body, facing front, no base, no background.
   ```
-- `canh-cut-lon.glb` – Chim cánh cụt (Sở Thú)
+- `canh-cut-lon.glb` – Chim cánh cụt (Sở Thú) ✅ đã có mô hình AI (Tencent HY 3D)
   ```text
   A penguin standing upright: dark navy back, white belly, yellow patches near the neck, orange beak and feet. Cute chibi 3D cartoon for a kids game: big round head, small round body, big shiny eyes, happy smile, soft rounded shapes, pastel matte vinyl toy look. Full body, facing front, no base, no background.
   ```
-- `ngua-van.glb` – Ngựa vằn
+- `ngua-van.glb` – Ngựa vằn ✅ đã có mô hình AI (Tencent HY 3D)
   ```text
   A cute zebra standing on four legs: white fur with bold black stripes, black mane, dark muzzle. Cute chibi 3D cartoon for a kids game: big round head, small round body, big shiny eyes, happy smile, soft rounded shapes, pastel matte vinyl toy look. Full body, facing front, no base, no background.
   ```
-- `ha-ma.glb` – Hà mã
+- `ha-ma.glb` – Hà mã ✅ đã có mô hình AI (Tencent HY 3D)
   ```text
   A chubby hippo standing on four legs: lavender grey skin, pink cheeks and belly, small round ears, wide smiling mouth. Cute chibi 3D cartoon for a kids game: big round head, small round body, big shiny eyes, happy smile, soft rounded shapes, pastel matte vinyl toy look. Full body, facing front, no base, no background.
   ```
-- `su-tu.glb` – Sư tử
+- `su-tu.glb` – Sư tử ✅ đã có mô hình AI (Tencent HY 3D)
   ```text
   A friendly lion standing on four legs: golden fur, big fluffy orange mane, cream muzzle, tail with a tuft. Cute chibi 3D cartoon for a kids game: big round head, small round body, big shiny eyes, happy smile, soft rounded shapes, pastel matte vinyl toy look. Full body, facing front, no base, no background.
   ```

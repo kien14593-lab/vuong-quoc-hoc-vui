@@ -1,4 +1,40 @@
 {
+  "animal_giraffe": {
+    "height": 3.4,
+    "rotY": -63,
+    "material": "lambert",
+    "credit": "Tencent HY 3D (hy3d.tencent.ai)"
+  },
+  "animal_hippo": {
+    "height": 1.32,
+    "rotY": 30,
+    "material": "lambert",
+    "credit": "Tencent HY 3D (hy3d.tencent.ai)"
+  },
+  "animal_lion": {
+    "height": 1.5,
+    "rotY": 25,
+    "material": "lambert",
+    "credit": "Tencent HY 3D (hy3d.tencent.ai)"
+  },
+  "animal_monkey": {
+    "height": 1.1,
+    "rotY": 0,
+    "material": "lambert",
+    "credit": "Tencent HY 3D (hy3d.tencent.ai)"
+  },
+  "animal_penguin": {
+    "height": 0.92,
+    "rotY": 0,
+    "material": "lambert",
+    "credit": "Tencent HY 3D (hy3d.tencent.ai)"
+  },
+  "animal_zebra": {
+    "height": 1.62,
+    "rotY": -65,
+    "material": "lambert",
+    "credit": "Tencent HY 3D (hy3d.tencent.ai)"
+  },
   "npc_bear": {
     "height": 1.9,
     "rotY": 0,

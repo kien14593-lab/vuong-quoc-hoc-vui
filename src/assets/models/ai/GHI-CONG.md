@@ -4,6 +4,12 @@ Tệp này do `tools/xu-ly-mo-hinh.mjs` tạo tự động.
 
 | Nhân vật | Khóa | Nguồn / giấy phép | Tệp gốc |
 |---|---|---|---|
+| Hươu cao cổ | animal_giraffe | Tencent HY 3D (hy3d.tencent.ai) | huou-cao-co.glb |
+| Hà mã | animal_hippo | Tencent HY 3D (hy3d.tencent.ai) | ha-ma.glb |
+| Sư tử | animal_lion | Tencent HY 3D (hy3d.tencent.ai) | su-tu.glb |
+| Khỉ | animal_monkey | Tencent HY 3D (hy3d.tencent.ai) | khi.glb |
+| Chim cánh cụt (Sở Thú) | animal_penguin | Tencent HY 3D (hy3d.tencent.ai) | canh-cut-lon.glb |
+| Ngựa vằn | animal_zebra | Tencent HY 3D (hy3d.tencent.ai) | ngua-van.glb |
 | Chú Gấu | npc_bear | Tencent HY 3D (hy3d.tencent.ai) | gau.glb |
 | Cô Mèo | npc_cat | Tencent HY 3D (hy3d.tencent.ai) | meo.glb |
 | Chú Hề | npc_clown | Tencent HY 3D (hy3d.tencent.ai) | he.glb |

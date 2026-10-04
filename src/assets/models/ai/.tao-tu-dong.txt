@@ -1,6 +1,12 @@
 {
   "note": "Danh sách tệp do tools/xu-ly-mo-hinh.mjs tạo – đừng sửa tay.",
   "files": [
+    "animal_giraffe.glb",
+    "animal_hippo.glb",
+    "animal_lion.glb",
+    "animal_monkey.glb",
+    "animal_penguin.glb",
+    "animal_zebra.glb",
     "npc_bear.glb",
     "npc_cat.glb",
     "npc_clown.glb",
@@ -23,6 +29,24 @@
     "player_trai.glb"
   ],
   "nguon": {
+    "animal_giraffe": [
+      "huou-cao-co.glb"
+    ],
+    "animal_hippo": [
+      "ha-ma.glb"
+    ],
+    "animal_lion": [
+      "su-tu.glb"
+    ],
+    "animal_monkey": [
+      "khi.glb"
+    ],
+    "animal_penguin": [
+      "canh-cut-lon.glb"
+    ],
+    "animal_zebra": [
+      "ngua-van.glb"
+    ],
     "npc_bear": [
       "gau.glb"
     ],

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import names from '../src/assets/models/ai-names.json';
 import { DEFAULT_OUTFIT } from '../src/core/outfits';
 import { CAST } from '../src/game/cast';
-import { EVERY_ZONE_MODELS, MINI_MODELS, MINI_WITH_PLAYER, TITLE_MODELS, ZONE_MODELS, miniModels, modelsInStoryOrder, playerModels, zoneModels } from '../src/game/needs';
+import { EVERY_ZONE_MODELS, MINI_MODELS, MINI_WITH_PLAYER, TITLE_MODELS, ZONE_LATE_MODELS, ZONE_MODELS, miniModels, modelsInStoryOrder, playerModels, zoneLateModels, zoneModels } from '../src/game/needs';
 
 /**
  * Mô hình AI chỉ được tải cho cảnh cần nó (game/needs.ts). Kiểm tra bằng cách đọc mã nguồn: mọi nhân vật/con thú
@@ -60,11 +60,23 @@ describe('mô hình cần cho từng cảnh (needs.ts)', () => {
   it('mỗi khu vực có danh sách, đủ và không thừa', () => {
     expect(sorted(ZONE_FILES)).toEqual(sorted(Object.keys(ZONE_MODELS)));
     for (const id of ZONE_FILES) {
+      const z = id as keyof typeof ZONE_MODELS;
       const u = used(file(`world/zones/${id}.ts`));
-      const list = zoneModels(id as keyof typeof ZONE_MODELS);
-      expect(missing(u, list), `world/zones/${id}.ts dùng nhưng chưa ghi trong ZONE_MODELS.${id}`).toEqual([]);
-      expect(missing([...ZONE_MODELS[id as keyof typeof ZONE_MODELS]], u), `ZONE_MODELS.${id} ghi thừa`).toEqual([]);
+      const list = [...zoneModels(z), ...zoneLateModels(z)];
+      expect(missing(u, list), `world/zones/${id}.ts dùng nhưng chưa ghi trong ZONE_MODELS.${id} / ZONE_LATE_MODELS.${id}`).toEqual([]);
+      expect(missing([...ZONE_MODELS[z], ...zoneLateModels(z)], u), `ZONE_MODELS.${id} / ZONE_LATE_MODELS.${id} ghi thừa`).toEqual([]);
     }
+  });
+
+  it('thú tải sau: khu vực có thật, không trùng danh sách phải chờ, có trong thứ tự tải dần', () => {
+    const all = modelsInStoryOrder();
+    for (const [id, late] of Object.entries(ZONE_LATE_MODELS)) {
+      expect(ZONE_FILES, id).toContain(id);
+      const z = id as keyof typeof ZONE_MODELS;
+      expect(late.filter((k) => zoneModels(z).includes(k)), `ZONE_LATE_MODELS.${id} trùng danh sách chờ`).toEqual([]);
+      for (const k of late) expect(all, k).toContain(k);
+    }
+    expect(zoneModels('zoo').some((k) => k.startsWith('animal_')), 'thú trong chuồng không chặn việc vào Sở Thú').toBe(false);
   });
 
   it('mỗi trò chơi nhỏ có nhân vật đều có danh sách, đủ và không thừa', () => {
