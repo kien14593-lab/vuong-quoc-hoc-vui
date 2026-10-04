@@ -273,6 +273,7 @@ export function bakeStatic(root: THREE.Object3D, chunk = 24): BakeResult {
 export function disposeTree(root: THREE.Object3D): void {
   root.traverse((o) => {
     const m = o as THREE.Mesh;
+    if ((o as THREE.SkinnedMesh).isSkinnedMesh) (o as THREE.SkinnedMesh).skeleton?.dispose();
     if (m.isMesh || (o as THREE.Points).isPoints || (o as THREE.Line).isLine) {
       if (m.geometry && !m.geometry.userData.shared) m.geometry.dispose();
       const mats = Array.isArray(m.material) ? m.material : [m.material];
