@@ -13,6 +13,8 @@
     "npc_knight": ["hiep-si", "hiepsi", "hiep-si-tho", "knight"],
     "npc_clown": ["chu-he", "he", "bibo", "clown"],
     "npc_villager": ["dan-lang", "villager"],
+    "player_trai": ["be-trai", "be-nam", "ban-trai", "boy"],
+    "player_gai": ["be-gai", "be-nu", "ban-gai", "girl"],
     "pet_dog": ["cho", "cun", "cun-con", "dog"],
     "pet_cat": ["meo-con", "pet-cat"],
     "pet_rabbit": ["tho-con", "pet-rabbit"],

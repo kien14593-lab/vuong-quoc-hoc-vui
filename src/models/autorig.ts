@@ -80,10 +80,38 @@ export interface AutoRigDebug {
   headCircle: [number, number, number];
 }
 
+/** Số đo để phát hiện phần lạ gắn vào tay chân (đuôi, áo choàng, váy xòe...). Tay/chân: [trái, phải]. */
+export interface AutoRigMetrics {
+  /** Độ cao đáy háng (đỉnh khe giữa hai chân) / chiều cao. */
+  crotch: number;
+  /** Tỉ lệ ô của vùng chân/tay nằm ngoài ống chân/tay khi nhìn từ phía trước. */
+  legExtra: [number, number];
+  armExtra: [number, number];
+  /** Tỉ lệ đỉnh của chân/tay nằm xa phía sau/trước ống chân/tay khi nhìn ngang. */
+  legDepth: [number, number];
+  armDepth: [number, number];
+}
+
+export type AutoRigWarnCode = 'low-crotch' | 'leg-extra' | 'leg-depth' | 'arm-extra' | 'arm-depth';
+/** Lý do không dựng được xương: không thấy khe giữa hai chân / dưới tay trái / dưới tay phải / cổ. */
+export type AutoRigFail = 'legs' | 'armL' | 'armR' | 'neck';
+
+export interface AutoRigWarning {
+  code: AutoRigWarnCode;
+  /** 'L' = bên trái nhân vật (+X), 'R' = bên phải. */
+  side?: 'L' | 'R';
+  value: number;
+}
+
 export interface AutoRigResult {
   ok: boolean;
+  /** Lý do không dựng được (rỗng khi ok). */
+  fail: AutoRigFail[];
   /** Ghi chú khi dò (để gỡ lỗi). */
   notes: string[];
+  /** Cảnh báo: dựng được xương nhưng có phần lạ sẽ cử động theo tay chân (xem rigReport). */
+  warnings: AutoRigWarning[];
+  metrics: AutoRigMetrics;
   height: number;
   legs: boolean;
   arms: boolean;
@@ -901,10 +929,124 @@ export function autoRig(meshes: AutoRigMesh[], o: AutoRigOpts = {}): AutoRigResu
     pelvis,
   };
 
-  const ok = legs && armOk && neck > armTop;
+  /* ---------------- 11. Số đo phần lạ (đuôi, áo choàng, váy xòe...) ---------------- */
+  const metrics: AutoRigMetrics = {
+    crotch: legs ? (Y(crotch) - minY) / H : 0,
+    legExtra: [0, 0],
+    armExtra: [0, 0],
+    legDepth: [0, 0],
+    armDepth: [0, 0],
+  };
+  // Ống chân nhìn từ trước: đoạn liền kề khe giữa trên từng hàng dưới háng. Bề ngang chuẩn = chân hẹp hơn
+  // (đuôi, vạt áo dính vào một chân làm chân đó "to" ra).
+  const mains: Map<number, Run>[] = [new Map(), new Map()];
+  let wRef = 0;
+  if (legs) {
+    const wMed: number[] = [];
+    for (let n = 0; n < 2; n++) {
+      const ws: number[] = [];
+      for (let j = PAD; j < crotch; j++) {
+        let main: Run | undefined;
+        if (n === 0) main = runs[j].find((r) => r.s > mid);
+        else for (const r of runs[j]) if (r.e < mid) main = r;
+        if (!main) continue;
+        mains[n].set(j, main);
+        ws.push(main.e - main.s + 1);
+      }
+      ws.sort((a, b) => a - b);
+      wMed.push(median(ws.slice(Math.floor(ws.length * 0.25), Math.ceil(ws.length * 0.75))) || 1);
+    }
+    wRef = Math.min(wMed[0], wMed[1]);
+    for (let n = 0; n < 2; n++) {
+      const own = n === 0 ? LEG_L : LEG_R;
+      let all = 0;
+      let extra = 0;
+      for (let j = PAD; j < crotch; j++) {
+        const main = mains[n].get(j);
+        let inMain = 0;
+        for (let i = 0; i < W; i++) {
+          if (lab[j * W + i] !== own) continue;
+          all++;
+          if (main && i >= main.s && i <= main.e) inMain++;
+          else extra++;
+        }
+        extra += Math.max(0, inMain - 1.6 * wRef - 1);
+      }
+      metrics.legExtra[n] = all ? extra / all : 0;
+    }
+  }
+  if (armOk) {
+    for (let n = 0; n < 2; n++) {
+      const A = arms[n]!;
+      const own = n === 0 ? ARM_L : ARM_R;
+      let all = 0;
+      let extra = 0;
+      for (let k = 0; k < N; k++) {
+        if (lab[k] !== own) continue;
+        all++;
+        const i = k % W;
+        const j = (k - i) / W;
+        const q = Math.abs((i - A.sx) * A.dir[1] - (j - A.sy) * A.dir[0]);
+        if (q > 0.9 * A.d + 1) extra++;
+      }
+      metrics.armExtra[n] = all ? extra / all : 0;
+    }
+  }
+  // Nhìn ngang: đỉnh thuộc chân/tay (trọng số ≥ 0,5) nằm xa phía sau/trước trục chân/tay (đuôi, vạt áo choàng, váy
+  // xòe sẽ đung đưa theo chân). Trục chân lấy ở lõi ống chân (sát khe giữa, dưới háng, trên bàn chân).
+  {
+    const yCrotch = legs ? Y(crotch) - 2 * c : -Infinity;
+    const yFoot = legs ? minY + (yCrotch - minY) * 0.3 : -Infinity;
+    const zs: number[][] = [[], [], [], []];
+    const ys: number[][] = [[], [], [], []];
+    const core: number[][] = [[], [], [], []];
+    meshes.forEach((m, mi) => {
+      const sk = skin[mi];
+      const p = m.pos;
+      for (let v = 0; v < p.length / 3; v++) {
+        const b = sk.index[v * 4];
+        if (b < ARM_L || sk.weight[v * 4] < 0.5) continue;
+        const q = b - ARM_L;
+        const y = p[3 * v + 1];
+        if (q >= 2) {
+          const j = Math.round(V(y));
+          const i = U(p[3 * v]);
+          const main = mains[q - 2].get(j);
+          if (main && y >= yFoot && (q === 2 ? i >= main.s - 0.5 && i <= main.s + wRef : i <= main.e + 0.5 && i >= main.e - wRef)) core[q].push(p[3 * v + 2]);
+        } else core[q].push(p[3 * v + 2]);
+        zs[q].push(p[3 * v + 2]);
+        ys[q].push(y);
+      }
+    });
+    for (let q = 0; q < 4; q++) {
+      const z = zs[q];
+      if (z.length < 20) continue;
+      const isLeg = q >= 2;
+      const n = q & 1;
+      const zc = core[q].length >= 10 ? median(core[q]) : median(z);
+      const dia = (isLeg ? wRef : arms[n]?.d ?? 0) * c;
+      if (!(dia > 0)) continue;
+      let far = 0;
+      for (let i = 0; i < z.length; i++) {
+        const dz = z[i] - zc;
+        // Mũi giày chìa ra trước.
+        if (dz < -1.1 * dia || dz > (isLeg && ys[q][i] < yFoot ? 2.2 : 1.1) * dia) far++;
+      }
+      (isLeg ? metrics.legDepth : metrics.armDepth)[n] = far / z.length;
+    }
+  }
+  const fail: AutoRigFail[] = [];
+  if (!legs) fail.push('legs');
+  if (!arms[0]) fail.push('armL');
+  if (!arms[1]) fail.push('armR');
+  if (!(neck > armTop)) fail.push('neck');
+  const ok = !fail.length;
   const res: AutoRigResult = {
     ok,
+    fail,
     notes,
+    warnings: rigWarnings(ok, metrics),
+    metrics,
     height: H,
     legs,
     arms: armOk,
@@ -918,4 +1060,157 @@ export function autoRig(meshes: AutoRigMesh[], o: AutoRigOpts = {}): AutoRigResu
   if (o.debug) res.debug = { W, R, cell: c, x0, y0, lab, wts, headCircle: [hc > 0 ? Dc[hc] : midC, hc, hr] };
   res.ms = now() - t0;
   return res;
+}
+
+/* ------------------------------------------------------------------ */
+/* Cảnh báo & kết luận "đi bằng chân" hay "nhún" (dùng chung cho game,  */
+/* công cụ xử lý mô hình và lệnh kiểm tra)                              */
+/* ------------------------------------------------------------------ */
+
+/** Ngưỡng cảnh báo / quyết định nhún. */
+export const RIG_LIMITS = {
+  /** Đáy háng thấp hơn tỉ lệ này của chiều cao → cảnh báo váy, áo choàng dài che chân. */
+  crotchWarn: 0.12,
+  /** Thấp hơn nữa → chân quá ngắn để bước: nhún. */
+  crotchHop: 0.06,
+  /** Tỉ lệ phần lạ dính vào tay/chân (nhìn trước / nhìn ngang) → cảnh báo. */
+  extra: 0.05,
+  depth: 0.05,
+};
+
+function rigWarnings(ok: boolean, m: AutoRigMetrics): AutoRigWarning[] {
+  const out: AutoRigWarning[] = [];
+  if (!ok) return out;
+  if (m.crotch < RIG_LIMITS.crotchWarn) out.push({ code: 'low-crotch', value: m.crotch });
+  const sets = [
+    ['leg-extra', m.legExtra, RIG_LIMITS.extra],
+    ['leg-depth', m.legDepth, RIG_LIMITS.depth],
+    ['arm-extra', m.armExtra, RIG_LIMITS.extra],
+    ['arm-depth', m.armDepth, RIG_LIMITS.depth],
+  ] as const;
+  for (const [code, v, lim] of sets) {
+    for (let n = 0; n < 2; n++) if (v[n] > lim) out.push({ code, side: n === 0 ? 'L' : 'R', value: v[n] });
+  }
+  return out;
+}
+
+export interface RigVerdict {
+  /** true = đi bằng chân (xương tự dựng); false = nhún nhảy như các nhân vật AI khác. */
+  walk: boolean;
+  /** Giải thích cho cô (tiếng Việt): lý do và cách sửa; rỗng khi mọi thứ ổn. */
+  lines: string[];
+}
+
+const SIDE_VI = { L: 'trái của bé (bên phải ảnh)', R: 'phải của bé (bên trái ảnh)' } as const;
+const pct = (v: number) => `${Math.round(v * 100)}%`;
+
+/** Kết luận từ kết quả dò: bé đi bằng chân hay nhún, kèm lý do và cách sửa. */
+export function rigReport(r: Pick<AutoRigResult, 'ok' | 'fail' | 'warnings' | 'metrics'>): RigVerdict {
+  const lines: string[] = [];
+  if (!r.ok) {
+    if (r.fail.includes('legs'))
+      lines.push('Không thấy khe hở giữa hai chân (váy dài hoặc áo choàng che kín chân?). Cách sửa: hai chân tách rời, hở rõ giữa hai chân; váy, áo choàng ngắn trên đầu gối.');
+    for (const s of ['L', 'R'] as const) {
+      if (r.fail.includes(s === 'L' ? 'armL' : 'armR'))
+        lines.push(`Không thấy khe hở dưới tay ${SIDE_VI[s]} (tay áp sát người, tay áo rộng hoặc áo choàng che kín nách?). Cách sửa: tay dang chéo xuống khoảng 45°, hở rõ dưới mỗi nách.`);
+    }
+    if (r.fail.includes('neck')) lines.push('Không tìm được cổ (đầu thấp hơn vai?). Cách sửa: đứng thẳng, đầu ở trên hai vai, mặt nhìn thẳng phía trước.');
+    return { walk: false, lines };
+  }
+  if (r.metrics.crotch < RIG_LIMITS.crotchHop) {
+    lines.push(`Khe giữa hai chân chỉ bắt đầu ở ${pct(r.metrics.crotch)} chiều cao (váy hoặc áo choàng gần chạm đất): chân quá ngắn để bước. Cách sửa: váy, áo choàng ngắn trên đầu gối.`);
+    return { walk: false, lines };
+  }
+  const seen = new Set<string>();
+  for (const w of r.warnings) {
+    if (w.code === 'low-crotch') {
+      lines.push(`Khe giữa hai chân bắt đầu thấp (${pct(w.value)} chiều cao): váy hoặc áo choàng che phần trên của chân nên chân chỉ cử động từ mép váy trở xuống. Đẹp hơn khi váy, áo choàng ngắn trên đầu gối.`);
+      continue;
+    }
+    const leg = w.code.startsWith('leg');
+    const id = `${leg}${w.side}`;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const side = SIDE_VI[w.side ?? 'L'];
+    lines.push(
+      leg
+        ? `Có phần lạ dính vào chân ${side} (đuôi, vạt áo choàng, váy xòe...): phần đó sẽ đung đưa theo bước chân. Cách sửa: bỏ đuôi, áo choàng dài hoặc để chúng không chạm vào chân.`
+        : `Có phần lạ dính vào tay ${side} (tay áo rộng, vạt áo choàng, đồ cầm tay...): phần đó sẽ đung đưa theo tay. Cách sửa: tay không cầm gì, tay áo gọn, áo choàng hẹp và chỉ dài tới thắt lưng.`,
+    );
+  }
+  return { walk: true, lines };
+}
+
+/** Phiên bản cách dò xương: tăng khi đổi thuật toán để công cụ dò lại mô hình cũ. */
+export const RIG_VERSION = 1;
+
+/**
+ * Kết quả dò xương lưu sẵn trong config.json (công cụ xử lý mô hình tính trước, trọng số da nằm trong GLB:
+ * thuộc tính _SKIN_INDEX, _SKIN_WEIGHT). Tọa độ: hệ của mô hình gốc đã xoay `rotY` độ quanh trục đứng, chưa co giãn.
+ */
+export interface BakedRig {
+  v: number;
+  rotY: number;
+  ok: boolean;
+  walk: boolean;
+  fail: AutoRigFail[];
+  warnings: AutoRigWarning[];
+  metrics: AutoRigMetrics;
+  height: number;
+  joints: AutoRigResult['joints'];
+  relax: [number, number];
+  armAngle: [number, number];
+  anchors: AutoRigAnchors;
+}
+
+const r5 = (v: number) => Math.round(v * 1e5) / 1e5;
+const roundDeep = <T>(x: T): T =>
+  (typeof x === 'number' ? r5(x) : Array.isArray(x) ? x.map(roundDeep) : x && typeof x === 'object' ? Object.fromEntries(Object.entries(x).map(([k, v]) => [k, roundDeep(v)])) : x) as T;
+
+/** Gói kết quả dò để lưu (bỏ trọng số từng đỉnh, làm tròn số). */
+export function bakeRig(res: AutoRigResult, rotY: number): BakedRig {
+  return roundDeep({
+    v: RIG_VERSION,
+    rotY,
+    ok: res.ok,
+    walk: rigReport(res).walk,
+    fail: res.fail,
+    warnings: res.warnings,
+    metrics: res.metrics,
+    height: res.height,
+    joints: res.joints,
+    relax: res.relax,
+    armAngle: res.armAngle,
+    anchors: res.anchors,
+  });
+}
+
+type Placeable = Pick<AutoRigResult, 'joints' | 'anchors' | 'height'>;
+
+/** Đưa khớp và điểm neo sang hệ khác: p' = s·p + t (co giãn đều rồi dời). */
+export function placeRig<T extends Placeable>(r: T, s: number, t: V3): T {
+  const P = (p: V3): V3 => [s * p[0] + t[0], s * p[1] + t[1], s * p[2] + t[2]];
+  const J = r.joints;
+  const A = r.anchors;
+  return {
+    ...r,
+    height: r.height * s,
+    joints: { pelvis: P(J.pelvis), neck: P(J.neck), shoulderL: P(J.shoulderL), shoulderR: P(J.shoulderR), hipL: P(J.hipL), hipR: P(J.hipR) },
+    anchors: {
+      head: P(A.head),
+      headR: [A.headR[0] * s, A.headR[1] * s, A.headR[2] * s],
+      headTop: A.headTop * s + t[1],
+      faceZ: A.faceZ * s + t[2],
+      neck: P(A.neck),
+      chestY: A.chestY * s + t[1],
+      chestFrontZ: A.chestFrontZ * s + t[2],
+      chestBackZ: A.chestBackZ * s + t[2],
+      chestHalfW: A.chestHalfW * s,
+      shoulderL: P(A.shoulderL),
+      shoulderR: P(A.shoulderR),
+      handL: P(A.handL),
+      handR: P(A.handR),
+      pelvis: P(A.pelvis),
+    },
+  };
 }

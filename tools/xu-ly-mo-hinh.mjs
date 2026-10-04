@@ -13,6 +13,11 @@
  * 4. Ghi vào src/assets/models/ai/<khóa>.glb, <khóa>@<động tác>.glb  +  config.json (từ mo-hinh-ai/cau-hinh.json),
  *    GHI-CONG.md (bảng ghi công) và .tao-tu-dong.txt (danh sách tệp do công cụ tạo)
  *
+ * Bé (nhân vật chính): be-trai.glb, be-gai.glb (mặc đồ thường ngày); bộ đồ: be-trai-<bộ đồ>.glb, be-gai-<bộ đồ>.glb
+ * (vd. be-trai-the-thao.glb → player_trai__the_thao). Tên, giá, biểu tượng của bộ đồ ghi trong mục "bo-do" của
+ * cau-hinh.json (không ghi thì dùng mặc định). Bé được dò xương sẵn (tools/xuong-tu-dong.mjs) để đi bằng chân;
+ * kết luận "đi bằng chân" hay "nhún" in ra ngay khi xử lý.
+ *
  * Chỉ nhân vật CÓ tệp gốc trong mo-hinh-ai/ lần này mới được làm lại (tệp cũ của nhân vật đó không còn dùng thì xóa).
  * Nhân vật đã lắp từ trước mà tệp gốc không còn ở đây (vd. lắp trên máy khác) được GIỮ NGUYÊN. Muốn gỡ hẳn: --go <tên>.
  *
@@ -28,6 +33,7 @@ import sharp from 'sharp';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ghiDuoc, ghiTrongSo, luoiDeDo, napTs, napXuong } from './xuong-tu-dong.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
@@ -71,12 +77,98 @@ const ROLE_HINT = {
 const KEY_VI = {
   npc_bear: 'Chú Gấu', npc_rabbit: 'Thỏ Bông', npc_robot: 'Robot Bíp', npc_cat: 'Cô Mèo', npc_owl: 'Bác Cú', npc_squirrel: 'Cô Sóc',
   npc_turtle: 'Ông Rùa', npc_deer: 'Bạn Nai', npc_elephant: 'Bác Voi', npc_king: 'Nhà Vua', npc_knight: 'Hiệp Sĩ Thỏ', npc_clown: 'Chú Hề',
-  npc_villager: 'Dân làng',
+  npc_villager: 'Dân làng', player_trai: 'Bé trai', player_gai: 'Bé gái',
   pet_dog: 'Cún con', pet_cat: 'Mèo mướp con', pet_rabbit: 'Thỏ con', pet_panda: 'Gấu trúc con', pet_fox: 'Cáo con',
   pet_penguin: 'Chim cánh cụt con', pet_dino: 'Khủng long tí hon',
   animal_giraffe: 'Hươu cao cổ', animal_monkey: 'Khỉ', animal_penguin: 'Chim cánh cụt (Sở Thú)', animal_zebra: 'Ngựa vằn',
   animal_hippo: 'Hà mã', animal_lion: 'Sư tử',
 };
+
+/* ------------------------------------------------------------------ */
+/* Bé (nhân vật chính) và bộ đồ                                         */
+/* ------------------------------------------------------------------ */
+/** Khóa của bé trai, bé gái (be-trai.glb, be-gai.glb – mặc đồ thường ngày). */
+const KIDS = ['player_trai', 'player_gai'];
+/** Khóa bộ đồ: <khóa bé>__<mã bộ đồ>, vd. be-trai-the-thao.glb → player_trai__the_thao. */
+const OUTFIT_SEP = '__';
+/** Bộ đồ chưa ghi giá trong cau-hinh.json. */
+const OUTFIT_PRICE = 60;
+const OUTFIT_ICON = '👕';
+/** Tên, biểu tượng có sẵn của các bộ đồ hay gặp (dùng khi tên tệp viết không dấu và cau-hinh.json chưa ghi tên). */
+const OUTFIT_KNOWN = {
+  the_thao: ['Đồ thể thao', '⚽'],
+  phi_hanh_gia: ['Đồ phi hành gia', '🚀'],
+  hiep_si: ['Đồ hiệp sĩ', '🛡️'],
+  hiep_si_nho: ['Đồ hiệp sĩ nhỏ', '🛡️'],
+  vay_cong_chua: ['Váy công chúa', '👑'],
+  cong_chua: ['Váy công chúa', '👑'],
+  sieu_nhan: ['Đồ siêu nhân', '🦸'],
+  do_ngu: ['Đồ ngủ', '🌙'],
+  ngu: ['Đồ ngủ', '🌙'],
+  boi: ['Đồ bơi', '🩱'],
+  mua_dong: ['Đồ mùa đông', '🧣'],
+  ao_dai: ['Áo dài', '👗'],
+};
+/** Biểu tượng đoán theo từ trong mã bộ đồ. */
+const OUTFIT_ICON_HINT = [
+  [/_vay_|_dam_/, '👗'],
+  [/_the_thao_|_bong_da_/, '⚽'],
+  [/_phi_hanh_|_vu_tru_/, '🚀'],
+  [/_hiep_si_/, '🛡️'],
+  [/_cong_chua_|_hoang_tu_|_vua_/, '👑'],
+  [/_mua_dong_|_len_/, '🧣'],
+];
+const isKidKey = (key) => KIDS.includes(String(key).split(OUTFIT_SEP)[0]);
+
+/** "Đồ thể thao", "bo-do-the-thao", "do_the_thao" → "the_thao"; đồ thường ngày → '' (bé mặc đồ mặc định). */
+function outfitId(name) {
+  const s = slug(name)
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .replace(/^(bo_do|do)_(?=.)/, '');
+  return ['thuong_ngay', 'mac_dinh', 'binh_thuong', 'hang_ngay'].includes(s) ? '' : s;
+}
+
+/**
+ * Tên tệp/tên trong cấu hình của bé: "be-trai" → { key: 'player_trai' }; "be-gai-the-thao", "Bé gái – Đồ thể thao"
+ * → { key: 'player_gai__the_thao', kid: 'player_gai', outfit: 'the_thao', text: 'Đồ thể thao' }. Phần sau tên bé luôn
+ * là bộ đồ (không phải động tác). null nếu không phải bé.
+ */
+function kidOf(name) {
+  const base = String(name).replace(/\.(glb|gltf)$/i, '');
+  const parts = slug(base).split(/[^a-z0-9]+/).filter(Boolean);
+  for (let i = parts.length; i > 0; i--) {
+    const kid = keyOf(parts.slice(0, i).join('-'));
+    if (!KIDS.includes(kid)) continue;
+    const rest = parts.slice(i).join('-');
+    const outfit = rest ? outfitId(rest) : '';
+    const words = base
+      .replace(/\(\d+\)/g, ' ')
+      .split(/[^\p{L}\p{N}]+/u)
+      .filter(Boolean);
+    const text = (words.length === parts.length ? words : parts).slice(i).join(' ');
+    return { key: outfit ? kid + OUTFIT_SEP + outfit : kid, kid, outfit, text };
+  }
+  return null;
+}
+
+/** Tên nhân vật (kể cả bé + bộ đồ) → khóa. */
+const resolveKey = (name) => kidOf(name)?.key ?? keyOf(name);
+
+/** Tên, giá, biểu tượng mặc định của bộ đồ (từ tên tệp có dấu, hoặc bảng có sẵn). named = tên đã đẹp (có dấu). */
+function outfitDefaults(id, text) {
+  const known = OUTFIT_KNOWN[id];
+  const t = String(text ?? '').trim();
+  const accented = t !== '' && t.toLowerCase() !== slug(t).replace(/-/g, ' ');
+  const cap = (s) => s.charAt(0).toLocaleUpperCase('vi') + s.slice(1);
+  const name = accented
+    ? /^(đồ|bộ|váy|áo|quần|đầm)(\s|$)/i.test(t)
+      ? cap(t)
+      : `Đồ ${t}`
+    : (known?.[0] ?? `Đồ ${(t || id.replace(/_/g, ' ')).toLowerCase()}`);
+  const hint = OUTFIT_ICON_HINT.find(([rx]) => rx.test(`_${id}_`));
+  return { name, price: OUTFIT_PRICE, icon: known?.[1] ?? hint?.[1] ?? OUTFIT_ICON, level: 1, named: accented || Boolean(known) };
+}
 
 /* ------------------------------------------------------------------ */
 /* Tham số dòng lệnh                                                    */
@@ -126,15 +218,17 @@ function roleOf(name) {
   return null;
 }
 
-/** "gau@di", "gau-di", "chu-gau-vay-tay", "Gấu đi" → { key: 'npc_bear', role: 'walk' }. */
+/** "gau@di", "gau-di", "chu-gau-vay-tay", "Gấu đi" → { key: 'npc_bear', role: 'walk' }; "be-trai-the-thao" → bộ đồ của bé. */
 function parseName(file) {
   const base = file.replace(/\.(glb|gltf)$/i, '');
   const at = base.indexOf('@');
   if (at > 0) {
-    const key = keyOf(base.slice(0, at));
+    const key = resolveKey(base.slice(0, at));
     const role = roleOf(base.slice(at + 1));
     return { key, role, roleText: base.slice(at + 1), explicit: true };
   }
+  const kid = kidOf(base);
+  if (kid) return { key: kid.key, role: null, kid };
   const key = keyOf(base);
   if (key) return { key, role: null };
   const parts = slug(base).split('-');
@@ -151,6 +245,47 @@ function parseName(file) {
 /* ------------------------------------------------------------------ */
 const MATERIAL = { mem: 'lambert', 'mem-mai': 'lambert', lambert: 'lambert', 'hoat-hinh': 'toon', toon: 'toon', goc: 'standard', 'nguyen-ban': 'standard', standard: 'standard' };
 
+/** Mục "bo-do" của cau-hinh.json: { "the-thao": { "ten": "Đồ thể thao", "gia": 60, "bieu-tuong": "⚽" } } hoặc "the-thao": "Đồ thể thao". */
+function convertOutfits(raw, warn) {
+  const out = {};
+  for (const [name, c] of Object.entries(raw ?? {})) {
+    if (name.startsWith('_')) continue;
+    const id = outfitId(name);
+    if (!id) {
+      warn.push(`cau-hinh.json: "bo-do" – "${name}" là đồ thường ngày (luôn miễn phí, không cần cài) – bỏ qua.`);
+      continue;
+    }
+    const m = {};
+    const entries = typeof c === 'string' ? [['ten', c]] : Object.entries(c ?? {});
+    for (const [k, v] of entries) {
+      const sk = slug(k);
+      if (sk === 'ten' || k === 'name') m.name = String(v).trim();
+      else if (sk === 'gia' || k === 'price') {
+        const n = Math.round(Number(v));
+        if (Number.isFinite(n) && n >= 0) m.price = n;
+        else warn.push(`cau-hinh.json: bộ đồ "${name}" – giá "${v}" không hợp lệ (ghi số xu, vd. 60).`);
+      } else if (sk === 'bieu-tuong' || sk === 'hinh' || k === 'icon') m.icon = String(v).trim();
+      else if (sk === 'cap' || sk === 'cap-do' || k === 'level') {
+        const n = Math.round(Number(v));
+        if (Number.isFinite(n) && n >= 1) m.level = n;
+        else warn.push(`cau-hinh.json: bộ đồ "${name}" – cấp "${v}" không hợp lệ (ghi số, vd. 1).`);
+      } else warn.push(`cau-hinh.json: bộ đồ "${name}" – không hiểu mục "${k}" (dùng: ten, gia, bieu-tuong, cap).`);
+    }
+    if (m.icon !== undefined && !okIcon(m.icon)) {
+      warn.push(`cau-hinh.json: bộ đồ "${name}" – biểu tượng "${m.icon}" không dùng được (cần đúng 1 emoji hiện được trên Windows 10) – tạm dùng biểu tượng mặc định.`);
+      delete m.icon;
+    }
+    if (m.name !== undefined) {
+      const clean = stripEmoji(m.name);
+      if (clean !== m.name) warn.push(`cau-hinh.json: bộ đồ "${name}" – tên có emoji không hiện được trên Windows 10, đã bỏ: "${clean}".`);
+      if (clean) m.name = clean;
+      else delete m.name;
+    }
+    out[id] = { ...out[id], ...m };
+  }
+  return out;
+}
+
 function convertConfig(raw) {
   const out = {};
   /** Khóa → số tam giác tối đa riêng ("tam-giac"). Chỉ dùng lúc giảm lưới, không ghi vào config.json của game. */
@@ -159,9 +294,14 @@ function convertConfig(raw) {
   const texs = {};
   const seams = {};
   const warn = [];
+  let outfits = {};
   for (const [name, c] of Object.entries(raw ?? {})) {
     if (name.startsWith('_')) continue;
-    const key = keyOf(name);
+    if (['bo-do', 'outfits'].includes(slug(name))) {
+      outfits = { ...outfits, ...convertOutfits(c, warn) };
+      continue;
+    }
+    const key = resolveKey(name);
     if (!key) {
       warn.push(`cau-hinh.json: không biết nhân vật "${name}" – bỏ qua.`);
       continue;
@@ -206,7 +346,7 @@ function convertConfig(raw) {
     }
     out[key] = { ...out[key], ...o };
   }
-  return { out, tris, texs, seams, warn };
+  return { out, outfits, tris, texs, seams, warn };
 }
 
 /* ------------------------------------------------------------------ */
@@ -214,7 +354,50 @@ function convertConfig(raw) {
 /* ------------------------------------------------------------------ */
 const kb = (n) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 const num = (n) => n.toLocaleString('vi-VN');
-const label = (key) => KEY_VI[key] ?? key;
+/** Tên bộ đồ theo mã (để báo cáo: "Bé trai – Đồ thể thao"). */
+const OUTFIT_LABEL = new Map();
+const label = (key) => {
+  const [kid, outfit] = String(key).split(OUTFIT_SEP);
+  if (outfit && KIDS.includes(kid)) return `${KEY_VI[kid]} – ${OUTFIT_LABEL.get(outfit) ?? outfit}`;
+  return KEY_VI[key] ?? key;
+};
+/** Cấu hình bộ đồ thừa hưởng từ bé (ghi đè được bằng mục "be-trai-<bộ đồ>" trong cau-hinh.json). */
+const KID_INHERIT = ['height', 'rotY', 'scale', 'offset', 'material', 'credit'];
+
+/** Bỏ emoji không hiện được trên Windows 10 (≤ Emoji 12.0, quy tắc của tests/emoji12.ts). */
+let emojiIssues = () => [];
+const stripEmoji = (text) => {
+  const issues = emojiIssues(text);
+  if (!issues.length) return text;
+  const drop = new Set();
+  for (const e of issues) for (let i = 0; i < Array.from(e.text).length; i++) drop.add(e.at + i);
+  return Array.from(text)
+    .filter((_, i) => !drop.has(i))
+    .join('')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+/** Biểu tượng bộ đồ: đúng một emoji hiện được trên Windows 10. */
+const okIcon = (s) => /\p{Extended_Pictographic}/u.test(s) && Array.from(s).length <= 4 && !emojiIssues(s).length;
+
+/** Dò xương cho bé (tư thế chữ A) ngay trong công cụ: ghi trọng số da vào lưới, in kết luận đi bằng chân hay nhún. */
+async function bakeKid(doc, rotY) {
+  const rig = await napXuong();
+  const ds = luoiDeDo(doc, rotY);
+  if (!ghiDuoc(ds)) {
+    console.log('  ℹ Không lưu sẵn xương được (lưới dùng chung nhiều chỗ) – trò chơi sẽ tự dò khi nạp.');
+    return null;
+  }
+  const res = rig.autoRig(ds.map((x) => x.input));
+  const verdict = rig.rigReport(res);
+  if (verdict.walk) ghiTrongSo(doc, ds, res);
+  if (verdict.walk && !verdict.lines.length) console.log(`  🚶 Dáng đi: ĐI BẰNG CHÂN (xương tự dựng, dò trong ${Math.round(res.ms)} ms).`);
+  else if (verdict.walk) console.log('  🚶 Dáng đi: ĐI BẰNG CHÂN (xương tự dựng) – nhưng có điều nên xem lại:');
+  else console.log('  ⚠ Dáng đi: NHÚN NHẢY – bé vẫn chơi được nhưng không bước chân, vì:');
+  for (const l of verdict.lines) console.log(`     • ${l}`);
+  if (verdict.lines.length) console.log('     (Xem hình: node tools/kiem-tra-xuong.mjs <tệp>.glb – hoặc tạo lại ảnh theo hướng dẫn tư thế chữ A.)');
+  return rig.bakeRig(res, rotY);
+}
 /** Khóa nhân vật của một tệp kết quả: npc_bear.glb, npc_bear@walk.glb → npc_bear. */
 const outKey = (file) => file.replace(/\.glb$/i, '').split('@')[0];
 const readJson = (file) => {
@@ -413,6 +596,11 @@ async function main() {
   const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.decoder': MeshoptDecoder, 'meshopt.encoder': MeshoptEncoder });
   const quiet = new Logger(Logger.Verbosity.ERROR);
   io.setLogger(quiet);
+  try {
+    ({ emojiIssues } = await napTs(path.join(ROOT, 'tests', 'emoji12.ts')));
+  } catch {
+    /* thiếu tệp quy tắc emoji: bỏ qua bước kiểm tra biểu tượng */
+  }
 
   console.log('');
   console.log('=== XỬ LÝ MÔ HÌNH AI – Vương Quốc Học Vui ===');
@@ -425,7 +613,7 @@ async function main() {
   // Nhân vật cần gỡ (--go)
   const removeKeys = new Map(); // khóa -> tên đã gõ
   for (const name of GO) {
-    const key = name ? keyOf(path.basename(name).replace(/\.(glb|gltf)$/i, '')) : null;
+    const key = name ? resolveKey(path.basename(name).replace(/\.(glb|gltf)$/i, '')) : null;
     if (key) removeKeys.set(key, name);
     else {
       console.log(
@@ -455,7 +643,7 @@ async function main() {
       process.exitCode = 1;
     }
   }
-  const { out: config, tris: triLimits, texs: texSizes, seams: seamFix, warn: cfgWarn } = convertConfig(cfgRaw);
+  const { out: config, outfits: outfitCfg, tris: triLimits, texs: texSizes, seams: seamFix, warn: cfgWarn } = convertConfig(cfgRaw);
   cfgWarn.forEach((w) => console.log('  ⚠ ' + w));
 
   // Gom theo nhân vật
@@ -477,7 +665,13 @@ async function main() {
     if (p.role) e.anims.push({ file: f, role: p.role });
     else if (e.main) {
       console.log(`  ⚠ ${f}: đã có tệp chính "${e.main}" cho ${label(p.key)} – bỏ qua tệp này.`);
-    } else e.main = f;
+    } else {
+      e.main = f;
+      if (p.kid?.outfit && /^(v?\d+|moi|cu|new|old|final|copy|ban_sao|lan_\d+)$/.test(p.kid.outfit)) {
+        const base = p.kid.kid === 'player_trai' ? 'be-trai.glb' : 'be-gai.glb';
+        console.log(`  ⚠ ${f}: được hiểu là BỘ ĐỒ "${p.kid.outfit}" của ${KEY_VI[p.kid.kid]}. Nếu đây là bé mặc đồ thường ngày, hãy đổi tên tệp thành ${base}.`);
+      }
+    }
   }
   // Nhân vật chỉ có tệp động tác: dùng tệp "đứng yên" (hoặc tệp đầu tiên) làm tệp chính.
   for (const [key, e] of plan) {
@@ -530,8 +724,65 @@ async function main() {
   for (const [key, files] of outBefore) {
     if (plan.has(key) || removeKeys.has(key)) continue;
     kept.set(key, files);
+  }
+
+  // Bộ đồ: tên, giá, biểu tượng chung cho cả hai bé (cau-hinh.json mục "bo-do" > tên tệp có dấu > bảng có sẵn).
+  const allKeys = new Set([...plan.keys(), ...kept.keys()]);
+  const outfitMeta = new Map(); // mã bộ đồ -> { id, name, price, icon, level }
+  for (const key of removeKeys.keys()) {
+    const m = prevCfg[key]?.outfit;
+    if (m?.id && m.name) OUTFIT_LABEL.set(m.id, m.name);
+  }
+  {
+    const cand = new Map();
+    const noBase = new Set();
+    for (const key of [...allKeys].sort()) {
+      const [kid, id] = key.split(OUTFIT_SEP);
+      if (!id || !KIDS.includes(kid)) continue;
+      const src = plan.get(key)?.main ?? (prevSources[key] ?? [])[0];
+      const d = outfitDefaults(id, src ? (kidOf(path.basename(src))?.text ?? '') : '');
+      const cur = cand.get(id);
+      if (!cur || (!cur.named && d.named)) cand.set(id, d);
+      if (!allKeys.has(kid)) noBase.add(kid);
+    }
+    for (const [id, d] of cand) {
+      const c = outfitCfg[id] ?? {};
+      const name = stripEmoji(c.name ?? d.name) || d.name;
+      const icon = c.icon ?? (okIcon(d.icon) ? d.icon : OUTFIT_ICON);
+      outfitMeta.set(id, { id, name, price: c.price ?? d.price, icon, level: c.level ?? d.level });
+      OUTFIT_LABEL.set(id, name);
+      if (!c.name && !d.named) {
+        console.log(
+          `  ⚠ Bộ đồ "${id}" chưa có tên tiếng Việt – tạm gọi "${name}". Đặt tên trong cau-hinh.json, mục "bo-do": ` +
+            `"${id.replace(/_/g, '-')}": { "ten": "Đồ ...", "gia": ${d.price} }.`,
+        );
+      }
+    }
+    for (const kid of noBase) {
+      const base = kid === 'player_trai' ? 'be-trai.glb' : 'be-gai.glb';
+      console.log(`  ⚠ Có bộ đồ của ${KEY_VI[kid]} nhưng chưa có ${base} (bé mặc đồ thường ngày) – hãy thêm ${base} để trò chơi dùng đúng bé này.`);
+    }
+    for (const id of Object.keys(outfitCfg)) {
+      if (!cand.has(id)) console.log(`  ℹ cau-hinh.json: bộ đồ "${id}" chưa có tệp be-trai-${id.replace(/_/g, '-')}.glb hay be-gai-${id.replace(/_/g, '-')}.glb – chưa bán trong cửa hàng.`);
+    }
+  }
+  for (const [key, files] of kept) {
     console.log(`  ℹ ${label(key)}: không có tệp gốc trong mo-hinh-ai – giữ nguyên mô hình đã lắp (${files.join(', ')}).`);
   }
+  /** Cấu hình dùng khi xử lý/ghi: bộ đồ thừa hưởng chiều cao, góc xoay, vật liệu... của bé. */
+  const cfgFor = (key) => {
+    const [kid, id] = key.split(OUTFIT_SEP);
+    const outfit = Boolean(id) && KIDS.includes(kid);
+    const own = { ...((outfit || !kept.has(key) ? config[key] : (config[key] ?? prevCfg[key])) ?? {}) };
+    delete own.rig;
+    delete own.outfit;
+    if (!outfit) return own;
+    const base = cfgFor(kid);
+    const inh = {};
+    for (const f of KID_INHERIT) if (base[f] !== undefined) inh[f] = base[f];
+    return { ...inh, ...own };
+  };
+  const rigs = new Map(); // khóa bé/bộ đồ -> xương đã dò (lưu vào config.json)
   if (!glbs.length && !GO.length) {
     if (kept.size) console.log('  ℹ Không có tệp .glb mới trong mo-hinh-ai – chỉ cập nhật cấu hình (cau-hinh.json) cho các nhân vật đã lắp.');
     else {
@@ -572,19 +823,25 @@ async function main() {
       doc.getRoot().listAnimations()[0].setName('idle');
       clips[0] = `${clips[0]} → đứng yên`;
     }
-    if (seamFix[key] !== false) {
+    if ((seamFix[key] ?? seamFix[key.split(OUTFIT_SEP)[0]]) !== false) {
       const n = await padUvGaps(doc);
       if (n) console.log(`  ℹ Sửa vệt nứt: tô kín khe giữa các mảnh ảnh (${n} ảnh).`);
     }
     const steps = [dedup(), prune({ keepLeaves: true }), resample()];
     let ratio = REDUCE;
-    const triLimit = triLimits[key] ?? AUTO_TRI_LIMIT;
+    const triLimit = triLimits[key] ?? triLimits[key.split(OUTFIT_SEP)[0]] ?? AUTO_TRI_LIMIT;
     if (!ratio && tris > triLimit) ratio = triLimit / tris;
     const reduce = Boolean(ratio && ratio < 1);
     if (reduce) steps.push(dequantize(), weld(), simplifyMesh(ratio));
-    const texSize = (!TEX_CLI && texSizes[key]) || TEX_SIZE;
-    steps.push(textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [texSize, texSize] }), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
     await doc.transform(...steps);
+    // Bé, bộ đồ: dò xương trên lưới đã giảm (trước khi nén), ghi trọng số vào tệp.
+    if (isKidKey(key) && !skins) {
+      const r = await bakeKid(doc, cfgFor(key).rotY ?? 0);
+      if (r) rigs.set(key, r);
+    }
+    // Bộ đồ dùng cỡ ảnh của bé nếu không ghi riêng.
+    const texSize = (!TEX_CLI && (texSizes[key] ?? texSizes[key.split(OUTFIT_SEP)[0]])) || TEX_SIZE;
+    await doc.transform(textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [texSize, texSize] }), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
     const trisAfter = triangles(doc);
     const outName = `${key}.glb`;
     const outPath = path.join(OUT_DIR, outName);
@@ -596,7 +853,7 @@ async function main() {
     produced.push(outName);
     console.log(`  ✔ ${e.main} → ${outName}  (${kb(before)} → ${DRY ? '?' : kb(after)}, ${num(tris)} tam giác${trisAfter < tris ? ` → còn ${num(trisAfter)}` : ''})`);
     if (reduce && trisAfter > tris * ratio * 1.5) console.log(`  ℹ Chỉ giảm được còn ${num(trisAfter)} tam giác – giảm thêm sẽ làm méo hình.`);
-    if (!skins) console.log('  ℹ Mô hình chưa có khung xương – trò chơi tự cho nhân vật nhún nhảy, "thở", lắc lư nhẹ. (Muốn cử động thật: gắn xương bằng Rig/Animate của trang AI rồi tải lại – không bắt buộc.)');
+    if (!skins && !isKidKey(key)) console.log('  ℹ Mô hình chưa có khung xương – trò chơi tự cho nhân vật nhún nhảy, "thở", lắc lư nhẹ. (Muốn cử động thật: gắn xương bằng Rig/Animate của trang AI rồi tải lại – không bắt buộc.)');
     if (clips.length) console.log(`    Động tác trong tệp: ${clips.join(', ')}`);
     else if (skins) console.log('    (Tệp chính không có động tác – cần thêm tệp động tác như gau-di.glb)');
     if (trisAfter > 40000 && !reduce) console.log('  ⚠ Mô hình khá nặng – nên chọn số đa giác thấp hơn (Remesh ~10.000–20.000) để game chạy mượt trên máy yếu.');
@@ -680,6 +937,36 @@ async function main() {
     for (const f of outBefore.get(key) ?? []) if (!produced.includes(f)) toDelete.push([f, 'không còn tệp gốc tương ứng trong mo-hinh-ai']);
   }
 
+  // Bé, bộ đồ giữ nguyên (không có tệp gốc lần này): dùng lại xương đã dò; dò lại khi đổi góc xoay hay cách dò mới.
+  for (const [key, files] of kept) {
+    if (!isKidKey(key)) continue;
+    const rotY = cfgFor(key).rotY ?? 0;
+    const prev = prevCfg[key]?.rig;
+    const { RIG_VERSION } = await napXuong();
+    if (prev && prev.v === RIG_VERSION && (prev.rotY ?? 0) === rotY) {
+      rigs.set(key, prev);
+      continue;
+    }
+    const main = files.find((f) => !f.includes('@'));
+    if (!main) continue;
+    const p = path.join(OUT_DIR, main);
+    try {
+      const d = await io.read(p);
+      d.setLogger(quiet);
+      if (d.getRoot().listSkins().length) continue;
+      console.log('');
+      console.log(`▶ ${label(key)}: ${!prev ? 'chưa dò xương' : prev.v !== RIG_VERSION ? 'có cách dò xương mới' : 'đổi góc xoay'} – dò lại trên ${main}.`);
+      const r = await bakeKid(d, rotY);
+      if (r) rigs.set(key, r);
+      if (r && !DRY) {
+        await io.write(p, d);
+        writtenCount++;
+      }
+    } catch (err) {
+      console.log(`  ✖ Không dò lại được xương của ${main}: ${err.message} – trò chơi sẽ tự dò khi nạp.`);
+    }
+  }
+
   // config.json, danh sách tệp và bảng ghi công: nhân vật vừa làm lại + nhân vật giữ nguyên.
   const keys = [...new Set([...done.keys(), ...kept.keys()])].sort();
   const cfgOut = {};
@@ -687,8 +974,11 @@ async function main() {
   const credits = [];
   for (const key of keys) {
     // Nhân vật giữ nguyên: ưu tiên cau-hinh.json, không có thì dùng cấu hình lần trước.
-    const c = { ...((done.has(key) ? config[key] : (config[key] ?? prevCfg[key])) ?? {}) };
+    const c = cfgFor(key);
     if (!c.credit) c.credit = 'Mô hình tạo bằng AI';
+    if (rigs.has(key)) c.rig = rigs.get(key);
+    const [kid, id] = key.split(OUTFIT_SEP);
+    if (id && KIDS.includes(kid) && outfitMeta.has(id)) c.outfit = outfitMeta.get(id);
     cfgOut[key] = c;
     sources[key] = done.get(key) ?? prevSources[key] ?? [];
     credits.push(`| ${label(key)} | ${key} | ${c.credit} | ${sources[key].join(', ') || '–'} |`);
@@ -713,7 +1003,15 @@ async function main() {
   }
   if (toDelete.length || gone.length) console.log('');
   for (const [f, why] of toDelete) console.log(`  🗑 ${DRY ? 'Sẽ xóa' : 'Đã xóa'} ${f} (${why}).`);
-  for (const key of gone) console.log(`  ✔ ${DRY ? 'Sẽ gỡ' : 'Đã gỡ'} mô hình AI của ${label(key)} – trò chơi dùng lại nhân vật có sẵn.`);
+  for (const key of gone) {
+    const [kid, id] = key.split(OUTFIT_SEP);
+    const why = id && KIDS.includes(kid)
+      ? 'cửa hàng thôi bán bộ đồ này; bé nào đang mặc sẽ mặc lại đồ thường ngày'
+      : KIDS.includes(key)
+        ? 'trò chơi tạm dùng bé dựng sẵn (hình đơn giản) cho tới khi có mô hình mới'
+        : 'trò chơi dùng lại nhân vật có sẵn';
+    console.log(`  ✔ ${DRY ? 'Sẽ gỡ' : 'Đã gỡ'} mô hình AI của ${label(key)} – ${why}.`);
+  }
 
   console.log('');
   if (DRY) console.log('Chế độ xem thử (--xem): chưa ghi hay xóa tệp nào.');
