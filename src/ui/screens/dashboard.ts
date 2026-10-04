@@ -5,20 +5,21 @@ import { toast } from '../toast';
 import { GRADE_NAMES, GRADE_TOPICS, TOPICS, maxLevelFor, startLevel } from '../../math/curriculum';
 import type { Grade, Topic } from '../../math/types';
 import { badgeDef, levelDef, levelProgress } from '../../core/progression';
+import { importSummary, type ImportSide } from '../../core/backup';
 import {
   deleteProfile,
   exportProfile,
   hasProfile,
+  importBackup,
   listProfiles,
-  parseProfileFile,
   profile,
   readProfile,
   resetProfileProgress,
   save,
   setGrade,
-  storeImported,
   type AnswerLog,
   type Goal,
+  type ImportCheck,
   type Profile,
   writeProfile,
   dayKey,
@@ -255,27 +256,23 @@ function renderManage(p: Profile): HTMLElement {
   const fileInput = h<HTMLInputElement>('input.dash-file-hidden', { type: 'file', accept: 'application/json,.json' });
   fileInput.addEventListener('change', async () => {
     const file = fileInput.files?.[0];
+    // Chọn lại đúng tệp đó (sau khi bấm "Thôi") vẫn phải hỏi lại.
+    fileInput.value = '';
     if (!file) return;
-    let imported: Profile;
+    let done: ImportCheck | null;
     try {
-      imported = parseProfileFile(await file.text());
+      done = await importBackup(await file.text(), askImport);
     } catch (err) {
       void alertBox('Không nhập được hồ sơ', err instanceof Error ? err.message : 'Tệp không hợp lệ.', '⚠️');
       return;
-    } finally {
-      // Chọn lại đúng tệp đó (sau khi bấm "Thôi") vẫn phải hỏi lại.
-      fileInput.value = '';
     }
-    if (playing(imported.id)) {
-      const ok = await confirmBox(`Hồ sơ của ${profile().name} đang được chơi. Nhập tệp sẽ thay toàn bộ tiến trình hiện tại bằng bản trong tệp, rồi game về màn hình chính để tải lại hồ sơ.`, { title: 'Nhập hồ sơ', icon: '📥', yes: 'Nhập', no: 'Thôi' });
-      if (!ok) return;
-      storeImported(imported);
+    if (!done) return;
+    if (done.playing) {
       nav.title();
       toast('Đã nhập hồ sơ. Chọn hồ sơ để chơi tiếp nhé!', { icon: '✓', tone: 'good' });
       return;
     }
-    storeImported(imported);
-    activeProfile = imported;
+    activeProfile = done.profile;
     toast('Đã nhập hồ sơ thành công.', { icon: '✓', tone: 'good' });
     renderAll();
   });
@@ -411,6 +408,22 @@ function downloadProfile(p: Profile): void {
   a.download = `vuong-quoc-hoc-vui-${slug(p.name)}.json`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+/** Hỏi lại trước khi nhập tệp trùng hồ sơ đã có trên máy: bảng so sánh hai bản, cảnh báo khi tệp cũ hơn (khi đó Enter = "Thôi"). */
+function askImport(c: ImportCheck & { device: ImportSide }): Promise<boolean> {
+  const s = importSummary(c);
+  const body = h(
+    'div.confirm-text.import-confirm',
+    h('p.import-q', s.text),
+    h(
+      'table.import-compare',
+      h('thead', h('tr', h('th', ''), h('th', 'Trên máy này'), h('th', 'Trong tệp'))),
+      h('tbody', s.rows.map((r) => h(`tr${r.differs ? '.import-diff' : ''}`, h('th', { scope: 'row' }, r.label), h('td', r.device), h('td', r.file)))),
+    ),
+    s.warning ? h('p.import-warn', `⚠️ ${s.warning}`) : null,
+  );
+  return confirmBox(body, { title: 'Nhập hồ sơ', icon: '📥', yes: 'Nhập', no: 'Thôi', focus: c.older ? 'no' : 'yes' });
 }
 
 async function resetProgress(p: Profile): Promise<void> {

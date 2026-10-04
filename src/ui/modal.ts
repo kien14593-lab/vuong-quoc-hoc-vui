@@ -99,29 +99,29 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-/** Hộp xác nhận Có/Không. */
-export function confirmBox(text: string, opts: { title?: string; icon?: string; yes?: string; no?: string } = {}): Promise<boolean> {
+/** Hộp xác nhận Có/Không. `focus`: nút được chọn sẵn – bấm Enter là bấm nút đó. */
+export function confirmBox(text: Child, opts: { title?: string; icon?: string; yes?: string; no?: string; focus?: 'yes' | 'no' } = {}): Promise<boolean> {
   return new Promise((resolve) => {
     let answer = false;
+    const no = button(opts.no ?? 'Không', () => m.close(), 'btn-soft');
+    const yes = button(
+      opts.yes ?? 'Đồng ý',
+      () => {
+        answer = true;
+        m.close();
+      },
+      'btn-primary',
+    );
     const m = openModal({
       title: opts.title ?? 'Xác nhận',
       icon: opts.icon ?? '❓',
       width: 760,
       className: 'modal-small',
-      body: h('p.confirm-text', text),
-      footer: [
-        button(opts.no ?? 'Không', () => m.close(), 'btn-soft'),
-        button(
-          opts.yes ?? 'Đồng ý',
-          () => {
-            answer = true;
-            m.close();
-          },
-          'btn-primary',
-        ),
-      ],
+      body: typeof text === 'string' ? h('p.confirm-text', text) : text,
+      footer: [no, yes],
       onClose: () => resolve(answer),
     });
+    if (opts.focus) (opts.focus === 'no' ? no : yes).focus();
   });
 }
 

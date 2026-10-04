@@ -421,3 +421,59 @@
 .dash-file-hidden {
   display: none;
 }
+
+/* Nhập tệp trùng hồ sơ đã có trên máy: bảng so sánh trong hộp xác nhận.
+   Chỉ dùng em – co giãn theo cỡ chữ của hộp thoại. */
+.import-confirm .import-q {
+  margin: 0 0 0.45em;
+}
+
+.import-compare {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.7em;
+  line-height: 1.25;
+}
+
+.import-compare th,
+.import-compare td {
+  padding: 0.25em 0.45em;
+  border-bottom: 0.08em solid rgba(91, 74, 110, 0.18);
+}
+
+.import-compare thead th {
+  color: var(--ol);
+  font-weight: 800;
+  text-align: center;
+}
+
+.import-compare tbody th {
+  font-weight: 600;
+  text-align: left;
+}
+
+.import-compare td {
+  font-weight: 800;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.import-compare .import-diff td {
+  background: var(--yellow-l);
+}
+
+.import-warn {
+  margin: 0.55em 0 0;
+  padding: 0.35em 0.6em;
+  border-radius: 0.6em;
+  background: #ffe1e1;
+  color: #c0392b;
+  font-size: 0.78em;
+  font-weight: 800;
+}
+
+/* Nút được chọn sẵn (bấm Enter là bấm nút này): viền nổi rõ. */
+.modal-card:has(.import-confirm) .modal-footer .btn:focus {
+  outline: 0.15em solid var(--ol);
+  outline-offset: 0.18em;
+}

@@ -34,7 +34,10 @@ Câu hỏi tự điều chỉnh độ khó theo lớp và theo kết quả làm 
 - **Góc phụ huynh** (ở màn hình chính và trong Cài đặt, có câu hỏi kiểm tra người lớn): tổng quan, kết quả theo
   chủ đề, tiến bộ theo tuần, mục tiêu, nhật ký hoạt động; xuất / nhập tệp JSON (chuyển máy), đổi lớp,
   đặt lại tiến độ, xóa hồ sơ.
-  Khi đang chơi mà nhập tệp của **chính hồ sơ đang chơi** (game hỏi lại trước), đặt lại tiến độ hoặc xóa hồ sơ đó,
+  Nhập tệp của hồ sơ **đã có trên máy** thì game hỏi lại trước, kèm bảng so sánh "Trên máy này" / "Trong tệp"
+  (tên, lớp, ⭐, cấp, lần chơi cuối). Tệp **cũ hơn** bản trên máy thì có thêm lời cảnh báo và nút "Thôi" được chọn sẵn.
+  Hồ sơ chưa có trên máy thì nhập luôn, không hỏi.
+  Khi đang chơi mà nhập tệp của **chính hồ sơ đang chơi**, đặt lại tiến độ hoặc xóa hồ sơ đó,
   game tự về màn hình chính để tải lại hồ sơ cho đúng.
 
 ### 🗣️ Giọng đọc

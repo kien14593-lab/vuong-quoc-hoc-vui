@@ -1,15 +1,19 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { SAVE_VERSION } from '../src/config';
+import { formatPlayed, importSummary, isOlder, OLDER_WARNING, UNKNOWN_DATE } from '../src/core/backup';
 import { bus } from '../src/core/events';
 import { RETIRED_WEAR } from '../src/core/items';
 import { DEFAULT_OUTFIT } from '../src/core/outfits';
+import { levelFromXp } from '../src/core/progression';
 import {
   addCoins,
+  checkImport,
   deleteProfile,
   equip,
   exportProfile,
   guessKid,
   hasProfile,
+  importBackup,
   importProfile,
   listProfiles,
   loadProfile,
@@ -364,6 +368,221 @@ describe('nhập tệp trùng hồ sơ đang chơi', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('nhập tệp trùng hồ sơ đã có trên máy: hỏi lại, so sánh hai bản', () => {
+  type Asked = Parameters<Parameters<typeof importBackup>[1]>[0];
+  /** Người lớn trả lời hộp hỏi lại ("Nhập" = true, "Thôi" = false); ghi lại những gì hộp hiện ra. */
+  function answer(ok: boolean) {
+    const seen: Asked[] = [];
+    return {
+      seen,
+      ask: async (c: Asked) => {
+        seen.push(c);
+        return ok;
+      },
+    };
+  }
+  const onDevice = (id: string) => [storage.get(`p.${id}`), storage.get('profiles')];
+
+  it('hồ sơ chưa có trên máy: nhập luôn, không hỏi', async () => {
+    const fresh = oldSave();
+    const a = answer(false);
+    const done = await importBackup(JSON.stringify({ app: 'vuong-quoc-toan-hoc', version: SAVE_VERSION, profile: fresh }), a.ask);
+    expect(a.seen).toHaveLength(0);
+    expect(done).toMatchObject({ device: null, playing: false, older: false });
+    expect(readProfile(fresh.id)).toMatchObject({ name: fresh.name, stars: 12 });
+  });
+
+  it('đã có trên máy: hỏi lại kèm bảng so sánh; bấm "Nhập" → thay bằng bản trong tệp', async () => {
+    const old = oldSave();
+    store(old);
+    const file = backupOf(old.id, (p) => {
+      p.stars = 30;
+      p.xp = 5000;
+      p.grade = 3;
+      p.lastPlayed = old.lastPlayed + 3600000;
+    });
+    const a = answer(true);
+    const done = await importBackup(file, a.ask);
+    expect(a.seen).toHaveLength(1);
+    const c = a.seen[0];
+    expect(c).toMatchObject({ playing: false, older: false });
+    expect(c.device).toEqual({ name: old.name, grade: 2, stars: 12, level: levelFromXp(820), lastPlayed: old.lastPlayed });
+    expect(c.file).toEqual({ name: old.name, grade: 3, stars: 30, level: levelFromXp(5000), lastPlayed: old.lastPlayed + 3600000 });
+    const s = importSummary(c);
+    expect(s.text).toBe(`Máy này đã có hồ sơ của ${old.name}. Nhập tệp sẽ thay toàn bộ tiến trình trên máy bằng bản trong tệp.`);
+    expect(s.rows.map((r) => [r.label, r.differs])).toEqual([
+      ['Tên', false],
+      ['Lớp', true],
+      ['⭐ Ngôi sao', true],
+      ['Cấp', levelFromXp(820) !== levelFromXp(5000)],
+      ['Chơi lần cuối', true],
+    ]);
+    expect(s.rows[2]).toMatchObject({ device: '12', file: '30' });
+    expect(s.warning).toBeNull();
+    expect(done).toMatchObject({ playing: false });
+    expect(readProfile(old.id)).toMatchObject({ stars: 30, grade: 3 });
+    expect(listProfiles().filter((x) => x.id === old.id)).toHaveLength(1);
+  });
+
+  it('bấm "Thôi": trên máy không có gì thay đổi', async () => {
+    const old = oldSave();
+    store(old);
+    const file = backupOf(old.id, (p) => {
+      p.coins = 999;
+    });
+    const before = onDevice(old.id);
+    const a = answer(false);
+    expect(await importBackup(file, a.ask)).toBeNull();
+    expect(a.seen).toHaveLength(1);
+    expect(onDevice(old.id)).toEqual(before);
+    expect(readProfile(old.id)!.coins).toBe(37);
+  });
+
+  it('đang chơi hồ sơ khác: vẫn hỏi; bấm "Nhập" → hồ sơ đang chơi giữ nguyên', async () => {
+    const a = oldSave();
+    const b = oldSave();
+    store(a);
+    store(b);
+    const fileB = backupOf(b.id, (p) => {
+      p.coins = 555;
+    });
+    loadProfile(a.id);
+    const me = profile();
+    const ask = answer(true);
+    const done = await importBackup(fileB, ask.ask);
+    expect(ask.seen).toHaveLength(1);
+    expect(ask.seen[0]).toMatchObject({ playing: false, device: { name: b.name } });
+    expect(done).toMatchObject({ playing: false });
+    expect(profile()).toBe(me);
+    expect(readProfile(b.id)!.coins).toBe(555);
+  });
+
+  it('hồ sơ đang chơi, bấm "Thôi": không lưu hộ thay đổi đang chờ, không gỡ hồ sơ, không đổi gì trên máy', async () => {
+    vi.useFakeTimers();
+    try {
+      const old = oldSave();
+      store(old);
+      const file = backupOf(old.id, (p) => {
+        p.coins = 999;
+      });
+      loadProfile(old.id);
+      const me = profile();
+      addCoins(5);
+      const before = onDevice(old.id);
+      const seen: (string | null)[] = [];
+      const off = bus.on('profile', (e) => seen.push(e.id));
+      const a = answer(false);
+      const done = await importBackup(file, a.ask);
+      off();
+      expect(done).toBeNull();
+      // So với bản đang chơi trong bộ nhớ (vừa tải → mới hơn tệp).
+      expect(a.seen[0]).toMatchObject({ playing: true, older: true, device: { name: old.name, lastPlayed: me.lastPlayed } });
+      expect(importSummary(a.seen[0]).text).toBe(`Hồ sơ của ${old.name} đang được chơi. Nhập tệp sẽ thay toàn bộ tiến trình hiện tại bằng bản trong tệp, rồi game về màn hình chính để tải lại hồ sơ.`);
+      expect(onDevice(old.id)).toEqual(before);
+      expect(seen).toEqual([]);
+      expect(profile()).toBe(me);
+      expect(me.coins).toBe(37 + 5);
+      // Lần lưu hẹn giờ bình thường của game vẫn chạy như không có gì xảy ra.
+      vi.advanceTimersByTime(2000);
+      expect(storage.getJSON<Profile | null>(`p.${old.id}`, null)!.coins).toBe(37 + 5);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('hồ sơ đang chơi, bấm "Nhập": thay bằng bản trong tệp, gỡ hồ sơ đang chơi (game về màn hình chính)', async () => {
+    const old = oldSave();
+    store(old);
+    const file = backupOf(old.id, (p) => {
+      p.coins = 999;
+    });
+    loadProfile(old.id);
+    addCoins(5);
+    const done = await importBackup(file, async () => true);
+    expect(done).toMatchObject({ playing: true });
+    expect(hasProfile()).toBe(false);
+    saveNow();
+    expect(readProfile(old.id)!.coins).toBe(999);
+  });
+
+  it('tệp cũ hơn bản trên máy (so theo phút): cảnh báo; cùng phút hoặc mới hơn: không', () => {
+    const t = new Date(2026, 9, 5, 7, 4, 50).getTime();
+    const dev = oldSave();
+    dev.lastPlayed = t;
+    store(dev);
+    const before = onDevice(dev.id);
+    const at = (ms: number) =>
+      checkImport(
+        backupOf(dev.id, (p) => {
+          p.lastPlayed = ms;
+        }),
+      );
+    const old2h = at(t - 2 * 3600000);
+    expect(old2h.older).toBe(true);
+    const s = importSummary({ ...old2h, device: old2h.device! });
+    expect(s.warning).toBe(OLDER_WARNING);
+    expect(OLDER_WARNING).toBe('Tệp này cũ hơn bản trên máy — nhập sẽ mất tiến trình mới hơn.');
+    expect(s.rows[4]).toEqual({ label: 'Chơi lần cuối', device: '05/10/2026 07:04', file: '05/10/2026 05:04', differs: true });
+    expect(at(t - 60000).older).toBe(true);
+    expect(at(t - 40000).older).toBe(false);
+    expect(at(t).older).toBe(false);
+    expect(at(t + 3600000).older).toBe(false);
+    expect(importSummary({ ...at(t + 3600000), device: old2h.device! }).warning).toBeNull();
+    // Chỉ đọc tệp – không ghi gì.
+    expect(onDevice(dev.id)).toEqual(before);
+  });
+
+  it('ngày giờ dd/mm/yyyy HH:mm theo giờ máy; không có → "không rõ ngày"', () => {
+    const t0 = new Date(2026, 9, 5).getTime();
+    expect(formatPlayed(new Date(2026, 9, 5, 7, 4).getTime())).toBe('05/10/2026 07:04');
+    expect(formatPlayed(new Date(2025, 0, 31, 23, 59, 59).getTime())).toBe('31/01/2025 23:59');
+    expect(formatPlayed(null)).toBe('không rõ ngày');
+    expect(UNKNOWN_DATE).toBe('không rõ ngày');
+    expect(isOlder(null, t0)).toBe(false);
+    expect(isOlder(t0, null)).toBe(false);
+  });
+
+  it('tệp v1 không ghi ngày chơi: "không rõ ngày", không cảnh báo, vẫn nhập được (đoán bé, trả xu đúng một lần)', async () => {
+    const dev = oldSave({ hair: 2 });
+    store(dev);
+    const v1 = oldSave({ hair: 2, extra: ['shirt_rainbow'] }) as Record<string, unknown>;
+    v1.id = dev.id;
+    delete v1.lastPlayed;
+    const a = answer(true);
+    const done = await importBackup(JSON.stringify({ app: 'vuong-quoc-toan-hoc', version: 1, profile: v1 }), a.ask);
+    expect(a.seen).toHaveLength(1);
+    const c = a.seen[0];
+    expect(c.file.lastPlayed).toBeNull();
+    expect(c.device.lastPlayed).toBe(dev.lastPlayed);
+    expect(c.older).toBe(false);
+    const s = importSummary(c);
+    expect(s.rows[4]).toMatchObject({ device: formatPlayed(dev.lastPlayed), file: 'không rõ ngày', differs: true });
+    expect(s.warning).toBeNull();
+    expect(done!.profile.kid).toBe('gai');
+    expect(readProfile(dev.id)).toMatchObject({ kid: 'gai', coins: 37 + 80 });
+    expect(readProfile(dev.id)!.inventory.shirt_rainbow).toBeUndefined();
+    loadProfile(dev.id);
+    expect(takeRefundNotice()).toBe(80);
+    expect(takeRefundNotice()).toBe(0);
+  });
+
+  it('bản trên máy không ghi ngày chơi: "không rõ ngày" ở cột "Trên máy này", không cảnh báo', () => {
+    const dev = oldSave();
+    store(dev);
+    const file = backupOf(dev.id, (p) => {
+      p.lastPlayed = 1;
+    });
+    const raw = storage.getJSON<Record<string, unknown>>(`p.${dev.id}`, {});
+    delete raw.lastPlayed;
+    storage.setJSON(`p.${dev.id}`, raw);
+    const c = checkImport(file);
+    expect(c.device!.lastPlayed).toBeNull();
+    expect(c.file.lastPlayed).toBe(1);
+    expect(c.older).toBe(false);
+    expect(importSummary({ ...c, device: c.device! }).rows[4]).toMatchObject({ device: 'không rõ ngày' });
   });
 });
 

@@ -1,6 +1,7 @@
 import { SAVE_VERSION } from '../config';
 import { initialSkill, updateSkill, type SkillChange, type SkillState } from '../math/adaptive';
 import type { Grade, Topic } from '../math/types';
+import { isOlder, playedAt, type ImportCompare, type ImportSide } from './backup';
 import { bus } from './events';
 import { item, RETIRED_WEAR, type DecorSlot, type WearSlot } from './items';
 import { DEFAULT_OUTFIT, isKid, outfitFits, type Kid } from './outfits';
@@ -389,8 +390,8 @@ export function exportProfile(id: string): string {
   return JSON.stringify({ app: 'vuong-quoc-toan-hoc', version: SAVE_VERSION, profile: p }, null, 1);
 }
 
-/** Đọc tệp sao lưu thành hồ sơ (chưa ghi gì xuống máy). Tệp hỏng / không phải của game → báo lỗi. */
-export function parseProfileFile(json: string): Profile {
+/** Hồ sơ gốc trong tệp sao lưu (chưa chuyển dạng). Tệp hỏng / không phải của game → báo lỗi. */
+function readBackup(json: string): Profile {
   let data: { app?: unknown; profile?: Profile } | null;
   try {
     data = JSON.parse(json) as typeof data;
@@ -400,7 +401,55 @@ export function parseProfileFile(json: string): Profile {
   if (!data || typeof data !== 'object' || data.app !== 'vuong-quoc-toan-hoc' || !data.profile || typeof data.profile !== 'object' || !data.profile.id) {
     throw new Error('Tệp không đúng định dạng.');
   }
-  return migrate(data.profile);
+  return data.profile;
+}
+
+/** Đọc tệp sao lưu thành hồ sơ (chưa ghi gì xuống máy). Tệp hỏng / không phải của game → báo lỗi. */
+export function parseProfileFile(json: string): Profile {
+  return migrate(readBackup(json));
+}
+
+/** Tệp sao lưu đã đọc, so với bản cùng hồ sơ trên máy – chưa ghi gì. */
+export interface ImportCheck extends ImportCompare {
+  /** Hồ sơ trong tệp (đã chuyển sang dạng mới) – được ghi xuống máy khi bấm "Nhập". */
+  profile: Profile;
+}
+
+function importSide(p: Profile, lastPlayed: number | null): ImportSide {
+  return { name: p.name, grade: p.grade, stars: p.stars, level: levelFromXp(p.xp), lastPlayed };
+}
+
+/**
+ * Đọc tệp sao lưu và so với bản cùng hồ sơ trên máy (không ghi gì). Ngày chơi lần cuối lấy từ hồ sơ gốc – chuyển dạng
+ * sẽ điền "bây giờ" khi thiếu. Hồ sơ đang chơi được so bằng bản trong bộ nhớ và KHÔNG lưu trước,
+ * để bấm "Thôi" thì trên máy không có gì thay đổi.
+ */
+export function checkImport(json: string): ImportCheck {
+  const raw = readBackup(json);
+  const p = migrate(raw);
+  const file = importSide(p, playedAt(raw.lastPlayed));
+  const playing = current?.id === p.id;
+  let device: ImportSide | null = null;
+  if (current && playing) device = importSide(current, playedAt(current.lastPlayed));
+  else {
+    const stored = storage.getJSON<Profile | null>(`p.${p.id}`, null);
+    if (stored && typeof stored === 'object') device = importSide(migrate(stored), playedAt(stored.lastPlayed));
+  }
+  return { profile: p, file, device, playing, older: isOlder(file.lastPlayed, device?.lastPlayed ?? null) };
+}
+
+/**
+ * Nhập tệp sao lưu. Hồ sơ đã có trên máy (kể cả hồ sơ đang chơi) → `ask` hỏi lại kèm bảng so sánh;
+ * "Thôi" → không ghi gì, trả về null. Hồ sơ mới → nhập luôn, không hỏi.
+ * Kết quả có `playing` = vừa thay hồ sơ đang chơi → người gọi đưa game về màn hình chính.
+ */
+export async function importBackup(json: string, ask: (c: ImportCheck & { device: ImportSide }) => Promise<boolean>): Promise<ImportCheck | null> {
+  const c = checkImport(json);
+  const { device } = c;
+  if (device && !(await ask({ ...c, device }))) return null;
+  const playing = current?.id === c.profile.id;
+  storeImported(c.profile);
+  return { ...c, playing };
 }
 
 /**
