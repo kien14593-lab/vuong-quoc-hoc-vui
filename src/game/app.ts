@@ -3,7 +3,7 @@ import { KIDS, kidKey } from '../core/outfits';
 import { awardBadge, hasBadge, hasProfile, profile, saveNow, setPosition, takeRefundNotice, unloadProfile, type ZoneId } from '../core/state';
 import { engine } from '../engine/core';
 import { miniDef, miniTitle, runMini, type MiniResult } from '../minigames';
-import { ensureGlb, glbReady, prefetchGlb } from '../models';
+import { ensureGlb, glbReady, lowerGlb, prefetchGlb } from '../models';
 import { h, nextFrame, wait } from '../ui/dom';
 import { hud } from '../ui/hud';
 import { coinIcon } from '../ui/icons';
@@ -19,7 +19,7 @@ import { nav } from '../world/nav';
 import { TitleStage } from '../world/title';
 import type { Spawn, Zone } from '../world/zone';
 import { createZone } from '../world/zones';
-import { miniModels, zoneModels, type PlayerNeed } from './needs';
+import { miniModels, playerModels, zoneModels, type PlayerNeed } from './needs';
 import { checkBadges, zoneLock, ZONE_META } from './story';
 
 /**
@@ -63,14 +63,15 @@ async function fade(on: boolean, text = ''): Promise<void> {
 /**
  * Chờ tải mô hình AI cho cảnh sắp vào (trong lúc màn chuyển cảnh). Chờ lâu mới hiện thanh tiến độ;
  * quá hạn/lỗi thì nhân vật dùng tạm mô hình dựng bằng code (không bao giờ kẹt).
+ * `first`: tải trước nhất – bé (luôn ở giữa màn hình): mạng chậm, quá hạn chờ thì ít nhất bé đã sẵn sàng.
  */
-async function waitModels(keys: string[], ms = 15000): Promise<void> {
+async function waitModels(keys: string[], first: string[] = [], ms = 15000): Promise<void> {
   if (glbReady(keys)) return;
   const load = veilEl().querySelector<HTMLElement>('.fade-veil-load')!;
   const fill = load.querySelector<HTMLElement>('.boot-bar-fill')!;
   fill.style.width = '0%';
   const hint = setTimeout(() => load.classList.add('on'), 800);
-  await ensureGlb(keys, { timeoutMs: ms, onProgress: (f) => (fill.style.width = `${Math.round(f * 100)}%`) });
+  await ensureGlb(keys, { timeoutMs: ms, first, onProgress: (f) => (fill.style.width = `${Math.round(f * 100)}%`) });
   clearTimeout(hint);
   load.classList.remove('on');
 }
@@ -97,8 +98,9 @@ export async function goZone(id: ZoneId, spawn: Spawn = 'start'): Promise<void> 
   moving = true;
   try {
     const meta = ZONE_META[id];
-    // Tải mô hình AI của khu vực (và bé) song song với màn mờ dần. (Dựng lỗi thì về làng: mô hình AI của làng đã nạp từ màn tiêu đề.)
-    const models = waitModels(zoneModels(id, hasProfile() ? profile().equipped.pet : null, playerNeed()));
+    // Tải mô hình AI của khu vực (và bé – trước nhất) song song với màn mờ dần. (Dựng lỗi thì về làng: mô hình AI của làng đã nạp từ màn tiêu đề.)
+    const me = playerNeed();
+    const models = waitModels(zoneModels(id, hasProfile() ? profile().equipped.pet : null, me), playerModels(me));
     await fade(true, `${meta.icon} ${meta.name}`);
     await models;
     closeAllModals();
@@ -130,11 +132,12 @@ async function playMini(id: string): Promise<MiniResult | null> {
   const z = zone;
   if (!z) return null;
   z.pause();
-  const keys = miniModels(id, playerNeed());
+  const me = playerNeed();
+  const keys = miniModels(id, me);
   const veiled = !glbReady(keys);
   if (veiled) {
     const info = miniDef(id)?.info;
-    const models = waitModels(keys);
+    const models = waitModels(keys, playerModels(me));
     await fade(true, info ? miniTitle(info) : '');
     await models;
     if (zone !== z) {
@@ -212,6 +215,8 @@ export async function enterWorld(o: EnterOpts = {}): Promise<void> {
     spawn = 'start';
   }
   bindHud();
+  // Ảnh bé ở màn tiêu đề / tạo hồ sơ không cần gấp nữa: nhường đường cho bé và khu vực sắp vào (mạng chậm vào nhanh hơn).
+  lowerGlb();
   await goZone(id, spawn);
   checkBadges();
   // Hồ sơ cũ: báo số xu trả lại cho áo, quần, giày đã bỏ.

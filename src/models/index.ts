@@ -19,6 +19,6 @@ import './kid';
 
 export { buildModel, modelKeys, modelDef, hasModel, collectTicks, modelHeight } from './registry';
 export { animateRig, rigOf } from './rig';
-export { preloadGlb, ensureGlb, glbReady, glbLoaded, hasGlb, prefetchGlb, setGlbEnabled, glbReport, glbKeys } from './glb';
+export { preloadGlb, ensureGlb, glbReady, glbLoaded, hasGlb, prefetchGlb, lowerGlb, setGlbEnabled, glbReport, glbKeys } from './glb';
 export { kidModelKey } from './kid';
 export type { PlayerOpts } from './character';

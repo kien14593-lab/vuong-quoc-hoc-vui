@@ -358,6 +358,8 @@ export abstract class Zone implements Stage {
     this.player = new Player(p.kid, p.equipped, { x: sp.x, z: sp.z, rot: sp.rot });
     this.scene.add(this.player.root);
     this.makePet();
+    // Mạng chậm, chờ quá hạn lúc chuyển cảnh: tạm dùng bé có sẵn, tải xong bé AI (mặc bộ đồ đang chọn) thì tự thay.
+    if (!glbReady([playerKey(p.kid, p.equipped.outfit)])) this.onLook();
     // Sinh ra ngoài vùng cổng là đủ: quay lại ngay vẫn đi qua được (độ trễ r+0.6 chỉ dùng khi bị cổng khóa đẩy ra).
     for (const pt of this.portals) pt.armed = Math.hypot(sp.x - pt.x, sp.z - pt.z) > pt.r + 0.15;
     this.cam.snap(this.player.pos);

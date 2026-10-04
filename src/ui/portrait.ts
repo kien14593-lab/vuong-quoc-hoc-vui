@@ -187,7 +187,8 @@ export function setPlayerPortrait(img: HTMLImageElement, kid: Kid, eq: Partial<E
   img.classList.add('portrait-wait');
   void ensureGlb([playerKey(kid, eq.outfit)]).then(() => {
     if (img.dataset.portraitReq !== tok) return;
-    const u = playerPortrait(kid, eq, o);
+    // Tải bị tạm dừng (vd. đã vào thế giới, ảnh này không cần nữa): giữ bóng bé tạm, không tải lại.
+    const u = glbReady([playerKey(kid, eq.outfit)]) ? playerPortrait(kid, eq, o) : '';
     if (u) show(u);
     else img.classList.remove('portrait-wait');
   });

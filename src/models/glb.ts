@@ -196,6 +196,8 @@ const loads = new Map<string, Load>();
 /** Hàng đợi nạp trước ở nền (lần lượt từng tệp, ưu tiên thấp). */
 const queue: string[] = [];
 const failed = new Set<string>();
+/** Số lần đang chờ nhóm tệp cần trước nhất (EnsureOpts.first) tải xong – trong lúc đó không nạp trước ở nền. */
+let holds = 0;
 let enabled = true;
 let loader: GLTFLoader | undefined;
 
@@ -249,6 +251,8 @@ function getLoader(): GLTFLoader {
 }
 
 const settled = (url: string) => gltfs.has(url) || failed.has(url);
+/** Tệp đã tải quá nửa (hoặc đang giải nén): tải tiếp rẻ hơn dừng rồi tải lại từ đầu. */
+const halfDone = (ld: Load) => ld.parsing || (ld.total > 0 && ld.got * 2 > ld.total);
 
 /** Các tệp (mô hình + hoạt cảnh, mọi biến thể) của các khóa có mô hình GLB. */
 function urlsFor(keys: Iterable<string>): string[] {
@@ -313,7 +317,7 @@ function startLoad(url: string, low: boolean): Load {
 
 /** Nạp trước ở nền: chỉ một tệp mỗi lúc và chỉ khi không có tệp nào khác đang tải. */
 function pump(): void {
-  if (loads.size) return;
+  if (loads.size || holds) return;
   while (queue.length) {
     const u = queue.shift()!;
     if (!settled(u) && !loads.has(u)) {
@@ -328,6 +332,11 @@ export interface EnsureOpts {
   timeoutMs?: number;
   /** Tiến độ 0..1. */
   onProgress?: (frac: number) => void;
+  /**
+   * Khóa cần trước nhất (vd. bé – luôn ở giữa màn hình): tải trước; tệp khác chưa tải thì đợi nhóm này xong mới bắt đầu
+   * (mạng chậm, quá hạn chờ thì ít nhất bé đã sẵn sàng). Tệp đang tải dở vẫn tải tiếp, trừ tệp ưu tiên thấp chưa quá nửa.
+   */
+  first?: Iterable<string>;
 }
 
 /**
@@ -349,14 +358,26 @@ export function ensureGlb(keys: Iterable<string>, o: EnsureOpts = {}): Promise<b
       queue.unshift(u);
     }
   }
-  const mine = urls.map((u) => {
+  const take = (u: string): Load => {
     const ld = loads.get(u);
     if (!ld) return startLoad(u, false);
     ld.low = false;
     return ld;
-  });
+  };
+  const head = new Set(o.first ? urlsFor(o.first).filter((u) => need.has(u)) : []);
+  // Chưa có bé: tệp khác chưa tải – hoặc đang tải ở ưu tiên thấp, chưa quá nửa (mạng rất chậm) – đợi bé xong mới tải.
+  const later = head.size ? urls.filter((u) => !head.has(u) && (!loads.has(u) || yields(loads.get(u)!))) : [];
+  for (const u of later) {
+    loads.get(u)?.ctrl.abort();
+    loads.delete(u);
+  }
+  const now = urls.filter((u) => !later.includes(u)).map((u) => ({ u, ld: take(u) }));
+  if (later.length) holds++;
   const frac = () =>
-    mine.reduce((s, ld, i) => s + (settled(urls[i]) ? 1 : ld.total > 0 ? Math.min(0.98, ld.got / ld.total) : 0), 0) / mine.length;
+    urls.reduce((s, u) => {
+      const ld = loads.get(u);
+      return s + (settled(u) ? 1 : ld && ld.total > 0 ? Math.min(0.98, ld.got / ld.total) : 0);
+    }, 0) / urls.length;
   return new Promise<boolean>((resolve) => {
     let over = false;
     const tick = o.onProgress ? setInterval(() => o.onProgress!(frac()), 120) : undefined;
@@ -374,8 +395,29 @@ export function ensureGlb(keys: Iterable<string>, o: EnsureOpts = {}): Promise<b
       o.onProgress?.(1);
       resolve(ok);
     }
-    void Promise.all(mine.map((ld) => ld.promise)).then(() => finish(urls.every((u) => gltfs.has(u))));
+    const headDone = Promise.all(now.filter((x) => head.has(x.u)).map((x) => x.ld.promise));
+    const rest = headDone.then(() => {
+      if (later.length) holds--;
+      const todo = later.filter((u) => !settled(u));
+      // Đã thôi chờ (quá hạn): phần còn lại tải dần ở nền.
+      if (over) for (const u of todo) if (!loads.has(u) && !queue.includes(u)) queue.push(u);
+      const mine = over ? [] : todo.map((u) => take(u).promise);
+      pump();
+      return Promise.all(mine);
+    });
+    void Promise.all([...now.map((x) => x.ld.promise), rest]).then(() => finish(urls.every((u) => gltfs.has(u))));
   });
+}
+
+/** Tệp đang tải ở ưu tiên thấp, chưa quá nửa: tạm dừng được (tải lại sau rẻ hơn để chen làm chậm cả hai). */
+const yields = (ld: Load) => ld.low && !halfDone(ld);
+
+/**
+ * Các tệp đang tải không cần gấp nữa (vd. vào thế giới: ảnh bé ở màn tiêu đề / tạo hồ sơ): tệp chưa tải quá nửa thành
+ * ưu tiên thấp – cảnh sắp vào cần tệp khác thì tạm dừng, sau đó tải lại dần ở nền.
+ */
+export function lowerGlb(): void {
+  for (const ld of loads.values()) if (!halfDone(ld)) ld.low = true;
 }
 
 /** Các tệp GLB của các khóa đã xong (nạp được hoặc lỗi) chưa – xong thì dựng mô hình không cần chờ. */
