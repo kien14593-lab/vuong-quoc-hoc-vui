@@ -16,3 +16,5 @@ Tệp này do `tools/xu-ly-mo-hinh.mjs` tạo tự động.
 | Robot Bíp | npc_robot | Tencent HY 3D (hy3d.tencent.ai) | robot.glb |
 | Ông Rùa | npc_turtle | Tencent HY 3D (hy3d.tencent.ai) | rua.glb |
 | Cún con | pet_dog | Tencent HY 3D (hy3d.tencent.ai) | cun.glb |
+| Bé gái | player_gai | Tencent HY 3D (hy3d.tencent.ai) | be-gai.glb |
+| Bé trai | player_trai | Tencent HY 3D (hy3d.tencent.ai) | be-trai.glb |

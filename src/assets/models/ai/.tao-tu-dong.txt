@@ -12,7 +12,9 @@
     "npc_rabbit.glb",
     "npc_robot.glb",
     "npc_turtle.glb",
-    "pet_dog.glb"
+    "pet_dog.glb",
+    "player_gai.glb",
+    "player_trai.glb"
   ],
   "nguon": {
     "npc_bear": [
@@ -50,6 +52,12 @@
     ],
     "pet_dog": [
       "cun.glb"
+    ],
+    "player_gai": [
+      "be-gai.glb"
+    ],
+    "player_trai": [
+      "be-trai.glb"
     ]
   }
 }
