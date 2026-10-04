@@ -77,6 +77,12 @@ export interface GlbLook {
   colors?: Record<string, string>;
   /** Kiểu vật liệu: 'lambert' (mặc định – hợp phong cách game), 'toon' (tô bóng 3 mức), 'standard' (giữ nguyên PBR). */
   material?: 'lambert' | 'toon' | 'standard';
+  /**
+   * Lệch mức mipmap khi lấy màu từ ảnh (vd. -1 = sắc hơn một mức). Ảnh của mô hình AI xếp các mảnh sát nhau nên ở xa,
+   * mipmap trộn màu mảnh bên cạnh vào mép mảnh → vệt nứt màu (rõ nhất trên tóc). Lệch -1 bỏ gần hết mà không lấp lánh
+   * thêm. Bé (player_*) mặc định -1; 0 = tắt.
+   */
+  mipBias?: number;
   /** Chiều cao mong muốn (m); mặc định = chiều cao của mô hình dựng bằng code cùng khóa (trừ độ nâng `offset`). */
   height?: number;
   /** Tỉ lệ cố định (bỏ qua `height`). */
@@ -472,14 +478,24 @@ function toonGradient(): THREE.DataTexture {
   return toonRamp;
 }
 
-function convertMaterial(src: THREE.Material, mode: GlbLook['material'], color?: string): THREE.Material {
-  const key = `${src.uuid}|${mode ?? 'lambert'}|${color ?? ''}`;
+/** Lấy màu từ ảnh (map) với độ lệch mức mipmap – xem GlbLook.mipBias. */
+export function biasMipmap(m: THREE.Material, bias: number): void {
+  const b = bias.toFixed(2);
+  const chunk = THREE.ShaderChunk.map_fragment.replace('texture2D( map, vMapUv )', `texture2D( map, vMapUv, ${b} )`);
+  m.onBeforeCompile = (sh) => {
+    sh.fragmentShader = sh.fragmentShader.replace('#include <map_fragment>', chunk);
+  };
+  m.customProgramCacheKey = () => `mipBias${b}`;
+}
+
+function convertMaterial(src: THREE.Material, mode: GlbLook['material'], color?: string, mipBias = 0): THREE.Material {
+  const key = `${src.uuid}|${mode ?? 'lambert'}|${color ?? ''}|${mipBias}`;
   const hit = matCache.get(key);
   if (hit) return hit;
   const s = src as THREE.MeshStandardMaterial;
   let m: THREE.Material;
   if (mode === 'standard' || !s.isMeshStandardMaterial) {
-    m = color ? src.clone() : src;
+    m = color || mipBias ? src.clone() : src;
     if (color && (m as THREE.MeshStandardMaterial).color) (m as THREE.MeshStandardMaterial).color.set(color);
   } else {
     const common = {
@@ -503,6 +519,7 @@ function convertMaterial(src: THREE.Material, mode: GlbLook['material'], color?:
     else m = new THREE.MeshLambertMaterial(common);
   }
   m.userData.shared = true;
+  if (mipBias && (m as THREE.MeshLambertMaterial).map) biasMipmap(m, mipBias);
   for (const t of [s.map, s.emissiveMap, s.normalMap]) if (t) t.userData.shared = true;
   matCache.set(key, m);
   return m;
@@ -900,7 +917,7 @@ function prepare(entry: Entry, vi: number, o: Record<string, unknown>): Prepared
       drop.push(mesh);
       return;
     }
-    const conv = (m: THREE.Material) => convertMaterial(m, look.material, look.colors?.[m.name]);
+    const conv = (m: THREE.Material) => convertMaterial(m, look.material, look.colors?.[m.name], look.mipBias);
     mesh.material = Array.isArray(mesh.material) ? mesh.material.map(conv) : conv(mesh.material);
     mesh.geometry.userData.shared = true;
     takeSkin(mesh.geometry);

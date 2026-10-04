@@ -63,7 +63,8 @@ for (const [path, url] of Object.entries(files)) {
 
 for (const [key, src] of mains) {
   AI_MODELS.push(key);
-  // Bé (nhân vật chính) và các bộ đồ: dựng xương tự động để đi, chạy, vẫy tay thật (công cụ đã dò sẵn trong config.json).
-  const kid: Partial<GlbSpec> = key.startsWith('player_') ? { autoRig: true } : {};
+  // Bé (nhân vật chính) và các bộ đồ: dựng xương tự động để đi, chạy, vẫy tay thật (công cụ đã dò sẵn trong config.json);
+  // lệch mipmap -1 để tóc không có vệt nứt màu khi nhìn từ xa (xem GlbLook.mipBias).
+  const kid: Partial<GlbSpec> = key.startsWith('player_') ? { autoRig: true, mipBias: -1 } : {};
   defineGlbModel(key, { src, animSrc: anims.get(key), source: 'ai', credit: 'Tạo bằng AI', ...kid, ...config[key] });
 }

@@ -13,6 +13,7 @@ import { animateRig, rigOf, type AnimState, type Rig } from '../src/models/rig';
  *  key=npc_clown   mô hình (khóa)
  *  mode=weights    tô màu theo trọng số da + lưới nhãn 2D + khớp   (anim=walk... yaw=30 t=1.3 rig=1|0)
  *  mode=strip      dải khung hình   rig=both|1|0  dist=close|game  yaw=30  anims=walk,run,wave,air,happy,ride  frames=8
+ *                  dyaw=0.5 (quay camera thêm mỗi khung)  still=1 (giữ nguyên tư thế)
  *  mode=perf       đo thời gian dò xương, dựng mô hình, mỗi khung hình (n=20)
  * Xong thì window.__done = true (để công cụ chụp ảnh chờ).
  */
@@ -290,6 +291,8 @@ function strip(): void {
   const dist = q.get('dist') ?? 'close';
   const yaw = num('yaw', 30);
   const frames = num('frames', 8);
+  const dyaw = num('dyaw', 0);
+  const still = q.get('still') === '1';
   const anims = (q.get('anims') ?? 'walk,run,wave,air,happy,ride').split(',') as AnimName[];
   const rq = q.get('rig') ?? 'both';
   const variants = rq === 'both' ? [true, false] : [rq !== '0'];
@@ -312,12 +315,13 @@ function strip(): void {
     for (const rg of variants) {
       const p = puppet(rg, a === 'ride');
       scene.add(p.root);
-      const cam = camera(dist, cw / ch, p.rig.height, yaw);
       const st = STATES[a];
       step(p, st, 1.5);
       const t0 = p.t;
       for (let f = 0; f < frames; f++) {
-        step(p, st, t0 + (PERIOD[a] * f) / frames);
+        // dyaw: quay camera thêm mỗi khung (đo lấp lánh ảnh); still=1: giữ nguyên tư thế
+        const cam = camera(dist, cw / ch, p.rig.height, yaw + f * dyaw);
+        step(p, st, still ? t0 : t0 + (PERIOD[a] * f) / frames);
         r.render(scene, cam);
         g.drawImage(r.domElement, LW + f * cw, row * ch);
       }
