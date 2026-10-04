@@ -35,8 +35,11 @@ const ROOM_IDS: RoomId[] = ['mul', 'frac', 'geo'];
 const CHOICE_COLORS = ['#8fd3ff', '#ffd166', '#ff9ec7', '#9be09b', '#c7b3ff'];
 const CASTLE_STYLE = { stone: '#fff2dc', trim: '#e8c5ff', roof: '#b197fc', flag: '#ff7aa8', accent: '#ffd166' };
 const HALL_STYLE = { stone: '#fff2dc', trim: '#e8c5ff', floor: '#fff8ee', carpet: '#d6b5ff' };
-/** Góc xoay tối đa (rad) của Nhà Vua trên ngai khi nói chuyện. */
-const KING_TURN = THREE.MathUtils.degToRad(25);
+/**
+ * Nhà Vua đứng trên bục, ngay trước ngai (mặt bục cao 0.7 m, mép trước ở z −13.45), để bé thấy cả người:
+ * áo choàng, cổ áo, đôi ủng. Đứng đây vua quay hẳn về phía bé được mà không lẹm vào lưng ngai.
+ */
+const KING_SPOT = { x: 0, y: 0.7, z: -13.9 };
 
 /** 🏰 LÂU ĐÀI TRÍ TUỆ – ba phòng thử thách và thử thách cuối của Nhà Vua. */
 export class CastleZone extends Zone {
@@ -236,18 +239,16 @@ export class CastleZone extends Zone {
         },
       });
     }
-    this.king = this.npc(CAST.vua.art, 0, -14.5, {
+    this.king = this.npc(CAST.vua.art, KING_SPOT.x, KING_SPOT.z, {
       name: CAST.vua.name,
       color: CAST.vua.color,
       rot: 0,
       r: 2.8,
       mark: () => (this.roomsDone() && !on('castle.king') ? '!' : on('castle.king') ? '★' : '?'),
-      talk: (npc) => {
-        // Vua ngồi trên ngai: chỉ xoay nhẹ về phía bé (xoay nhiều thì chân và áo choàng lộ ra trước ghế).
-        npc.actor.yawGoal = THREE.MathUtils.clamp(npc.actor.yawGoal, -KING_TURN, KING_TURN);
-        return this.runKing();
-      },
+      talk: () => this.runKing(),
     });
+    // NPC không tự bám độ cao nền: nâng Nhà Vua lên mặt bục.
+    this.king.actor.setPos(KING_SPOT.x, KING_SPOT.z, KING_SPOT.y);
   }
 
   private buildSideContent(): void {
@@ -420,13 +421,13 @@ export class CastleZone extends Zone {
       for (let i = 0; i < 5; i++) {
         const topic = topics[(Math.floor(this.rnd() * topics.length) + i) % topics.length];
         const q = adaptiveQuestion(topic, { levelDelta: 1, theme: { who: 'Nhà Vua', item: 'viên sao', unit: 'viên', emoji: '⭐' } });
-        await this.quiz(q, { src: `castle:king:${i}`, speaker: CAST.vua, title: `Thử thách Nhà Vua ${i + 1}/5`, icon: '👑' }, [0, 2.0, -14.5], 13);
+        await this.quiz(q, { src: `castle:king:${i}`, speaker: CAST.vua, title: `Thử thách Nhà Vua ${i + 1}/5`, icon: '👑' }, [KING_SPOT.x, KING_SPOT.y + 2.0, KING_SPOT.z], 13);
         this.king.actor.celebrate(0.8);
       }
       setFlag('castle.king');
       reward({ xp: 60, coins: 30, stars: 2, badge: 'nha-toan-hoc', items: { hat_crown: 1, decor_trophy: 1 } });
-      this.fx.burst('confetti', [0, 2.5, -13.6], { count: 90 });
-      this.fx.burst('star', [0, 3.4, -13.6], { count: 34 });
+      this.fx.burst('confetti', [KING_SPOT.x, KING_SPOT.y + 2.5, KING_SPOT.z + 0.3], { count: 90 });
+      this.fx.burst('star', [KING_SPOT.x, KING_SPOT.y + 3.4, KING_SPOT.z + 0.3], { count: 34 });
       this.king.actor.celebrate(3);
       sfx('star');
       toast('Bạn nhận vương miện và cúp vàng! Hãy mở túi để đội vương miện, rồi về nhà đặt cúp nhé.', { icon: '👑', tone: 'gold', ms: 5200 });
