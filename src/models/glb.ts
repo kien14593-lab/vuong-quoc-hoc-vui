@@ -3,7 +3,7 @@ import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { box } from '../engine/kit';
-import { autoRig, type AutoRigResult, type V3 } from './autorig';
+import { autoRig, placeRig, RIG_VERSION, rigReport, type AutoRigAnchors, type AutoRigResult, type BakedRig, type V3 } from './autorig';
 import { overrideModel, type Collider, type ModelDef } from './registry';
 import { animateRig, type AnimState, type Rig, type RigKind } from './rig';
 
@@ -101,6 +101,11 @@ export interface GlbLook {
    * (xem autorig.ts). Dò không được thì dùng hoạt cảnh nhún nhảy như thường. Tùy chọn dựng `autoRig` ghi đè.
    */
   autoRig?: boolean;
+  /**
+   * Xương đã dò sẵn bởi công cụ xử lý mô hình (config.json "rig"; trọng số da nằm trong tệp GLB) – khỏi phải dò
+   * lúc chạy. Cũ (phiên bản khác) hoặc không khớp tệp thì dò lại lúc chạy.
+   */
+  rig?: BakedRig;
 }
 
 export interface GlbSpec extends GlbLook {
@@ -123,17 +128,41 @@ interface Prepared {
   baseY: number;
   height: number;
   headName?: string;
-  /** Xương tự dựng (tính khi cần lần đầu; null = không dựng được). */
-  rigged?: Rigged | null;
+  /** Xương tự dựng & điểm neo (tính khi cần lần đầu; null = không dựng được). */
+  auto?: AutoData | null;
 }
 
-/** Dữ liệu xương tự dựng dùng chung cho mọi bản sao của một mô hình. */
-interface Rigged {
-  res: AutoRigResult;
+/** Xương tự dựng & điểm neo dùng chung cho mọi bản sao của một mô hình (hệ gốc mô hình, mét). */
+interface AutoData {
+  joints: AutoRigResult['joints'];
+  anchors: AutoRigAnchors;
+  relax: [number, number];
+  armAngle: [number, number];
+  /** true = đi bằng chân (xương tự dựng); false = nhún nhảy như các nhân vật AI khác, chỉ dùng điểm neo để gắn đồ. */
+  walk: boolean;
   /** Theo thứ tự duyệt cây mẫu: hình học có trọng số da (dùng chung) & ma trận gắn (lưới → hệ gốc mô hình). */
   meshes: { geo: THREE.BufferGeometry; bind: THREE.Matrix4 }[];
   /** Nghịch đảo tư thế gốc của từng xương (thứ tự AUTO_BONES). */
   inverses: THREE.Matrix4[];
+  /** Lấy từ config.json (công cụ đã dò sẵn) thay vì dò lúc chạy. */
+  baked: boolean;
+  /** Thời gian chuẩn bị (ms). */
+  ms: number;
+}
+
+/**
+ * Chỗ gắn đồ (mũ, kính, balo, khăn...) trên mô hình có xương tự dựng – `root.userData.sockets`.
+ * Mỗi chỗ gắn có trục song song với gốc mô hình khi đứng nghỉ; gốc đặt ở khớp: vị trí cục bộ = điểm − khớp.
+ */
+export interface GlbSockets {
+  /** Theo đầu (gốc ở cổ `joints.neck`). */
+  head: THREE.Object3D;
+  /** Theo thân (gốc ở hông `joints.pelvis`). */
+  body: THREE.Object3D;
+  joints: AutoRigResult['joints'];
+  anchors: AutoRigAnchors;
+  /** true = có xương (đi bằng chân); false = nhún nhảy. */
+  walk: boolean;
 }
 
 interface Entry {
@@ -347,6 +376,17 @@ export function ensureGlb(keys: Iterable<string>, o: EnsureOpts = {}): Promise<b
 /** Các tệp GLB của các khóa đã xong (nạp được hoặc lỗi) chưa – xong thì dựng mô hình không cần chờ. */
 export function glbReady(keys?: Iterable<string>): boolean {
   return !enabled || urlsFor(keys ?? entries.keys()).every(settled);
+}
+
+/** Khóa này có mô hình GLB đăng ký không (bật hay tắt GLB đều trả lời theo tệp có sẵn). */
+export function hasGlb(key: string): boolean {
+  return entries.has(key);
+}
+
+/** Mô hình GLB của khóa đã nạp xong, dựng ngay được (không lỗi, đang bật GLB). */
+export function glbLoaded(key: string): boolean {
+  const e = entries.get(key);
+  return !!e && enabled && urlsOf(e.spec).every((u) => gltfs.has(u));
 }
 
 /** Nạp trước ở nền (ưu tiên thấp, lần lượt theo thứ tự) để các khu vực sau mở ngay; bỏ qua khi bật tiết kiệm dữ liệu. */
@@ -811,6 +851,7 @@ function prepare(entry: Entry, vi: number, o: Record<string, unknown>): Prepared
     const conv = (m: THREE.Material) => convertMaterial(m, look.material, look.colors?.[m.name]);
     mesh.material = Array.isArray(mesh.material) ? mesh.material.map(conv) : conv(mesh.material);
     mesh.geometry.userData.shared = true;
+    takeSkin(mesh.geometry);
     mesh.castShadow = true;
     mesh.receiveShadow = false;
     if ((mesh as THREE.SkinnedMesh).isSkinnedMesh) mesh.frustumCulled = false;
@@ -944,37 +985,129 @@ function rigInput(list: { mesh: THREE.Mesh; bind: THREE.Matrix4 }[]): { pos: Flo
   });
 }
 
-function rigData(entry: Entry, prep: Prepared, look: GlbLook, off: number[]): Rigged | null {
-  if (prep.rigged !== undefined) return prep.rigged;
-  const list = tplMeshes(prep, look, off);
-  if (!list) return (prep.rigged = null);
-  const res = autoRig(rigInput(list));
-  if (!res.ok) {
-    console.warn(`[glb] ${entry.key}: không tự dựng được xương (${res.notes.join('; ')}) – dùng hoạt cảnh nhún nhảy`);
-    return (prep.rigged = null);
-  }
-  const meshes = list.map(({ mesh, bind }, i) => {
-    const src = mesh.geometry;
-    const geo = new THREE.BufferGeometry();
-    for (const [name, attr] of Object.entries(src.attributes)) geo.setAttribute(name, attr);
-    geo.setIndex(src.index);
-    for (const g of src.groups) geo.addGroup(g.start, g.count, g.materialIndex);
-    geo.setDrawRange(src.drawRange.start, src.drawRange.count);
-    geo.setAttribute('skinIndex', new THREE.BufferAttribute(res.skin[i].index, 4));
-    geo.setAttribute('skinWeight', new THREE.BufferAttribute(res.skin[i].weight, 4));
-    geo.userData.shared = true;
-    return { geo, bind };
-  });
-  const J = res.joints;
-  const inverses = [J.pelvis, J.neck, J.shoulderL, J.shoulderR, J.hipL, J.hipR].map((p) => new THREE.Matrix4().makeTranslation(-p[0], -p[1], -p[2]));
-  return (prep.rigged = { res, meshes, inverses });
+type SkinAttr = THREE.BufferAttribute | THREE.InterleavedBufferAttribute;
+
+/** Trọng số da công cụ đã tính sẵn (thuộc tính _SKIN_INDEX, _SKIN_WEIGHT trong GLB), theo hình học gốc. */
+const bakedSkin = new WeakMap<THREE.BufferGeometry, [SkinAttr, SkinAttr]>();
+
+/** Cất trọng số da tính sẵn ra khỏi hình học gốc (lưới không xương khỏi phải tải chúng lên GPU). */
+function takeSkin(g: THREE.BufferGeometry): void {
+  const si = g.getAttribute('_skin_index');
+  const sw = g.getAttribute('_skin_weight');
+  if (!si || !sw) return;
+  bakedSkin.set(g, [si, sw]);
+  g.deleteAttribute('_skin_index');
+  g.deleteAttribute('_skin_weight');
 }
 
-function buildRigged(entry: Entry, prep: Prepared, rg: Rigged, inner: THREE.Group, model: THREE.Object3D, off: number[]): THREE.Object3D {
+/** Điểm neo dự phòng khi không tìm được cổ: theo tỉ lệ của bé dựng bằng code (cao 1,8). */
+function boxRig(list: { mesh: THREE.Mesh; bind: THREE.Matrix4 }[]): Pick<AutoRigResult, 'joints' | 'anchors'> {
+  const bb = new THREE.Box3();
+  const v = new THREE.Vector3();
+  for (const { mesh, bind } of list) {
+    const pa = mesh.geometry.getAttribute('position');
+    for (let i = 0; i < pa.count; i++) bb.expandByPoint(v.fromBufferAttribute(pa, i).applyMatrix4(bind));
+  }
+  const h = Math.max(1e-3, bb.max.y - bb.min.y);
+  const x = (bb.min.x + bb.max.x) / 2;
+  const z = (bb.min.z + bb.max.z) / 2;
+  const at = (k: number, dx = 0): V3 => [x + dx * h, bb.min.y + k * h, z];
+  const hr = 0.244 * h;
+  const torso = 0.143 * h;
+  const pelvis = at(0.233);
+  const neck = at(0.511);
+  return {
+    joints: { pelvis, neck, shoulderL: at(0.46, 0.15), shoulderR: at(0.46, -0.15), hipL: at(0.233, 0.07), hipR: at(0.233, -0.07) },
+    anchors: {
+      head: at(0.711),
+      headR: [hr * 1.04, hr * 0.95, hr],
+      headTop: bb.max.y,
+      faceZ: z + hr,
+      neck,
+      chestY: bb.min.y + 0.36 * h,
+      chestFrontZ: z + torso,
+      chestBackZ: z - torso,
+      chestHalfW: torso,
+      shoulderL: at(0.46, 0.15),
+      shoulderR: at(0.46, -0.15),
+      handL: at(0.27, 0.2),
+      handR: at(0.27, -0.2),
+      pelvis,
+    },
+  };
+}
+
+/**
+ * Xương tự dựng & điểm neo của mô hình người dáng chữ A: lấy từ config.json khi công cụ đã dò sẵn (nhanh),
+ * không thì dò lúc chạy. Dùng chung cho mọi bản sao.
+ */
+function autoData(entry: Entry, prep: Prepared, look: GlbLook, off: number[]): AutoData | null {
+  if (prep.auto !== undefined) return prep.auto;
+  const t0 = performance.now();
+  const list = tplMeshes(prep, look, off);
+  if (!list) return (prep.auto = null);
+  const b = look.rig;
+  const pre = list.map(({ mesh }) => bakedSkin.get(mesh.geometry));
+  const usable = !!b && b.v === RIG_VERSION && b.rotY === (look.rotY ?? 0) && !look.node && !look.hide && !look.only && pre.every(Boolean);
+  let placed: Pick<AutoRigResult, 'joints' | 'anchors'>;
+  let relax: [number, number];
+  let armAngle: [number, number];
+  let walk: boolean;
+  let neckOk: boolean;
+  let skin: [SkinAttr, SkinAttr][];
+  if (usable) {
+    placed = placeRig(b, prep.scale, [off[0], prep.baseY + off[1], off[2]]);
+    relax = b.relax;
+    armAngle = b.armAngle;
+    walk = b.ok && b.walk;
+    neckOk = !b.fail.includes('neck');
+    skin = pre as [SkinAttr, SkinAttr][];
+  } else {
+    if (b) console.info(`[glb] ${entry.key}: xương dò sẵn đã cũ hoặc không khớp tệp – dò lại lúc chạy (chạy lại CapNhatMoHinh.bat để nhanh hơn)`);
+    const res = autoRig(rigInput(list));
+    const verdict = rigReport(res);
+    if (!verdict.walk) console.warn(`[glb] ${entry.key}: dùng hoạt cảnh nhún nhảy – ${verdict.lines.join(' ')}`);
+    placed = res;
+    relax = res.relax;
+    armAngle = res.armAngle;
+    walk = verdict.walk;
+    neckOk = !res.fail.includes('neck');
+    skin = res.skin.map((s) => [new THREE.BufferAttribute(s.index, 4), new THREE.BufferAttribute(s.weight, 4)]);
+  }
+  if (!neckOk) placed = boxRig(list);
+  const meshes = walk
+    ? list.map(({ mesh, bind }, i) => {
+        const src = mesh.geometry;
+        const geo = new THREE.BufferGeometry();
+        for (const [name, attr] of Object.entries(src.attributes)) geo.setAttribute(name, attr);
+        geo.setIndex(src.index);
+        for (const g of src.groups) geo.addGroup(g.start, g.count, g.materialIndex);
+        geo.setDrawRange(src.drawRange.start, src.drawRange.count);
+        geo.setAttribute('skinIndex', skin[i][0]);
+        geo.setAttribute('skinWeight', skin[i][1]);
+        geo.userData.shared = true;
+        return { geo, bind };
+      })
+    : [];
+  const J = placed.joints;
+  const inverses = [J.pelvis, J.neck, J.shoulderL, J.shoulderR, J.hipL, J.hipR].map((p) => new THREE.Matrix4().makeTranslation(-p[0], -p[1], -p[2]));
+  return (prep.auto = { joints: J, anchors: placed.anchors, relax, armAngle, walk, meshes, inverses, baked: usable, ms: performance.now() - t0 });
+}
+
+/** Chỗ gắn đồ: nhóm có tên (không bị gộp lưới) – con của `parent`, biến đổi cục bộ `local`. */
+function socket(name: string, parent: THREE.Object3D, local?: THREE.Matrix4): THREE.Object3D {
+  const s = new THREE.Group();
+  s.name = name;
+  if (local) local.decompose(s.position, s.quaternion, s.scale);
+  parent.add(s);
+  return s;
+}
+
+function buildRigged(entry: Entry, prep: Prepared, rg: AutoData, inner: THREE.Group, model: THREE.Object3D, off: number[]): THREE.Object3D {
   const root = new THREE.Group();
   root.name = entry.key;
   root.add(inner);
-  const J = rg.res.joints;
+  const J = rg.joints;
   const bone = (name: string, p: V3, parent: THREE.Object3D, rel: V3 = [0, 0, 0]) => {
     const b = new THREE.Bone();
     b.name = name;
@@ -1010,13 +1143,13 @@ function buildRigged(entry: Entry, prep: Prepared, rg: Rigged, inner: THREE.Grou
     parent.remove(mesh);
   });
   // Hạ tay từ tư thế chữ A xuống gần thân (bàn tay vẫn không chạm hông).
-  armL.rotation.z = -rg.res.relax[0];
-  armR.rotation.z = rg.res.relax[1];
+  armL.rotation.z = -rg.relax[0];
+  armR.rotation.z = rg.relax[1];
 
   const rig: Rig = { root, kind: 'biped', height: prep.height + off[1], body, head, armL, armR, legL, legR, stride: AUTO.stride, cadence: AUTO.cadence };
   const legLen = Math.max(0.05, (J.hipL[1] + J.hipR[1]) / 2 - off[1]);
   const bodyY = body.position.y;
-  const [aL, aR] = rg.res.armAngle;
+  const [aL, aR] = rg.armAngle;
   let lastDriven = -1e9;
   let self = false;
   rig.custom = (_r, s) => {
@@ -1035,6 +1168,7 @@ function buildRigged(entry: Entry, prep: Prepared, rg: Rigged, inner: THREE.Grou
   root.userData.glb = true;
   root.userData.rigged = true;
   root.userData.dynamic = true;
+  root.userData.sockets = { head: socket('sockHead', head), body: socket('sockBody', body), joints: J, anchors: rg.anchors, walk: true } satisfies GlbSockets;
   root.userData.tick = (dt: number, t: number) => {
     if (performance.now() - lastDriven < 250) return;
     self = true;
@@ -1081,10 +1215,8 @@ function buildGlb(entry: Entry, o: Record<string, unknown>): THREE.Object3D {
   inner.position.set(off[0], prep.baseY + off[1], off[2]);
 
   const wantRig = (o.autoRig as boolean | undefined) ?? look.autoRig;
-  if (wantRig && !prep.roles.size) {
-    const rg = rigData(entry, prep, look, off);
-    if (rg) return buildRigged(entry, prep, rg, inner, model, off);
-  }
+  const auto = wantRig && !prep.roles.size ? autoData(entry, prep, look, off) : null;
+  if (auto?.walk) return buildRigged(entry, prep, auto, inner, model, off);
 
   const root = new THREE.Group();
   root.name = entry.key;
@@ -1106,6 +1238,18 @@ function buildGlb(entry: Entry, o: Record<string, unknown>): THREE.Object3D {
   root.userData.glb = true;
   root.userData.dynamic = true;
   root.userData.tick = (dt: number, t: number) => anim.autoTick(dt, t);
+  if (auto) {
+    // Nhún nhảy: chỗ gắn đồ là con của nhóm bên trong (nhún, nghiêng theo mô hình), đứng nghỉ thì ở đúng khớp.
+    const rest = innerMatrix(prep, look, off).invert();
+    const at = (p: V3) => rest.clone().multiply(new THREE.Matrix4().makeTranslation(p[0], p[1], p[2]));
+    root.userData.sockets = {
+      head: socket('sockHead', inner, at(auto.joints.neck)),
+      body: socket('sockBody', inner, at(auto.joints.pelvis)),
+      joints: auto.joints,
+      anchors: auto.anchors,
+      walk: false,
+    } satisfies GlbSockets;
+  }
 
   if (look.decorate) {
     const m4 = new THREE.Matrix4();
