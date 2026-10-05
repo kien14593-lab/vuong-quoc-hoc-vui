@@ -318,7 +318,9 @@ function startLoad(url: string, low: boolean): Load {
     })
     .finally(() => {
       if (loads.get(url) === ld) loads.delete(url);
-      pump();
+      // Đợi người chờ tệp này chạy tiếp trước: họ thường cần ngay tệp kế (vd. sở thú nạp từng con) – bắt đầu tệp nền
+      // bây giờ thì chỉ để bị hủy rồi tải lại.
+      setTimeout(pump, 0);
     });
   loads.set(url, ld);
   return ld;

@@ -146,6 +146,32 @@ describe('tải mô hình AI: bé trước nhất (mạng chậm)', () => {
     expect(started()).toEqual(['x.glb', 'kid.glb', 'npc1.glb', 'x.glb']);
     expect(req('x.glb').priority).toBe('low');
   });
+
+  it('gọi ensureGlb liền nhau (vd. sở thú nạp từng con): tệp nạp trước đang xếp hàng không bị bắt đầu rồi hủy giữa chừng', async () => {
+    const got: string[] = [];
+    const loop = (async () => {
+      for (const k of ['npc1', 'npc2', 'kid']) {
+        await glb.ensureGlb([k]);
+        got.push(k);
+      }
+    })();
+    await tick();
+    glb.prefetchGlb(['x']);
+    await tick();
+    expect(started()).toEqual(['npc1.glb']);
+    await finish('npc1.glb');
+    expect(started()).toEqual(['npc1.glb', 'npc2.glb']);
+    await finish('npc2.glb');
+    await finish('kid.glb');
+    await loop;
+    expect(got).toEqual(['npc1', 'npc2', 'kid']);
+    // Hết người chờ: tệp nền bắt đầu – một lần, ưu tiên thấp, không bị hủy.
+    expect(started()).toEqual(['npc1.glb', 'npc2.glb', 'kid.glb', 'x.glb']);
+    expect(req('x.glb').priority).toBe('low');
+    expect(reqs.some((r) => r.signal.aborted)).toBe(false);
+    await finish('x.glb');
+    expect(glb.glbLoaded('x')).toBe(true);
+  });
 });
 
 describe('lowerGlb: vào thế giới thì ảnh bé ở màn tiêu đề / tạo hồ sơ nhường đường', () => {
