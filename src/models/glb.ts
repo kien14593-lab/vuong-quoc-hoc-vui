@@ -527,8 +527,15 @@ export async function preloadGlb(keys?: Iterable<string>, o: PreloadOpts = {}): 
     all.push(done);
     if (!seq) continue;
     const urls = urlsFor([key]);
-    await Promise.race([done, Promise.all(urls.map((u) => loads.get(u)?.fetched))]);
-    if (urls.length) seq = !urls.every((u) => gltfs.has(u) || loads.get(u)?.fast);
+    const lds = urls.flatMap((u) => loads.get(u) ?? []);
+    // Hết giờ chờ mà tệp chưa xong thì dừng – không chỉ dựa vào `left`: hẹn giờ có thể báo sớm hơn performance.now() chút ít.
+    const late = await Promise.race([
+      done.then((ok) => !ok && !urls.every(settled)),
+      Promise.all(lds.map((ld) => ld.fetched)).then(() => false),
+    ]);
+    if (late) break;
+    // Tệp đã có sẵn (không phải tải) không cho biết mạng nhanh hay chậm.
+    if (lds.length) seq = !lds.every((ld) => ld.fast);
   }
   await Promise.all(all);
   opts.onProgress?.(1);

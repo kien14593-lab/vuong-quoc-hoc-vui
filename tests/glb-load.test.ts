@@ -346,6 +346,12 @@ describe('preloadGlb inOrder: màn hình tiêu đề tải lần lượt từng 
     expect(started()).toEqual(['npc1.glb']);
   });
 
+  it('quá hạn chờ khi hẹn giờ báo sớm hơn đồng hồ (performance.now): vẫn không bắt đầu tệp mới', async () => {
+    vi.spyOn(performance, 'now').mockReturnValue(performance.now());
+    await glb.preloadGlb(['npc1', 'npc2'], { inOrder: true, timeoutMs: 20, quiet: true });
+    expect(started()).toEqual(['npc1.glb']);
+  });
+
   it('không đợi giải nén: tệp trước đang giải nén thì tệp sau đã tải (mở lại trang – bộ nhớ đệm – giải nén song song)', async () => {
     let open!: () => void;
     parse.gate = new Promise<void>((r) => (open = r));
