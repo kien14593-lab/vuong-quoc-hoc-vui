@@ -351,6 +351,8 @@ export interface EnsureOpts {
    * (mạng chậm, quá hạn chờ thì ít nhất bé đã sẵn sàng). Tệp đang tải dở vẫn tải tiếp, trừ tệp ưu tiên thấp chưa quá nửa.
    */
   first?: Iterable<string>;
+  /** Quá hạn là chuyện thường (chờ ngắn có chủ ý – màn hình tiêu đề, chuyển cảnh: phần thiếu thay tại chỗ sau): không ghi cảnh báo. */
+  quiet?: boolean;
 }
 
 /**
@@ -397,7 +399,7 @@ export function ensureGlb(keys: Iterable<string>, o: EnsureOpts = {}): Promise<b
     const tick = o.onProgress ? setInterval(() => o.onProgress!(frac()), 120) : undefined;
     const timer = o.timeoutMs
       ? setTimeout(() => {
-          console.warn('[glb] chờ quá lâu – tạm dùng mô hình dựng bằng code:', urls.filter((u) => !settled(u)).map((u) => u.slice(0, 80)));
+          if (!o.quiet) console.warn('[glb] chờ quá lâu – tạm dùng mô hình dựng bằng code:', urls.filter((u) => !settled(u)).map((u) => u.slice(0, 80)));
           finish(false);
         }, o.timeoutMs)
       : undefined;
@@ -416,7 +418,8 @@ export function ensureGlb(keys: Iterable<string>, o: EnsureOpts = {}): Promise<b
       // Đã thôi chờ (quá hạn): phần còn lại tải dần ở nền.
       if (over) for (const u of todo) if (!loads.has(u) && !queue.includes(u)) queue.push(u);
       const mine = over ? [] : todo.map((u) => take(u).promise);
-      pump();
+      // Như startLoad: người chờ chạy tiếp trước (vd. vào khu vực rồi tải ngay thú cưng) – bắt đầu tệp nền bây giờ thì chỉ để bị hủy.
+      setTimeout(pump, 0);
       return Promise.all(mine);
     });
     void Promise.all([...now.map((x) => x.ld.promise), rest]).then(() => finish(urls.every((u) => gltfs.has(u))));
@@ -428,10 +431,16 @@ const yields = (ld: Load) => ld.low && !halfDone(ld);
 
 /**
  * Các tệp đang tải không cần gấp nữa (vd. vào thế giới: ảnh bé ở màn tiêu đề / tạo hồ sơ): tệp chưa tải quá nửa thành
- * ưu tiên thấp – cảnh sắp vào cần tệp khác thì tạm dừng, sau đó tải lại dần ở nền.
+ * ưu tiên thấp – cảnh sắp vào cần tệp khác thì tạm dừng, sau đó tải lại dần ở nền. `keep`: cảnh sắp vào cũng cần (nhân
+ * vật phải chờ, thú cưng, mô hình tải sau – vd. Chú Gấu, dân làng đang tải ở màn hình tiêu đề): tải tiếp song song, không
+ * bỏ phần đã tải rồi tải lại từ đầu.
  */
-export function lowerGlb(): void {
-  for (const ld of loads.values()) if (!halfDone(ld)) ld.low = true;
+export function lowerGlb(keep: Iterable<string> = []): void {
+  const k = new Set(urlsFor(keep));
+  for (const [u, ld] of loads) {
+    if (k.has(u)) ld.low = false;
+    else if (!halfDone(ld)) ld.low = true;
+  }
 }
 
 /** Các tệp GLB của các khóa đã xong (nạp được hoặc lỗi) chưa – xong thì dựng mô hình không cần chờ. */

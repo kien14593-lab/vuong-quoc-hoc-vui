@@ -9,7 +9,7 @@ import { setupLights, setupSky, type LightMood, type LightRig } from '../engine/
 import { bakeStatic, disposeTree } from '../engine/merge';
 import { bearFollows, markVisited, storyObjective } from '../game/story';
 import { CAST } from '../game/cast';
-import { zoneLateModels, zoneModels } from '../game/needs';
+import { playerModels, zoneLateModels, zoneModels } from '../game/needs';
 import { cancelOwner, tween, wait, type Ease, type Handle } from '../engine/tween';
 import type { Question } from '../math/types';
 import type { MiniInfo, MiniResult } from '../minigames/base';
@@ -30,7 +30,7 @@ import { FollowCam } from './camera';
 import { World, type Body } from './collide';
 import { K, keys } from './input';
 import { Labels, type Label } from './labels';
-import { loadLate } from './late';
+import { loadLate, type LateHost } from './late';
 import { nav } from './nav';
 import { buildLook, disposeLook, Player } from './player';
 import { inArea, Terrain, TERRAIN_COLORS, waterUniforms, type Area } from './terrain';
@@ -397,31 +397,40 @@ export abstract class Zone implements Stage {
   }
 
   /**
-   * Mô hình AI tải sau của khu vực (game/needs.ts ZONE_LATE_MODELS – thú trong chuồng, dân làng): vào khu vực không chờ,
-   * tải lần lượt sau nhân vật của khu vực, thú cưng và bé, xong tệp nào thì thay ngay tại chỗ (lateLoaded).
-   * Đang chơi trò chơi nhỏ / đang rời khu vực thì chưa tải tệp tiếp theo; rời hẳn thì thôi (phần còn lại tải dần ở nền).
+   * Mô hình AI chưa tải xong lúc vào khu vực – khu vực không chờ lâu (game/app.ts ZONE_WAIT_MS): tạm dùng mô hình dựng bằng
+   * code, tải xong tệp nào thì thay ngay tại chỗ (lateLoaded). Bé (onLook) trước nhất, rồi nhân vật của khu vực + Chú Gấu
+   * chưa tải kịp, rồi – sau mọi mô hình phải có, kể cả thú cưng (makePet) – phần tải sau của khu vực (game/needs.ts
+   * ZONE_LATE_MODELS: thú trong chuồng, dân làng). Đang chơi trò chơi nhỏ / đang rời khu vực thì chưa tải tệp tiếp theo;
+   * rời hẳn thì thôi (phần còn lại tải dần ở nền).
    */
   private loadLate(): void {
-    const late = zoneLateModels(this.id);
-    if (!late.length) return;
     const p = hasProfile() ? profile() : null;
-    const must = zoneModels(this.id, p?.equipped.pet, p ? { kid: p.kid, outfit: p.equipped.outfit } : null);
-    void loadLate(late, must, {
+    const me = p ? { kid: p.kid, outfit: p.equipped.outfit } : null;
+    const pet = p?.equipped.pet ?? null;
+    const kid = playerModels(me);
+    const must = zoneModels(this.id, pet, me);
+    const host: LateHost = {
       gone: () => this.disposed,
-      hold: () => this.paused || this.leaving,
+      // Vừa dựng xong, đang chuẩn bị trước lúc mở màn (game/app.ts goZone warmUp – tạm dừng nhưng chưa vào): vẫn tải tiếp,
+      // mạng không nghỉ (khe hở thì tệp nạp nền chen vào rồi bị hủy); thay sau màn che thì không lấp lánh.
+      hold: () => this.leaving || (this.paused && this.entered),
       scene: this.scene,
       camera: this.camera,
       swap: (key) => this.lateLoaded(key),
-    });
+    };
+    const missed = loadLate(must.filter((k) => k !== pet && !kid.includes(k)), kid, host);
+    const late = zoneLateModels(this.id);
+    if (late.length) void missed.then(() => loadLate(late, must, host, kid));
   }
 
-  /** NPC chờ đổi sang mô hình AI vừa tải (lateSwap). */
-  private readonly lateWait = new Set<Npc>();
+  /** Nhân vật chờ đổi sang mô hình AI vừa tải (lateSwap), kèm nhãn tên và độ cao nhãn trên đỉnh đầu. */
+  private readonly lateWait = new Map<Actor, { label: Label; dy: number }>();
   private lateTick = false;
 
-  /** Tệp tải sau `key` vừa xong: NPC dùng mô hình này đổi sang mô hình AI. */
+  /** Tệp tải sau `key` vừa xong: NPC (và Chú Gấu đi cùng) dùng mô hình này đổi sang mô hình AI. */
   protected lateLoaded(key: string): void {
-    for (const n of this.npcs) if (n.actor.modelKey === key) this.lateWait.add(n);
+    for (const n of this.npcs) if (n.actor.modelKey === key) this.lateWait.set(n.actor, { label: n.label, dy: 0.5 });
+    if (this.buddy && this.buddyLabel && this.buddy.modelKey === key) this.lateWait.set(this.buddy, { label: this.buddyLabel, dy: 0.45 });
     this.lateSwap();
     if (this.lateWait.size && !this.lateTick) {
       this.lateTick = true;
@@ -432,16 +441,15 @@ export abstract class Zone implements Stage {
   }
 
   /**
-   * Đổi mô hình cho NPC đang chờ – không đổi giữa lúc đang nói chuyện, đố hay vui mừng (để xong mới đổi); nhãn tên
+   * Đổi mô hình cho nhân vật đang chờ – không đổi giữa lúc đang nói chuyện, đố hay vui mừng (để xong mới đổi); nhãn tên
    * và dấu nhiệm vụ theo chiều cao mới, lấp lánh nhẹ lúc đổi.
    */
   private lateSwap(): void {
-    for (const n of this.lateWait) {
-      const a = n.actor;
+    for (const [a, w] of this.lateWait) {
       if (this.busy || a.busy) continue;
-      this.lateWait.delete(n);
+      this.lateWait.delete(a);
       if (!a.upgradeModel()) continue;
-      n.label.o.y = a.height + 0.5;
+      w.label.o.y = a.height + w.dy;
       if (a.root.visible && !this.paused) this.fx.burst('sparkle', [a.pos.x, a.pos.y + a.height * 0.55, a.pos.z], { count: 10, speed: 1.8, up: 1.6, spread: 0.35 });
     }
   }
@@ -1329,6 +1337,7 @@ export abstract class Zone implements Stage {
     } else if (!want && this.buddy) {
       this.buddyLabel?.remove();
       if (this.buddyInter) this.removeInteract(this.buddyInter);
+      this.lateWait.delete(this.buddy);
       this.buddy.dispose();
       disposeTree(this.buddy.root);
       this.buddy = null;

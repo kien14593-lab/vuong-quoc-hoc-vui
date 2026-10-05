@@ -6,8 +6,11 @@ import { CAST } from './cast';
 
 /**
  * NHÂN VẬT CẦN CHO TỪNG CẢNH – để chỉ tải tệp mô hình AI (GLB) khi cần, trò chơi mở nhanh hơn:
- *  - màn hình tiêu đề: tải lúc khởi động (main.ts) – không chờ mô hình bé (thẻ hồ sơ hiện bóng bé tạm rồi tự thay);
- *  - mỗi khu vực / trò chơi nhỏ: tải trong lúc màn hình chuyển cảnh (game/app.ts), kèm bé của hồ sơ đang chơi;
+ *  - màn hình tiêu đề: tải lúc khởi động, chỉ chờ ngắn (main.ts TITLE_WAIT_MS) – mạng chậm thì mở ngay với mô hình dựng
+ *    bằng code, tải xong thay tại chỗ (world/title.ts); không chờ mô hình bé (thẻ hồ sơ hiện bóng bé tạm rồi tự thay);
+ *  - mỗi khu vực / trò chơi nhỏ: tải trong lúc màn hình chuyển cảnh (game/app.ts), kèm bé của hồ sơ đang chơi. Khu vực chờ
+ *    tối đa ZONE_WAIT_MS (game/app.ts): nhân vật chưa tải kịp tạm dùng mô hình dựng bằng code, tải xong thay tại chỗ
+ *    (world/zone.ts loadLate); trò chơi nhỏ chờ đủ (cảnh không thay mô hình tại chỗ);
  *  - tải sau (ZONE_LATE_MODELS, TITLE_LATE_MODELS – thú chỉ để ngắm trong chuồng, dân làng): KHÔNG chờ – vào cảnh ngay
  *    với mô hình dựng bằng code, tải xong thì thay tại chỗ (world/late.ts) – mạng chậm không phải chờ vì nhân vật phụ;
  *  - phần còn lại: tải dần ở nền sau khi hiện màn hình tiêu đề (trừ các bộ đồ: chỉ tải khi cần).
@@ -17,14 +20,17 @@ import { CAST } from './cast';
  * v0 npc_be_na, v1 npc_anh_ti, v2 npc_chi_mai, v3 npc_be_bin, v4 npc_ba_ba, v5 npc_chu_tu.
  */
 
-/** Màn hình tiêu đề (world/title.ts). */
+/** Màn hình tiêu đề (world/title.ts): chờ ngắn lúc khởi động, chưa kịp thì thay tại chỗ theo thứ tự này. */
 export const TITLE_MODELS: readonly string[] = [CAST.tho.art, CAST.gau.art, CAST.meo.art, 'pet_dog'];
 
 /** Màn hình tiêu đề, tải sau (không chờ): dân làng đi dạo. */
 export const TITLE_LATE_MODELS: readonly string[] = ['npc_be_na', 'npc_chi_mai'];
 
-/** Có ở mọi khu vực: Chú Gấu đi theo người chơi (world/zone.ts). */
+/** Có ở mọi khu vực (trừ BEAR_FREE_ZONES): Chú Gấu đi theo người chơi (world/zone.ts). */
 export const EVERY_ZONE_MODELS: readonly string[] = [CAST.gau.art];
+
+/** Khu vực Chú Gấu không bao giờ đến (story.ts bearFollows; không đứng sẵn ở đó): không chờ tải mô hình Chú Gấu. */
+export const BEAR_FREE_ZONES: readonly ZoneId[] = ['house', 'castle'];
 
 /** Từng khu vực (world/zones/*.ts) – theo thứ tự cốt truyện. */
 export const ZONE_MODELS: Record<ZoneId, readonly string[]> = {
@@ -40,7 +46,7 @@ export const ZONE_MODELS: Record<ZoneId, readonly string[]> = {
 /**
  * Tải sau khi đã vào khu vực (không chờ – mạng chậm vẫn vào nhanh): thú AI trong chuồng và dân làng (nhân vật phụ) –
  * chỉ những người khu vực đó có. Khu vực hiện tạm mô hình dựng bằng code, rồi tự tải lần lượt theo thứ tự này (sau
- * nhân vật của khu vực, thú cưng và bé) và thay ngay tại chỗ (world/late.ts, world/zone.ts lateLoaded).
+ * bé, nhân vật của khu vực và thú cưng) và thay ngay tại chỗ (world/late.ts, world/zone.ts lateLoaded).
  */
 export const ZONE_LATE_MODELS: Partial<Record<ZoneId, readonly string[]>> = {
   village: ['npc_be_na', 'npc_anh_ti', 'npc_chi_mai', 'npc_ba_ba'],
@@ -75,7 +81,8 @@ export function playerModels(p?: PlayerNeed | null): string[] {
 
 /** Mô hình cần trước khi dựng khu vực (kèm thú cưng đang mang theo – mã vật phẩm cũng là khóa mô hình – và bé). */
 export function zoneModels(id: ZoneId, pet?: string | null, player?: PlayerNeed | null): string[] {
-  return [...new Set([...ZONE_MODELS[id], ...EVERY_ZONE_MODELS, ...(pet ? [pet] : []), ...playerModels(player)])];
+  const every = BEAR_FREE_ZONES.includes(id) ? [] : EVERY_ZONE_MODELS;
+  return [...new Set([...ZONE_MODELS[id], ...every, ...(pet ? [pet] : []), ...playerModels(player)])];
 }
 
 /** Mô hình của khu vực tải sau khi đã vào (không chờ). */

@@ -3,7 +3,7 @@ import names from '../src/assets/models/ai-names.json';
 import { DEFAULT_OUTFIT } from '../src/core/outfits';
 import type { ZoneId } from '../src/core/state';
 import { CAST } from '../src/game/cast';
-import { EVERY_ZONE_MODELS, MINI_MODELS, MINI_WITH_PLAYER, TITLE_LATE_MODELS, TITLE_MODELS, ZONE_LATE_MODELS, ZONE_MODELS, miniModels, modelsInStoryOrder, playerModels, zoneLateModels, zoneModels } from '../src/game/needs';
+import { BEAR_FREE_ZONES, EVERY_ZONE_MODELS, MINI_MODELS, MINI_WITH_PLAYER, TITLE_LATE_MODELS, TITLE_MODELS, ZONE_LATE_MODELS, ZONE_MODELS, miniModels, modelsInStoryOrder, playerModels, zoneLateModels, zoneModels } from '../src/game/needs';
 import { VILLAGER_KEYS, villagerKey } from '../src/models/villagers';
 
 /**
@@ -111,6 +111,15 @@ describe('mô hình cần cho từng cảnh (needs.ts)', () => {
 
   it('nhân vật có ở mọi khu vực (world/zone.ts)', () => {
     expect(used(file('world/zone.ts'), 'world/zone.ts')).toEqual(sorted(EVERY_ZONE_MODELS));
+  });
+
+  it('Chú Gấu không vào nhà, lâu đài (game/story.ts bearFollows): hai nơi đó không chờ tải Chú Gấu, nơi khác vẫn chờ', () => {
+    expect(file('game/story.ts')).toMatch(/BEAR_FREE_ZONES\.includes\(zone\)/);
+    expect(sorted([...BEAR_FREE_ZONES])).toEqual(['castle', 'house']);
+    for (const id of ZONE_FILES) {
+      const z = id as ZoneId;
+      expect(zoneModels(z).includes(CAST.gau.art), id).toBe(!BEAR_FREE_ZONES.includes(z));
+    }
   });
 
   it('mỗi khu vực có danh sách, đủ và không thừa', () => {

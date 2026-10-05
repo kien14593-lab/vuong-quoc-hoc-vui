@@ -208,7 +208,7 @@ cửa hàng* – thêm tệp sau cũng được.
 | *Có bộ đồ của Bé trai nhưng chưa có be-trai.glb* | Thêm `be-trai.glb` (bé mặc đồ thường ngày) – thiếu tệp này thì lúc mặc đồ thường ngày trò chơi dùng bé dựng bằng code. Bé gái: `be-gai.glb`. |
 | *không có tệp gốc trong mo-hinh-ai – giữ nguyên mô hình đã lắp* | Bình thường – nhân vật đã lắp được giữ. Muốn gỡ: `--go <tên>` (mục 3). |
 | *tệp không có động tác nào* | Khi tải tệp động tác, chọn kèm Animation. |
-| Mạng rất chậm: nhân vật AI tạm hiện thành nhân vật có sẵn | Bình thường – chờ quá 15 giây thì trò chơi tạm dùng nhân vật có sẵn để bé chơi tiếp; ra rồi vào lại khu vực là có mô hình AI. |
+| Mạng rất chậm: nhân vật AI tạm hiện thành nhân vật có sẵn | Bình thường – màn hình tiêu đề không chờ quá 1 giây, khu vực không chờ quá 7 giây: trò chơi tạm dùng nhân vật có sẵn để bé chơi ngay, tải xong mô hình AI thì tự thay tại chỗ (lấp lánh nhẹ), không cần ra vào lại. Trò chơi nhỏ chờ tối đa 15 giây; quá hạn thì dùng nhân vật có sẵn tới hết lượt chơi đó. |
 | Nhân vật quay lưng | `"xoay": 180` trong `cau-hinh.json`. |
 | Nhân vật quá to/nhỏ | `"chieu-cao": ...` trong `cau-hinh.json`. |
 | *Chưa có Node.js* | Cài Node.js bản LTS từ <https://nodejs.org>, rồi chạy lại. |

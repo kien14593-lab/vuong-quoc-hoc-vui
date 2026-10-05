@@ -6,6 +6,7 @@ import type { Topic } from '../math/types';
 import type { Child } from '../ui/dom';
 import { coinIcon } from '../ui/icons';
 import { rewardBurst } from '../ui/toast';
+import { BEAR_FREE_ZONES } from './needs';
 import { siteText, st } from './subject-text';
 
 /**
@@ -125,11 +126,11 @@ export function bearStage(): BearStage {
   return 'reward';
 }
 
-/** Chú Gấu đi theo người chơi (đang trong hành trình). */
+/** Chú Gấu đi theo người chơi (đang trong hành trình). Không vào nhà, lâu đài (game/needs.ts BEAR_FREE_ZONES). */
 export function bearFollows(zone: ZoneId): boolean {
   const s = bearStage();
   if (s === 'none' || s === 'done' || s === 'reward') return false;
-  return zone !== 'house' && zone !== 'castle';
+  return !BEAR_FREE_ZONES.includes(zone);
 }
 
 /** Các bước hành trình (để hiện danh sách nhiệm vụ). */

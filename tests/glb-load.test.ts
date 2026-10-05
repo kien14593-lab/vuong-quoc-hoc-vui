@@ -205,8 +205,7 @@ describe('lowerGlb: vào thế giới thì ảnh bé ở màn tiêu đề / tạ
     expect(glb.glbLoaded('gai')).toBe(true);
   });
 
-  it('mạng rất chậm: tệp khu vực còn đang tải từ màn tiêu đề (chưa quá nửa) đợi bé xong, tệp đã quá nửa tải tiếp', async () => {
-    // Màn tiêu đề chờ quá hạn: npc1, npc2 vẫn đang tải; bấm vào chơi thì bé (chưa tải) cần trước nhất.
+  it('tệp ưu tiên thấp chưa quá nửa mà cảnh mới cần: đợi bé xong rồi tải lại ở ưu tiên cao; tệp đã quá nửa tải tiếp', async () => {
     void glb.ensureGlb(['npc1', 'npc2']);
     await tick();
     req('npc1.glb').send(20, 100);
@@ -224,5 +223,92 @@ describe('lowerGlb: vào thế giới thì ảnh bé ở màn tiêu đề / tạ
     await finish('npc2.glb');
     await finish('npc1.glb');
     await expect(p).resolves.toBe(true);
+  });
+
+  it('vào khu vực (game/app.ts goZone): tệp khu vực còn đang tải từ màn tiêu đề tải tiếp cùng lúc với bé, không tải lại từ đầu', async () => {
+    // Màn tiêu đề chờ quá hạn: npc1 (mới 20%), npc2 vẫn đang tải; bấm vào chơi ngay – khu vực cần npc1, npc2 và bé.
+    void glb.ensureGlb(['npc1', 'npc2']);
+    await tick();
+    req('npc1.glb').send(20, 100);
+    req('npc2.glb').send(60, 100);
+    await tick();
+    glb.lowerGlb(['npc1', 'npc2', 'kid']);
+    const p = glb.ensureGlb(['npc1', 'npc2', 'kid'], { first: ['kid'] });
+    await tick();
+    expect(req('npc1.glb').signal.aborted).toBe(false);
+    expect(req('npc2.glb').signal.aborted).toBe(false);
+    expect(req('kid.glb').priority).toBe('high');
+    await finish('npc1.glb');
+    await finish('kid.glb');
+    await finish('npc2.glb');
+    await expect(p).resolves.toBe(true);
+    expect(started()).toEqual(['npc1.glb', 'npc2.glb', 'kid.glb']);
+  });
+
+  it('vào khu vực quá hạn mà bé chưa xong (game/app.ts KID_GRACE_MS): chờ riêng bé thêm – dùng tiếp lần tải bé, tệp khu vực vẫn tải tiếp', async () => {
+    void glb.ensureGlb(['npc1']);
+    await tick();
+    req('npc1.glb').send(20, 100);
+    await tick();
+    glb.lowerGlb(['npc1', 'kid']);
+    await expect(glb.ensureGlb(['npc1', 'kid'], { first: ['kid'], timeoutMs: 20, quiet: true })).resolves.toBe(false);
+    const grace = glb.ensureGlb(['kid'], { timeoutMs: 1000, quiet: true });
+    await tick();
+    expect(req('npc1.glb').signal.aborted).toBe(false);
+    await finish('kid.glb');
+    await expect(grace).resolves.toBe(true);
+    expect(started()).toEqual(['npc1.glb', 'kid.glb']);
+    await finish('npc1.glb');
+    expect(glb.glbReady(['npc1', 'kid'])).toBe(true);
+  });
+
+  it('vào khu vực: bé vừa xong thì thú cưng tải ngay (game/app.ts goZone) – tệp nạp nền không chen vào khe hở rồi bị hủy', async () => {
+    glb.prefetchGlb(['x']);
+    await tick();
+    const go = (async () => {
+      await glb.ensureGlb(['kid'], { first: ['kid'], timeoutMs: 20, quiet: true });
+      await glb.ensureGlb(['kid'], { timeoutMs: 1000, quiet: true });
+      void glb.ensureGlb(['npc2']);
+    })();
+    await tick();
+    expect(req('x.glb').signal.aborted).toBe(true);
+    await new Promise((r) => setTimeout(r, 30));
+    await finish('kid.glb');
+    await go;
+    expect(started()).toEqual(['x.glb', 'kid.glb', 'npc2.glb']);
+    await finish('npc2.glb');
+    // Hết người chờ: tệp nền tải lại – một lần, ưu tiên thấp.
+    expect(started()).toEqual(['x.glb', 'kid.glb', 'npc2.glb', 'x.glb']);
+    expect(req('x.glb').priority).toBe('low');
+    expect(req('x.glb').signal.aborted).toBe(false);
+  });
+
+  it('keep: tệp cảnh sắp vào cũng cần (vd. dân làng tải từ màn tiêu đề) tải tiếp, không bỏ phần đã tải', async () => {
+    void glb.ensureGlb(['npc2', 'x']);
+    await tick();
+    req('npc2.glb').send(20, 100);
+    req('x.glb').send(20, 100);
+    await tick();
+    glb.lowerGlb(['npc2']);
+    const p = glb.ensureGlb(['kid', 'npc1'], { first: ['kid'] });
+    await tick();
+    expect(req('npc2.glb').signal.aborted).toBe(false);
+    expect(req('x.glb').signal.aborted).toBe(true);
+    await finish('kid.glb');
+    await finish('npc1.glb');
+    await expect(p).resolves.toBe(true);
+    // Cảnh mới hỏi tệp đang tải dở: dùng tiếp lần tải đó, không tải lại từ đầu.
+    const q = glb.ensureGlb(['npc2']);
+    await finish('npc2.glb');
+    await expect(q).resolves.toBe(true);
+    expect(reqs.filter((r) => r.url === 'npc2.glb')).toHaveLength(1);
+  });
+
+  it('quiet: chờ ngắn có chủ ý (thay tại chỗ sau) – quá hạn không ghi cảnh báo', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await expect(glb.ensureGlb(['npc1'], { timeoutMs: 20, quiet: true })).resolves.toBe(false);
+    expect(warn).not.toHaveBeenCalled();
+    await finish('npc1.glb');
+    expect(glb.glbReady(['npc1'])).toBe(true);
   });
 });

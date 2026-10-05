@@ -27,6 +27,13 @@ function bootProgress(pct: number, text?: string): void {
   if (t && text) t.textContent = text;
 }
 
+/**
+ * Chờ tối đa (ms) mô hình AI của màn hình tiêu đề lúc khởi động – đủ cho máy đã tải lần trước (bộ nhớ đệm, kể cả khi phải
+ * hỏi lại máy chủ) mở ngay với mô hình AI. Mạng chậm, lần đầu: mở với mô hình dựng bằng code, tải xong thay tại chỗ
+ * (world/title.ts).
+ */
+const TITLE_WAIT_MS = 1000;
+
 async function main(): Promise<void> {
   bootProgress(0.1);
   // Điện thoại / máy tính bảng: cách vẽ 3D riêng (engine/core.ts), không làm mờ nền sau bảng (tốn sức vẽ), chặn phóng to trang.
@@ -46,8 +53,8 @@ async function main(): Promise<void> {
   bootProgress(0.3, 'Đang tải phông chữ...');
   await loadFonts();
   bootProgress(0.55, 'Đang chuẩn bị các bạn thú...');
-  // Chỉ chờ mô hình AI của màn hình tiêu đề; mỗi khu vực tự tải mô hình của mình khi chuyển cảnh (game/needs.ts).
-  await preloadGlb(TITLE_MODELS, { timeoutMs: 20000, onProgress: (f) => bootProgress(0.55 + 0.3 * f) });
+  // Chỉ chờ (ngắn) mô hình AI của màn hình tiêu đề; mỗi khu vực tự tải mô hình của mình khi chuyển cảnh (game/needs.ts).
+  await preloadGlb(TITLE_MODELS, { timeoutMs: TITLE_WAIT_MS, quiet: true, onProgress: (f) => bootProgress(0.55 + 0.3 * f) });
   bootProgress(0.85, 'Sắp xong rồi...');
   showTitle();
   startPlayTimer();

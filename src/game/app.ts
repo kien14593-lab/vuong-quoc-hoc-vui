@@ -22,7 +22,7 @@ import { nav } from '../world/nav';
 import { TitleStage } from '../world/title';
 import type { Npc, Spawn, Zone } from '../world/zone';
 import { createZone } from '../world/zones';
-import { miniModels, playerModels, zoneModels, type PlayerNeed } from './needs';
+import { miniModels, playerModels, zoneLateModels, zoneModels, type PlayerNeed } from './needs';
 import { checkBadges, zoneLock, ZONE_META } from './story';
 import { ensureEnglish } from './subject';
 
@@ -67,17 +67,32 @@ async function fade(on: boolean, text = ''): Promise<void> {
 }
 
 /**
+ * Chờ tối đa (ms) mô hình AI của khu vực sắp vào. Quá hạn (mạng chậm) thì vẫn vào: nhân vật chưa tải kịp tạm dùng mô hình
+ * dựng bằng code, tải xong tự thay ngay tại chỗ (world/zone.ts loadLate). Trò chơi nhỏ vẫn chờ đủ 15 giây.
+ */
+const ZONE_WAIT_MS = 7000;
+
+/**
+ * Bé chưa tải kịp lúc hết ZONE_WAIT_MS (mạng chậm; bé tải cùng lúc với tệp khu vực đang tải dở từ màn hình tiêu đề – thường
+ * chỉ thiếu chút nữa): chờ riêng bé thêm tối đa (ms). Bé luôn ở giữa màn hình – đổi mô hình bé ngay lúc vào dễ thấy nhất.
+ */
+const KID_GRACE_MS = 1500;
+
+/**
  * Chờ tải mô hình AI cho cảnh sắp vào (trong lúc màn chuyển cảnh). Chờ lâu mới hiện thanh tiến độ;
  * quá hạn/lỗi thì nhân vật dùng tạm mô hình dựng bằng code (không bao giờ kẹt).
  * `first`: tải trước nhất – bé (luôn ở giữa màn hình): mạng chậm, quá hạn chờ thì ít nhất bé đã sẵn sàng.
+ * `grace`: quá hạn mà bé (trong `keys`) vẫn chưa xong thì chờ riêng bé thêm tối đa (ms).
  */
-async function waitModels(keys: string[], first: string[] = [], ms = 15000): Promise<void> {
+async function waitModels(keys: string[], first: string[] = [], ms = 15000, grace = 0): Promise<void> {
   if (glbReady(keys)) return;
   const load = veilEl().querySelector<HTMLElement>('.fade-veil-load')!;
   const fill = load.querySelector<HTMLElement>('.boot-bar-fill')!;
   fill.style.width = '0%';
   const hint = setTimeout(() => load.classList.add('on'), 800);
-  await ensureGlb(keys, { timeoutMs: ms, first, onProgress: (f) => (fill.style.width = `${Math.round(f * 100)}%`) });
+  await ensureGlb(keys, { timeoutMs: ms, first, quiet: true, onProgress: (f) => (fill.style.width = `${Math.round(f * 100)}%`) });
+  const kid = first.filter((k) => keys.includes(k));
+  if (grace && kid.length && !glbReady(kid)) await ensureGlb(kid, { timeoutMs: grace, quiet: true });
   clearTimeout(hint);
   load.classList.remove('on');
 }
@@ -102,18 +117,30 @@ export function showTitle(): void {
 export async function goZone(id: ZoneId, spawn: Spawn = 'start'): Promise<void> {
   if (moving) return;
   moving = true;
+  // Cảnh đang rời (khu vực – cả lúc đi bằng bản đồ, không chỉ qua cổng – hoặc màn hình tiêu đề) thôi bắt đầu tải tệp
+  // tải sau (world/late.ts), nhường đường cho khu vực sắp vào.
+  const from = zone ?? (engine.stage instanceof TitleStage ? engine.stage : null);
+  if (from) from.leaving = true;
   try {
     const meta = ZONE_META[id];
-    // Tải mô hình AI của khu vực (và bé – trước nhất) song song với màn mờ dần. (Dựng lỗi thì về làng: mô hình AI của làng đã nạp từ màn tiêu đề.)
-    // Tệp đang tải không cần gấp nữa (ảnh bé ở màn tiêu đề / tạo hồ sơ, ảnh thẻ cửa hàng...) nhường đường cho khu vực sắp vào.
-    // Thú cưng không chờ: tải sau người trong khu vực rồi tự thay ngay tại chỗ (world/zone.ts makePet) – mạng chậm vẫn vào kịp.
-    lowerGlb();
     const me = playerNeed();
-    const models = waitModels(zoneModels(id, null, me), playerModels(me));
+    // Tải mô hình AI của khu vực (và bé – trước nhất) song song với màn mờ dần; chờ tối đa ZONE_WAIT_MS, phần chưa kịp
+    // thay tại chỗ sau khi vào. (Dựng lỗi thì về làng: mô hình AI của làng đã nạp từ màn tiêu đề.)
+    // Tệp đang tải không cần gấp nữa (ảnh bé ở màn tiêu đề / tạo hồ sơ, ảnh thẻ cửa hàng...) nhường đường cho khu vực sắp vào –
+    // trừ tệp khu vực ấy cũng cần (nhân vật phải chờ, thú cưng, mô hình tải sau – vd. Chú Gấu, dân làng đang tải ở màn hình
+    // tiêu đề): tải tiếp, không bỏ phần đã tải rồi tải lại từ đầu.
+    // Thú cưng không chờ: tải sau người trong khu vực rồi tự thay ngay tại chỗ (world/zone.ts makePet) – mạng chậm vẫn vào kịp.
+    const pet = hasProfile() ? profile().equipped.pet : null;
+    const need = zoneModels(id, null, me);
+    lowerGlb([...need, ...zoneLateModels(id), ...(pet ? [pet] : [])]);
+    const models = waitModels(need, playerModels(me), ZONE_WAIT_MS, KID_GRACE_MS);
     // Bộ câu hỏi Tiếng Anh (tải một lần, khi hồ sơ học Tiếng Anh / Cả hai) – biển báo, lời thoại dựng theo môn.
     const lessons = ensureEnglish();
     await fade(true, `${meta.icon} ${meta.name}`);
     await models;
+    // Thú cưng tải ngay sau phần phải chờ, không đợi dựng xong khu vực (makePet): mạng không nghỉ – khe hở thì tệp nạp nền
+    // chen vào rồi bị hủy.
+    if (pet && !glbReady([pet])) void ensureGlb([pet]);
     await lessons;
     closeAllModals();
     hud.setAction(null);
@@ -159,6 +186,8 @@ export async function goZone(id: ZoneId, spawn: Spawn = 'start'): Promise<void> 
         return z.paused || p.moving || p.vel.lengthSq() > 0.01 || z.cam.busy ? 'wait' : 'go';
       });
   } finally {
+    // Không đổi được cảnh (lỗi giữa chừng): cảnh cũ vẫn đang chạy, tải tiếp như thường.
+    if (from && engine.stage === from) from.leaving = false;
     moving = false;
   }
 }

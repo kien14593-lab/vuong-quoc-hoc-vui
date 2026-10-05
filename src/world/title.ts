@@ -20,6 +20,8 @@ export class TitleStage implements Stage {
   private actors: Actor[] = [];
   private ang = 0.35;
   private disposed = false;
+  /** Đang vào thế giới (game/app.ts goZone): thôi bắt đầu tải tệp tải sau, nhường đường cho khu vực sắp vào. */
+  leaving = false;
 
   constructor() {
     setupSky(this.scene, '#9fd8f7', '#fdeef4', 44, 120);
@@ -107,9 +109,11 @@ export class TitleStage implements Stage {
       this.actors.push(a);
     }
     this.actors[0].waving = true;
-    // Dân làng không chờ lúc khởi động (game/needs.ts TITLE_LATE_MODELS): mô hình AI tải sau rồi thay tại chỗ.
-    void loadLate(TITLE_LATE_MODELS, TITLE_MODELS, {
+    // Không chờ mô hình AI lúc khởi động (main.ts TITLE_WAIT_MS): nhân vật chưa tải kịp tạm dùng mô hình dựng bằng code,
+    // tải xong thì thay tại chỗ – các bạn thú trước, dân làng (game/needs.ts TITLE_LATE_MODELS) sau.
+    void loadLate([...TITLE_MODELS, ...TITLE_LATE_MODELS], [], {
       gone: () => this.disposed,
+      hold: () => this.leaving,
       scene: this.scene,
       camera: this.camera,
       swap: (k) => {
