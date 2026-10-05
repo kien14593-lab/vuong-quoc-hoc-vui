@@ -27,6 +27,14 @@ export interface Body {
 const CELL = 4;
 const key = (ix: number, iz: number) => (ix + 2048) * 8192 + (iz + 2048);
 
+const circleBody = (x: number, z: number, r: number, top = Infinity, tag?: string): Body => ({ kind: 'circle', x, z, r, hw: r, hd: r, c: 1, s: 0, top, on: true, tag });
+
+function boxBody(x: number, z: number, w: number, d: number, rotY = 0, top = Infinity, tag?: string): Body {
+  const hw = w / 2;
+  const hd = d / 2;
+  return { kind: 'box', x, z, r: Math.hypot(hw, hd), hw, hd, c: Math.cos(rotY), s: Math.sin(rotY), top, on: true, tag };
+}
+
 export interface Bounds {
   minX: number;
   minZ: number;
@@ -97,17 +105,20 @@ export class World {
   }
 
   circle(x: number, z: number, r: number, top = Infinity, tag?: string): Body {
-    return this.add({ kind: 'circle', x, z, r, hw: r, hd: r, c: 1, s: 0, top, on: true, tag });
+    return this.add(circleBody(x, z, r, top, tag));
   }
 
   box(x: number, z: number, w: number, d: number, rotY = 0, top = Infinity, tag?: string): Body {
-    const hw = w / 2;
-    const hd = d / 2;
-    return this.add({ kind: 'box', x, z, r: Math.hypot(hw, hd), hw, hd, c: Math.cos(rotY), s: Math.sin(rotY), top, on: true, tag });
+    return this.add(boxBody(x, z, w, d, rotY, top, tag));
   }
 
   /** Đăng ký các vật cản khai báo trong mô hình (theo vị trí/góc/tỉ lệ đặt). */
   addColliders(cols: Collider[] | undefined, x: number, z: number, rotY = 0, scale = 1, tag?: string): Body[] {
+    return World.shapes(cols, x, z, rotY, scale, tag).map((b) => this.add(b));
+  }
+
+  /** Tính các vật cản khai báo trong mô hình nhưng KHÔNG thêm vào thế giới (vd. chân luống hoa để NPC đi vòng). */
+  static shapes(cols: Collider[] | undefined, x: number, z: number, rotY = 0, scale = 1, tag?: string): Body[] {
     if (!cols) return [];
     const out: Body[] = [];
     const c = Math.cos(rotY);
@@ -119,8 +130,8 @@ export class World {
       const wx = x + ax * c + az * s;
       const wz = z - ax * s + az * c;
       const top = col.top !== undefined ? col.top * scale : Infinity;
-      if (col.kind === 'circle') out.push(this.circle(wx, wz, col.r * scale, top, tag));
-      else out.push(this.box(wx, wz, col.w * scale, col.d * scale, rotY + ((col.rot ?? 0) * Math.PI) / 180, top, tag));
+      if (col.kind === 'circle') out.push(circleBody(wx, wz, col.r * scale, top, tag));
+      else out.push(boxBody(wx, wz, col.w * scale, col.d * scale, rotY + ((col.rot ?? 0) * Math.PI) / 180, top, tag));
     }
     return out;
   }

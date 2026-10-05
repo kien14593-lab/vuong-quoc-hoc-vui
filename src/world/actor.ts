@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { dampAngle } from '../engine/tween';
 import { buildModel, collectTicks } from '../models/registry';
 import { animateRig, rigOf, type AnimState, type Rig } from '../models/rig';
-import { yawTo, type World } from './collide';
+import { yawTo, type Body, type World } from './collide';
+import { pickWanderTarget, segmentClear } from './wander';
 
 /**
  * Nhân vật/thú di chuyển được trong thế giới (NPC, thú cưng, người chơi).
@@ -29,9 +30,13 @@ export interface Wander {
   /** Thời điểm đi tiếp. */
   next: number;
   pause: [number, number];
+  /** Vật trang trí không chắn bé (luống hoa, bụi cây thấp...): NPC chọn điểm đến không đi xuyên qua. */
+  avoid?: readonly Body[];
 }
 
 const tmpV = new THREE.Vector3();
+/** Bé rời khỏi vùng gần quá khoảng này (giây) thì thôi đứng chờ, bắt đầu đếm giờ đi tiếp. */
+const HEED_GAP = 0.25;
 
 export class Actor {
   readonly root = new THREE.Group();
@@ -60,6 +65,11 @@ export class Actor {
   private stuckT = 0;
   private lastD = Infinity;
   private t = 0;
+  /** Lần cuối bé ở gần (xem `attend`), vị trí bé lúc đó, và số giây chờ trước khi đi tiếp. */
+  private heedT = -Infinity;
+  private heedX = 0;
+  private heedZ = 0;
+  private resume = 2.5;
   /** Tỉ lệ riêng của nhân vật này (opts.scale), áp lại khi đổi mô hình. */
   private readonly scaleK: number;
 
@@ -138,6 +148,17 @@ export class Actor {
     this.happyUntil = Math.max(this.happyUntil, this.t + sec);
   }
 
+  /**
+   * Bé đang ở gần (khu vực gọi mỗi khung hình): NPC đi lang thang đứng lại, quay dần về phía bé
+   * và không bỏ đi; bé đi xa thì 2–3 giây sau mới đi tiếp.
+   */
+  attend(x: number, z: number): void {
+    if (this.t - this.heedT > HEED_GAP) this.resume = 2 + Math.random();
+    this.heedT = this.t;
+    this.heedX = x;
+    this.heedZ = z;
+  }
+
   get moving(): boolean {
     return !!this.path;
   }
@@ -177,29 +198,31 @@ export class Actor {
   update(dt: number, t: number, world?: World | null): void {
     this.t = t;
     let v = 0;
-    if (this.path) v = this.followPath(dt);
-    else if (this.wander && t >= this.wander.next && !this.talking) {
-      const w = this.wander;
+    const w = this.wander;
+    const heed = !!w && !this.talking && t - this.heedT < HEED_GAP;
+    if (heed) {
+      if (this.path) this.stop(false);
+      this.yawGoal = yawTo(this.root.position.x, this.root.position.z, this.heedX, this.heedZ);
+      w.next = this.heedT + this.resume;
+    } else if (this.path) v = this.followPath(dt);
+    else if (w && t >= w.next && !this.talking) {
       const p = this.root.position;
-      let tx = w.x;
-      let tz = w.z;
-      for (let i = 0; i < 6; i++) {
-        const a = Math.random() * Math.PI * 2;
-        const r = Math.sqrt(Math.random()) * w.r;
-        const cx = w.x + Math.cos(a) * r;
-        const cz = w.z + Math.sin(a) * r;
-        if (!world || world.lineWalkable(p.x, p.z, cx, cz)) {
-          tx = cx;
-          tz = cz;
-          break;
-        }
+      const avoid = w.avoid?.length ? w.avoid : null;
+      const clear = (x: number, z: number) => !avoid || segmentClear(p.x, p.z, x, z, avoid, this.radius);
+      const ok = (x: number, z: number) => (!world || world.lineWalkable(p.x, p.z, x, z)) && clear(x, z);
+      // Không điểm nào hợp lệ: như cũ thì về tâm vùng – trừ khi đường về tâm xuyên vật trang trí.
+      const tgt = pickWanderTarget(w, ok) ?? (clear(w.x, w.z) ? { x: w.x, z: w.z } : null);
+      const rest = () => w.pause[0] + Math.random() * (w.pause[1] - w.pause[0]);
+      if (!tgt) w.next = t + rest();
+      else {
+        w.next = Infinity;
+        void this.walkTo(tgt.x, tgt.z).then(() => {
+          // Bị ngắt giữa chừng (nói chuyện, đứng chờ bé) thì lịch đã được đặt lại – không ghi đè.
+          if (this.wander === w && w.next === Infinity) w.next = this.t + rest();
+        });
       }
-      w.next = Infinity;
-      void this.walkTo(tx, tz).then(() => {
-        if (this.wander) this.wander.next = this.t + w.pause[0] + Math.random() * (w.pause[1] - w.pause[0]);
-      });
     }
-    this.yaw = dampAngle(this.yaw, this.yawGoal, 10, dt);
+    this.yaw = dampAngle(this.yaw, this.yawGoal, heed ? 5 : 10, dt);
     this.root.rotation.y = this.yaw;
     this.animateModel(dt, t, v);
   }

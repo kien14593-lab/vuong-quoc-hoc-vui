@@ -264,6 +264,8 @@ export abstract class Zone implements Stage {
   readonly actors: Actor[] = [];
   readonly npcs: Npc[] = [];
   readonly inters: Interactable[] = [];
+  /** Chân các vật trang trí không chắn bé (đặt với collide: false): NPC đi lang thang tránh đi xuyên qua. */
+  readonly decor: Body[] = [];
   /** Đang chạy một tương tác (hội thoại, câu hỏi...). */
   busy = false;
   /** Tạm dừng (đang chơi mini-game). */
@@ -426,6 +428,11 @@ export abstract class Zone implements Stage {
     if (s !== 1) obj.scale.multiplyScalar(s);
     const cols = obj.userData.colliders as Collider[] | undefined;
     if (o.collide !== false) obj.userData.bodies = this.world.addColliders(cols, x, z, obj.rotation.y, s, o.tag);
+    else if (cols?.length && !this.built && Math.abs(o.y ?? 0) < 0.3) {
+      const d = World.shapes(cols, x, z, obj.rotation.y, s, key);
+      obj.userData.decor = d;
+      this.decor.push(...d);
+    }
     const rr = o.reserve === false ? 0 : (o.reserve ?? footprint(cols, s));
     if (rr > 0) this.terrain.reserve(x, z, rr);
     if (o.name) obj.name = o.name;
@@ -445,6 +452,10 @@ export abstract class Zone implements Stage {
   /** Gỡ hẳn một mô hình động. */
   removeObj(obj: THREE.Object3D): void {
     for (const b of (obj.userData.bodies as Body[] | undefined) ?? []) this.world.remove(b);
+    for (const b of (obj.userData.decor as Body[] | undefined) ?? []) {
+      const i = this.decor.indexOf(b);
+      if (i >= 0) this.decor.splice(i, 1);
+    }
     obj.removeFromParent();
     disposeTree(obj);
   }
@@ -532,7 +543,7 @@ export abstract class Zone implements Stage {
   npc(key: string, x: number, z: number, o: NpcOpts): Npc {
     const actor = new Actor(key, { opts: o.opts, x, z, rot: o.rot ?? 0, scale: o.scale, radius: o.radius ?? modelRadius(key, o.opts) });
     actor.fixed = !o.wander;
-    if (o.wander) actor.wander = { x, z, r: o.wander, next: engine.t + 2 + this.rnd() * 4, pause: [2.5, 6] };
+    if (o.wander) actor.wander = { x, z, r: o.wander, next: engine.t + 2 + this.rnd() * 4, pause: [2.5, 6], avoid: this.decor };
     this.scene.add(actor.root);
     this.actors.push(actor);
     this.terrain.reserve(x, z, (o.wander ?? 0) + 1.2);
@@ -964,6 +975,8 @@ export abstract class Zone implements Stage {
       }
       const ip = this.interPos(it);
       const d = Math.hypot(p.x - ip.x, p.z - ip.z);
+      // NPC đi lang thang đứng chờ khi bé tới gần (bán kính nói chuyện + 1 m).
+      if (it.follow?.wander && d <= it.r + 1) it.follow.attend(p.x, p.z);
       const inside = d <= it.r;
       if (it.auto) {
         if (!inside) it.inside = false;
