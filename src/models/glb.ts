@@ -5,6 +5,7 @@ import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js
 import { box } from '../engine/kit';
 import { SHADOW_LAYER } from '../engine/layers';
 import { autoRig, placeRig, RIG_VERSION, rigReport, type AutoRigAnchors, type AutoRigResult, type BakedRig, type V3 } from './autorig';
+import { useImageWorker } from './glb-image';
 import { overrideModel, type Collider, type ModelDef } from './registry';
 import { animateRig, type AnimState, type Rig, type RigKind } from './rig';
 
@@ -253,6 +254,7 @@ function getLoader(): GLTFLoader {
   if (!loader) {
     loader = new GLTFLoader();
     loader.setMeshoptDecoder(MeshoptDecoder);
+    useImageWorker(loader);
   }
   return loader;
 }
