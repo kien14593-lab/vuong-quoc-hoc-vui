@@ -50,6 +50,7 @@ class FishingGame extends MiniGame {
     this.scene.add(this.bobber);
     this.bucket = this.model('crate', undefined, [-2.4, 0.06, 1.55], 0.2, 0.45);
     this.bucket.name = 'fish_bucket';
+    this.prime(answerPlate('0'), this.model('critter_fish', { color: '#ffa94d' }), ball(1.05, '#ffffff', { ...ss, opacity: 0.001, cast: false }));
     for (let i = 0; i < 12; i++) {
       const a = (i / 12) * Math.PI * 2;
       const r = 3.4 + (i % 3) * 0.22;

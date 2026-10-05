@@ -2,7 +2,7 @@ import { sfx } from '../core/audio';
 import { plainText, speak, stopSpeech } from '../core/speech';
 import { modelDef } from '../models/registry';
 import { h, wait } from './dom';
-import { modelPortrait } from './portrait';
+import { modelPortrait, preparePortraits, type PortraitOpts } from './portrait';
 import { layer, popBlock, pushBlock } from './root';
 
 /** Người nói trong hộp hội thoại. */
@@ -17,11 +17,30 @@ export interface Speaker {
   voice?: string;
 }
 
+/** Người nói có chân dung vẽ từ mô hình 3D (không phải ảnh dựng sẵn). */
+function modelArt(sp: Speaker | null | undefined): sp is Speaker & { art: string } {
+  return !!sp?.art && !sp.art.startsWith('data:') && !sp.art.startsWith('blob:');
+}
+
+/** Tùy chọn vẽ chân dung người nói – dùng chung cho vẽ và vẽ sẵn (cùng tùy chọn, cùng thứ tự → cùng ảnh trong bộ nhớ đệm). */
+function artOpts(sp: Speaker & { art: string }, size: number): PortraitOpts {
+  return { framing: modelDef(sp.art, sp.artOpts)?.portrait ?? 'head', size, yaw: 18, opts: sp.artOpts };
+}
+
 /** Ảnh chân dung (data URL) của người nói, '' nếu không có. */
 export function speakerArt(sp: Speaker | null | undefined, size = 256): string {
   if (!sp?.art) return '';
-  if (sp.art.startsWith('data:') || sp.art.startsWith('blob:')) return sp.art;
-  return modelPortrait(sp.art, { framing: modelDef(sp.art, sp.artOpts)?.portrait ?? 'head', size, yaw: 18, opts: sp.artOpts });
+  if (!modelArt(sp)) return sp.art;
+  return modelPortrait(sp.art, artOpts(sp, size));
+}
+
+/**
+ * Chuẩn bị vẽ sẵn chân dung những người sắp nói chuyện (cỡ hộp thoại và cỡ thẻ câu hỏi, người đứng đầu danh sách trước):
+ * gọi lúc màn chuyển cảnh còn che, mở màn rồi gọi `drawPrepared` (ui/portrait.ts) để vẽ dần lúc rảnh – hộp thoại mở ra
+ * là có ảnh ngay, không khựng.
+ */
+export function prepareSpeakers(list: Speaker[]): number {
+  return preparePortraits(list.filter(modelArt).map((sp) => [sp.art, [artOpts(sp, 256), artOpts(sp, 160)]]));
 }
 
 let queue: Promise<unknown> = Promise.resolve();

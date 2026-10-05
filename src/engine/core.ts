@@ -64,6 +64,8 @@ class Engine {
   touch = false;
   /** Mất ngữ cảnh WebGL (máy thiếu bộ nhớ): tạm dừng vẽ và cập nhật. */
   lost = false;
+  /** Lý do đang tạm dừng (xem hold()). */
+  private holds = new Set<string>();
   private last = 0;
   private pre = new Set<Hook>();
   private post = new Set<Hook>();
@@ -192,7 +194,7 @@ class Engine {
   private frame(now: number): void {
     const raw = this.last ? (now - this.last) / 1000 : 1 / 60;
     this.last = now;
-    if (document.hidden || this.lost) return;
+    if (document.hidden || this.lost || this.holds.size) return;
     const dt = Math.min(0.05, raw);
     this.t += dt;
     for (const fn of [...this.pre]) fn(dt, this.t);
@@ -248,6 +250,21 @@ class Engine {
   setLoading(on: boolean): void {
     this.drs.loading = on;
     if (!on) this.skipWindow();
+  }
+
+  /**
+   * Tạm dừng thời gian trò chơi và việc vẽ khi có lý do (vd. 'rotate': lời nhắc xoay ngang điện thoại đang phủ kín màn hình).
+   * Trò chơi nhỏ, tween, camera… đều chạy theo khung hình nên đứng yên đúng chỗ; bỏ hết lý do là chạy tiếp, không nhảy cóc.
+   */
+  hold(reason: string, on: boolean): void {
+    const was = this.holds.size > 0;
+    if (on) this.holds.add(reason);
+    else this.holds.delete(reason);
+    if (was && !this.holds.size) this.skipWindow();
+  }
+
+  get held(): boolean {
+    return this.holds.size > 0;
   }
 
   stats(): EngineStats {

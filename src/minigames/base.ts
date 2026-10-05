@@ -258,6 +258,22 @@ export abstract class MiniGame implements Stage {
     disposeTree(obj);
   }
 
+  /**
+   * Mẫu ẩn của đồ vật chỉ xuất hiện khi đang chơi (vd. bảng đáp án hai mặt của mỗi vòng): gọi trong build() để begin()
+   * biên dịch trước shader của nó lúc màn hướng dẫn hiện – vòng đầu không khựng. Mẫu ở lại (ẩn, không hoạt cảnh)
+   * đến hết trò: hủy sớm thì three bỏ luôn shader vừa biên dịch.
+   */
+  protected prime(...objs: THREE.Object3D[]): void {
+    for (const obj of objs) {
+      obj.traverse((o) => {
+        if (typeof o.userData.tick === 'function') this.ticks.delete(o.userData.tick);
+        this.actors.delete(o);
+      });
+      obj.visible = false;
+      if (!obj.parent) this.scene.add(obj);
+    }
+  }
+
   /** Thêm hàm chạy mỗi khung hình (kể cả khi tạm dừng). Trả về hàm hủy. */
   onTick(fn: Tick): () => void {
     this.ticks.add(fn);

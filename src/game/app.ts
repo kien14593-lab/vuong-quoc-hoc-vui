@@ -6,9 +6,11 @@ import { engine, warmUp } from '../engine/core';
 import { miniDef, miniTitle, runMini, type MiniResult } from '../minigames';
 import { ensureGlb, glbReady, lowerGlb, prefetchGlb } from '../models';
 import { h, nextFrame, wait } from '../ui/dom';
+import { prepareSpeakers } from '../ui/dialog';
 import { hud } from '../ui/hud';
 import { coinIcon } from '../ui/icons';
 import { closeAllModals } from '../ui/modal';
+import { drawPrepared, fitPrepared } from '../ui/portrait';
 import { clearBlocks, inputBlocked, layer } from '../ui/root';
 import { openBag } from '../ui/screens/bag';
 import { openMiniHub } from '../ui/screens/minihub';
@@ -18,7 +20,7 @@ import { openWorldMap } from '../ui/screens/worldmap';
 import { toast } from '../ui/toast';
 import { nav } from '../world/nav';
 import { TitleStage } from '../world/title';
-import type { Spawn, Zone } from '../world/zone';
+import type { Npc, Spawn, Zone } from '../world/zone';
 import { createZone } from '../world/zones';
 import { miniModels, playerModels, zoneModels, type PlayerNeed } from './needs';
 import { checkBadges, zoneLock, ZONE_META } from './story';
@@ -132,10 +134,30 @@ export async function goZone(id: ZoneId, spawn: Spawn = 'start'): Promise<void> 
     // Sau màn che (khu vực đứng yên tới lúc mở màn): biên dịch trước shader + đưa ảnh lên GPU cho cả khu vực,
     // kể cả phần chưa nhìn thấy – bé bắt đầu đi, quay camera không bị khựng.
     z.pause();
-    await warmUp(z.scene);
-    if (zone === z) z.enter();
+    const warm = warmUp(z.scene);
+    // Chân dung người trong khu vực (gần bé trước): shader biên dịch cùng lúc với khu vực (không chờ thêm),
+    // mở màn rồi vẽ dần lúc bé đứng yên, không xoay / phóng camera – hộp thoại đầu tiên hiện ngay, không khựng.
+    const near = (n: Npc) => n.actor.pos.distanceToSquared(z.player.pos);
+    prepareSpeakers(
+      z.npcs
+        .filter((n) => !n.opts.visible || n.opts.visible())
+        .sort((a, b) => near(a) - near(b))
+        .map((n) => n.speaker),
+    );
+    await warm;
+    if (zone === z) {
+      z.enter();
+      // Chân dung bé trên HUD vừa vẽ (khác cỡ) → đổi lại cỡ khung vẽ cho ảnh vẽ sẵn đầu tiên lúc còn che màn.
+      fitPrepared();
+    }
     await nextFrame();
     await fade(false);
+    if (zone === z)
+      drawPrepared(() => {
+        if (zone !== z || z.leaving) return 'stop';
+        const p = z.player;
+        return z.paused || p.moving || p.vel.lengthSq() > 0.01 || z.cam.busy ? 'wait' : 'go';
+      });
   } finally {
     moving = false;
   }

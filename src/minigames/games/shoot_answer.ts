@@ -44,6 +44,7 @@ class ShootAnswerGame extends MiniGame {
     this.ball.add(ball(0.13, '#74c0fc', { seg: 14 }), torus(0.13, 0.01, '#ffffff', { r: [90, 0, 0], ts: 18, seg: 4 }));
     this.ball.visible = false;
     this.scene.add(this.ball);
+    this.prime(answerPlate('0', '#ff8fab'));
     this.onPointer('tap', (e) => void this.tapTarget(e));
   }
 

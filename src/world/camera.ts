@@ -97,6 +97,19 @@ export class FollowCam {
     this.shakeT = Math.max(this.shakeT, dur);
   }
 
+  /** Đang kéo / chụm, hoặc góc nhìn còn đang trượt tới chỗ mới (lúc này đừng làm việc nặng). */
+  get busy(): boolean {
+    const dy = this.yawGoal - this.yaw;
+    return (
+      this.ptrs.size > 0 ||
+      Math.abs(Math.atan2(Math.sin(dy), Math.cos(dy))) > 0.01 ||
+      Math.abs(this.pitchGoal - this.pitch) > 0.01 ||
+      Math.abs(this.distGoal - this.dist) > 0.05 ||
+      Math.abs(this.shiftGoal - this.shift) > 0.002 ||
+      (!!this.focus && Math.abs(this.focus.goal - this.focus.k) > 0.01)
+    );
+  }
+
   /** Hướng camera nhìn tới (đã chiếu xuống mặt đất), dùng để quy đổi phím di chuyển. */
   forward(out = new THREE.Vector3()): THREE.Vector3 {
     return out.set(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));

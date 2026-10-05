@@ -92,6 +92,9 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  /* overflow:hidden cắt ở mép padding: chừa 0,25em cho dấu chồng (Nguyễn, Ỗ…) mà bố cục không đổi. */
+  padding-block: 0.25em;
+  margin-block: -0.25em;
 }
 
 .hud-title {

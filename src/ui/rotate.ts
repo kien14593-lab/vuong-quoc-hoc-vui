@@ -1,4 +1,5 @@
 import { isTouchDevice } from '../core/device';
+import { engine } from '../engine/core';
 import { popBlock, pushBlock } from './root';
 
 /** Thuần: điện thoại cầm dựng đứng (cạnh ngắn dưới 500 CSS px). Máy tính bảng dựng đứng vẫn chơi được. */
@@ -6,7 +7,7 @@ export function needsRotate(touch: boolean, w: number, h: number): boolean {
   return touch && h > w && w < 500;
 }
 
-/** Điện thoại cầm dựng đứng: phủ lời nhắc xoay ngang và tạm khóa điều khiển; xoay ngang là lời nhắc tự biến mất. */
+/** Điện thoại cầm dựng đứng: phủ lời nhắc xoay ngang, tạm khóa điều khiển và dừng thời gian trò chơi; xoay ngang là chơi tiếp đúng chỗ cũ. */
 export function installRotateHint(): void {
   if (!isTouchDevice()) return;
   let box: HTMLElement | null = null;
@@ -29,10 +30,12 @@ export function installRotateHint(): void {
       box.append(icon, title, text);
       document.body.appendChild(box);
       block = pushBlock('rotate');
+      engine.hold('rotate', true);
     } else if (!need && box) {
       box.remove();
       box = null;
       popBlock(block);
+      engine.hold('rotate', false);
     }
   };
   window.addEventListener('resize', sync);

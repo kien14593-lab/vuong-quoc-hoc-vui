@@ -60,6 +60,11 @@
   background: rgba(255, 255, 255, 0.62);
 }
 
+/* Bảng giới thiệu / kết quả: không làm mờ thì chữ phía sau lộ ra lờ mờ – dùng nền trắng đục hẳn. */
+.touch-gfx .mg-card {
+  background: #fff;
+}
+
 /* ---------------- Thanh trên ---------------- */
 .mg-top {
   position: absolute;

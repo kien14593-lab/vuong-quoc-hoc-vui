@@ -4,7 +4,8 @@
   --dash-accent: #1f5e50;
   --dash-soft: rgba(255, 255, 255, 0.78);
   --dash-line: rgba(31, 94, 80, 0.16);
-  background: linear-gradient(135deg, rgba(245, 255, 250, 0.94), rgba(255, 247, 239, 0.9));
+  /* Nền đục hẳn: mở từ Cài đặt trong game thì bảng Cài đặt và HUD phía sau không lộ ra lờ mờ. */
+  background: linear-gradient(135deg, #f5fffa, #fff7ef);
   border-color: rgba(31, 94, 80, 0.25) !important;
   color: var(--dash-ink);
   box-shadow: 0 28px 80px rgba(23, 63, 55, 0.26), 0 8px 0 rgba(31, 94, 80, 0.14) !important;

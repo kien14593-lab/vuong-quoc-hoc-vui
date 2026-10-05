@@ -54,6 +54,7 @@ class RunnerGame extends MiniGame {
       st.move = 0.8;
       st.run = true;
     }
+    this.prime(answerBoard('0', '#ff8fab'));
     this.onKey((e) => {
       if (e.code === 'ArrowLeft' || e.code === 'KeyA') this.moveLane(-1);
       if (e.code === 'ArrowRight' || e.code === 'KeyD') this.moveLane(1);

@@ -66,24 +66,38 @@ function ensure(): boolean {
   return true;
 }
 
-/** Vẽ một đối tượng (không lưu đệm). Đối tượng được trả lại nguyên vẹn (không hủy). */
-export function renderPortrait(obj: THREE.Object3D, o: PortraitOpts = {}): string {
-  if (!ensure() || !R) return '';
-  const px = Math.round(o.size ?? 256);
-  if (R.domElement.width !== px || R.domElement.height !== px) R.setSize(px, px, false);
-  const holder = new THREE.Group();
-  holder.add(obj);
-  holder.rotation.y = ((o.yaw ?? 0) * Math.PI) / 180;
-  scene.add(holder);
-  holder.updateMatrixWorld(true);
-  // Lưới bóng (glb.ts) dùng chung đỉnh với lưới thật: đo không cần nó (đỡ một lượt tính đỉnh theo xương).
+/** Lưới bóng (glb.ts) dùng chung đỉnh với lưới thật, ảnh chân dung không cần: tạm gỡ ra khi đo khung / biên dịch shader. */
+function withoutProxies<T>(obj: THREE.Object3D, fn: () => T): T {
   const proxies: [THREE.Object3D, THREE.Object3D][] = [];
   obj.traverse((x) => {
     if (x.userData.shadowProxy && x.parent) proxies.push([x, x.parent]);
   });
   for (const [x] of proxies) x.removeFromParent();
-  box.setFromObject(obj, true);
-  for (const [x, parent] of proxies) parent.add(x);
+  try {
+    return fn();
+  } finally {
+    for (const [x, parent] of proxies) parent.add(x);
+  }
+}
+
+const sizeOf = (o: PortraitOpts) => Math.round(o.size ?? 256);
+
+/** Đặt cỡ khung vẽ (đổi cỡ phải chờ GPU xong việc đang làm – tránh đổi qua đổi lại). */
+function fitCanvas(px: number): void {
+  if (R && (R.domElement.width !== px || R.domElement.height !== px)) R.setSize(px, px, false);
+}
+
+/** Vẽ một đối tượng (không lưu đệm). Đối tượng được trả lại nguyên vẹn (không hủy). */
+export function renderPortrait(obj: THREE.Object3D, o: PortraitOpts = {}): string {
+  if (!ensure() || !R) return '';
+  fitCanvas(sizeOf(o));
+  const holder = new THREE.Group();
+  holder.add(obj);
+  holder.rotation.y = ((o.yaw ?? 0) * Math.PI) / 180;
+  scene.add(holder);
+  holder.updateMatrixWorld(true);
+  // Đo không cần lưới bóng (đỡ một lượt tính đỉnh theo xương).
+  withoutProxies(obj, () => box.setFromObject(obj, true));
   if (box.isEmpty()) box.set(new THREE.Vector3(-0.5, 0, -0.5), new THREE.Vector3(0.5, 1, 0.5));
   box.getSize(size3);
   box.getCenter(center);
@@ -128,16 +142,138 @@ function cached(k: string, make: () => THREE.Object3D | null, o: PortraitOpts, k
   return url;
 }
 
-/** Chân dung theo khóa mô hình (NPC, thú cưng, đồ vật...). */
-export function modelPortrait(key: string, o: PortraitOpts = {}): string {
-  if (!hasModel(key)) return '';
+/** Khóa mô hình thật và khóa bộ nhớ đệm của ảnh chân dung mô hình; null nếu không có mô hình. */
+function modelEntry(key: string, o: PortraitOpts): { key: string; k: string } | null {
+  if (!hasModel(key)) return null;
   // Khóa chung (dân làng 'npc_villager' + { v }) → khóa riêng của từng người (mô hình AI riêng).
   key = modelKeyFor(key, o.opts ?? {});
-  const k = JSON.stringify(['m', key, o]);
+  return { key, k: JSON.stringify(['m', key, o]) };
+}
+
+/** Chân dung theo khóa mô hình (NPC, thú cưng, đồ vật...). */
+export function modelPortrait(key: string, o: PortraitOpts = {}): string {
+  const e = modelEntry(key, o);
+  if (!e) return '';
   // Mô hình AI chưa tải xong: vẽ tạm bằng mô hình dựng bằng code nhưng không lưu (lần sau vẽ lại bằng mô hình AI).
-  const ready = glbReady([key]);
-  if (!ready) void ensureGlb([key]);
-  return cached(k, () => buildModel(key, o.opts ?? {}), o, ready);
+  const ready = glbReady([e.key]);
+  if (!ready) void ensureGlb([e.key]);
+  // Đã chuẩn bị sẵn (preparePortraits) mà chưa kịp vẽ: vẽ ngay bằng mô hình đã dựng, shader đã biên dịch.
+  const p = ready && !cache.has(e.k) ? preps.find((x) => x.jobs.has(e.k)) : undefined;
+  if (p) drawPrep(p, e.k);
+  return cached(e.k, () => buildModel(e.key, o.opts ?? {}), o, ready);
+}
+
+/* ------------------------------------------------------------------ */
+/* Vẽ sẵn chân dung (người sắp nói chuyện trong khu vực)                 */
+/* ------------------------------------------------------------------ */
+
+/** Mô hình đã dựng + biên dịch shader, chờ vẽ các ảnh `jobs` (khóa bộ nhớ đệm → tùy chọn ảnh). */
+interface Prep {
+  obj: THREE.Object3D;
+  jobs: Map<string, PortraitOpts>;
+}
+
+let preps: Prep[] = [];
+let prepGen = 0;
+
+/** Vẽ ảnh `k` của mô hình đã chuẩn bị vào bộ nhớ đệm; vẽ hết các ảnh của mô hình thì hủy mô hình. */
+function drawPrep(p: Prep, k: string): void {
+  const o = p.jobs.get(k);
+  p.jobs.delete(k);
+  if (o && !cache.has(k)) {
+    const url = renderPortrait(p.obj, o);
+    if (cache.size > 400) cache.clear();
+    if (url) cache.set(k, url);
+  }
+  if (p.jobs.size) return;
+  preps = preps.filter((x) => x !== p);
+  disposeTree(p.obj);
+}
+
+/** Bỏ các chân dung đã chuẩn bị mà chưa vẽ. */
+export function dropPrepared(): void {
+  prepGen++;
+  for (const p of preps) disposeTree(p.obj);
+  preps = [];
+}
+
+/**
+ * Chuẩn bị vẽ sẵn chân dung mô hình: dựng mô hình và biên dịch shader ngay (gọi lúc màn chuyển cảnh còn che – trình duyệt
+ * biên dịch song song với phần chờ của khu vực), còn vẽ thì để sau, lúc rảnh (`drawPrepared`). Mỗi phần tử: khóa mô hình +
+ * các ảnh cần (cùng `opts`, khác cỡ ảnh). Chỉ mô hình đã sẵn sàng (mô hình AI đã tải xong, không tải thêm), bỏ ảnh đã có.
+ * Thay cho lần chuẩn bị trước. Trả về số mô hình đã chuẩn bị.
+ */
+export function preparePortraits(list: [key: string, opts: PortraitOpts[]][], max = 6): number {
+  dropPrepared();
+  if (!list.length || !ensure() || !R) return 0;
+  for (const [art, os] of list) {
+    if (preps.length >= max) break;
+    const jobs = new Map<string, PortraitOpts>();
+    let key = '';
+    for (const o of os) {
+      const e = modelEntry(art, o);
+      if (!e || !glbReady([e.key]) || cache.has(e.k) || preps.some((x) => x.jobs.has(e.k))) continue;
+      key = e.key;
+      jobs.set(e.k, o);
+    }
+    if (!jobs.size) continue;
+    let obj: THREE.Object3D | null = null;
+    try {
+      const built = buildModel(key, os[0].opts ?? {});
+      obj = built;
+      // Shader cho đúng cảnh chân dung (cùng đèn, cùng cách tô màu) → lúc vẽ dùng lại, không biên dịch nữa.
+      withoutProxies(built, () => R!.compile(built, cam, scene));
+      preps.push({ obj: built, jobs });
+    } catch (err) {
+      console.warn('[portrait] prepare', err);
+      if (obj) disposeTree(obj);
+    }
+  }
+  // Đổi cỡ khung vẽ ngay lúc còn che màn, để ảnh đầu tiên vẽ sau đó không phải chờ.
+  fitPrepared();
+  return preps.length;
+}
+
+/**
+ * Đổi cỡ khung vẽ cho ảnh vẽ sẵn đầu tiên (đổi cỡ phải chờ GPU – làm lúc còn che màn). Gọi lại sau khi vẽ ảnh khác cỡ
+ * lúc còn che màn (vd. chân dung bé trên HUD lúc vào khu vực).
+ */
+export function fitPrepared(): void {
+  const first = preps[0]?.jobs.values().next().value;
+  if (first) fitCanvas(sizeOf(first));
+}
+
+/** Ảnh vẽ tiếp theo: ưu tiên ảnh cùng cỡ khung vẽ hiện tại (vẽ hết ảnh lớn rồi mới tới ảnh nhỏ, chỉ đổi cỡ một lần). */
+function nextJob(): [Prep, string] | null {
+  const w = R?.domElement.width;
+  for (const p of preps) for (const [k, o] of p.jobs) if (sizeOf(o) === w) return [p, k];
+  for (const p of preps) for (const k of p.jobs.keys()) return [p, k];
+  return null;
+}
+
+/**
+ * Vẽ dần các chân dung đã chuẩn bị (theo thứ tự chuẩn bị, ảnh cùng cỡ vẽ liền nhau), mỗi lúc rảnh một ảnh – kể cả ảnh
+ * đầu tiên: ngay lúc mở màn máy còn bận vẽ cảnh, đọc ảnh ra phải chờ lâu.
+ * `state()`: 'go' = vẽ được, 'wait' = để lúc khác (vd. bé đang chạy), 'stop' = bỏ hết (đã rời khu vực).
+ */
+export function drawPrepared(state: () => 'go' | 'wait' | 'stop'): void {
+  const gen = prepGen;
+  const later = (fn: () => void) => {
+    // Safari chưa có requestIdleCallback.
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(fn, { timeout: 1200 });
+    else setTimeout(fn, 150);
+  };
+  const step = () => {
+    if (gen !== prepGen || !preps.length) return;
+    const s = state();
+    if (s === 'stop') return dropPrepared();
+    if (s === 'go') {
+      const j = nextJob();
+      if (j) drawPrep(j[0], j[1]);
+    }
+    if (preps.length) later(step);
+  };
+  later(step);
 }
 
 /* ------------------------------------------------------------------ */
