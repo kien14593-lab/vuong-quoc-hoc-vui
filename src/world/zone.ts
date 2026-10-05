@@ -17,9 +17,9 @@ import { ask, promptCard, type AskOptions, type AskResult } from '../ui/question
 import type { Stage as AnswerStage } from '../game/challenge';
 import { miniDef, miniName, miniTitle } from '../minigames/registry';
 import { ensureGlb, glbReady } from '../models/glb';
-import { buildModel, collectTicks, modelRadius, type Collider } from '../models/registry';
+import { buildModel, collectTicks, modelKeyFor, modelRadius, type Collider } from '../models/registry';
 import type { Speaker } from '../ui/dialog';
-import { say } from '../ui/dialog';
+import { prepareLateSpeakers, say } from '../ui/dialog';
 import type { Child } from '../ui/dom';
 import { hud } from '../ui/hud';
 import { coinIcon } from '../ui/icons';
@@ -438,6 +438,8 @@ export abstract class Zone implements Stage {
         if (this.lateWait.size) this.lateSwap();
       });
     }
+    // Chân dung hộp thoại của người vừa có mô hình AI: vẽ sẵn dần lúc rảnh (ui/portrait.ts) – mở hội thoại không khựng.
+    prepareLateSpeakers(this.talkers(key));
   }
 
   /**
@@ -657,6 +659,21 @@ export abstract class Zone implements Stage {
     });
     this.npcs.push(npc);
     return npc;
+  }
+
+  /**
+   * Những người bé có thể nói chuyện (vẽ sẵn chân dung hộp thoại – game/app.ts goZone, lateLoaded): NPC đang hiện, gần bé
+   * trước; Chú Gấu đi cùng đứng đầu (luôn ở cạnh bé – lúc vào khu vực có thể chưa dựng, xem syncBuddy). `key`: chỉ người
+   * dùng mô hình này.
+   */
+  talkers(key?: string): Speaker[] {
+    const p = this.player.pos;
+    const list = this.npcs
+      .filter((n) => (!n.opts.visible || n.opts.visible()) && (!key || n.actor.modelKey === key))
+      .sort((a, b) => a.actor.pos.distanceToSquared(p) - b.actor.pos.distanceToSquared(p))
+      .map((n) => n.speaker);
+    if (this.wantsBuddy() && (!key || modelKeyFor(CAST.gau.art) === key)) list.unshift(CAST.gau);
+    return list;
   }
 
   /** Thêm điểm tương tác. */

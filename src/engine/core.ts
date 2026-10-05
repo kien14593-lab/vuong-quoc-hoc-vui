@@ -366,8 +366,8 @@ class Engine {
   }
 }
 
-/** Đưa trước mọi ảnh (texture) của vật liệu trong `obj` lên GPU. */
-function uploadTextures(r: THREE.WebGLRenderer, obj: THREE.Object3D): void {
+/** Mọi ảnh (texture) của vật liệu trong `obj` đã sẵn sàng đưa lên GPU (ảnh đã tải xong). */
+export function texturesOf(obj: THREE.Object3D): THREE.Texture[] {
   const seen = new Set<THREE.Texture>();
   const add = (v: unknown) => {
     const t = v as THREE.Texture | null;
@@ -385,7 +385,12 @@ function uploadTextures(r: THREE.WebGLRenderer, obj: THREE.Object3D): void {
       if (u) for (const k in u) add(u[k]?.value);
     }
   });
-  for (const t of seen) r.initTexture(t);
+  return [...seen];
+}
+
+/** Đưa trước mọi ảnh (texture) của vật liệu trong `obj` lên GPU của bộ vẽ `r` (cả bộ vẽ chân dung – ui/portrait.ts). */
+export function uploadTextures(r: THREE.WebGLRenderer, obj: THREE.Object3D): void {
+  for (const t of texturesOf(obj)) r.initTexture(t);
 }
 
 /** Mặt được vẽ vào bản đồ bóng (kiểu PCF, như three WebGLShadowMap): mặt trước ↔ mặt sau, hai mặt giữ nguyên. */

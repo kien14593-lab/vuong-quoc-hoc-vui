@@ -20,7 +20,7 @@ import { openWorldMap } from '../ui/screens/worldmap';
 import { toast } from '../ui/toast';
 import { nav } from '../world/nav';
 import { TitleStage } from '../world/title';
-import type { Npc, Spawn, Zone } from '../world/zone';
+import type { Spawn, Zone } from '../world/zone';
 import { createZone } from '../world/zones';
 import { miniModels, playerModels, zoneLateModels, zoneModels, type PlayerNeed } from './needs';
 import { checkBadges, zoneLock, ZONE_META } from './story';
@@ -65,6 +65,9 @@ async function fade(on: boolean, text = ''): Promise<void> {
   engine.setLoading(on);
   await wait(on ? 380 : 40);
 }
+
+/** Màn che mờ dần trong chừng này ms (styles/hud.css: .fade-veil transition). */
+const VEIL_FADE_MS = 350;
 
 /**
  * Chờ tối đa (ms) mô hình AI của khu vực sắp vào. Quá hạn (mạng chậm) thì vẫn vào: nhân vật chưa tải kịp tạm dùng mô hình
@@ -162,15 +165,10 @@ export async function goZone(id: ZoneId, spawn: Spawn = 'start'): Promise<void> 
     // kể cả phần chưa nhìn thấy – bé bắt đầu đi, quay camera không bị khựng.
     z.pause();
     const warm = warmUp(z.scene);
-    // Chân dung người trong khu vực (gần bé trước): shader biên dịch cùng lúc với khu vực (không chờ thêm),
-    // mở màn rồi vẽ dần lúc bé đứng yên, không xoay / phóng camera – hộp thoại đầu tiên hiện ngay, không khựng.
-    const near = (n: Npc) => n.actor.pos.distanceToSquared(z.player.pos);
-    prepareSpeakers(
-      z.npcs
-        .filter((n) => !n.opts.visible || n.opts.visible())
-        .sort((a, b) => near(a) - near(b))
-        .map((n) => n.speaker),
-    );
+    // Chân dung người trong khu vực (Chú Gấu đi cùng, rồi gần bé trước): shader biên dịch cùng lúc với khu vực (không chờ
+    // thêm), mở màn rồi vẽ dần lúc bé đứng yên, không xoay / phóng camera – hộp thoại đầu tiên hiện ngay, không khựng.
+    // Người đổi sang mô hình AI sau khi mở màn: world/zone.ts lateLoaded.
+    prepareSpeakers(z.talkers());
     await warm;
     if (zone === z) {
       z.enter();
@@ -179,12 +177,13 @@ export async function goZone(id: ZoneId, spawn: Spawn = 'start'): Promise<void> 
     }
     await nextFrame();
     await fade(false);
+    // Vẽ chân dung sau khi màn che đã mờ hẳn (lúc cảnh vừa hiện, GPU còn bận – vẽ lúc ấy là khựng ngay giữa lúc cảnh hiện ra).
     if (zone === z)
       drawPrepared(() => {
         if (zone !== z || z.leaving) return 'stop';
         const p = z.player;
         return z.paused || p.moving || p.vel.lengthSq() > 0.01 || z.cam.busy ? 'wait' : 'go';
-      });
+      }, VEIL_FADE_MS);
   } finally {
     // Không đổi được cảnh (lỗi giữa chừng): cảnh cũ vẫn đang chạy, tải tiếp như thường.
     if (from && engine.stage === from) from.leaving = false;

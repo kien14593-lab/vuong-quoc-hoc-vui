@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { DEFAULT_OUTFIT, playerKey, type Kid } from '../core/outfits';
 import type { Equipped } from '../core/state';
+import { texturesOf, uploadTextures } from '../engine/core';
 import { disposeTree } from '../engine/merge';
 import type { PlayerOpts } from '../models/character';
 import { ensureGlb, glbReady } from '../models/glb';
@@ -157,7 +158,7 @@ export function modelPortrait(key: string, o: PortraitOpts = {}): string {
   // Mô hình AI chưa tải xong: vẽ tạm bằng mô hình dựng bằng code nhưng không lưu (lần sau vẽ lại bằng mô hình AI).
   const ready = glbReady([e.key]);
   if (!ready) void ensureGlb([e.key]);
-  // Đã chuẩn bị sẵn (preparePortraits) mà chưa kịp vẽ: vẽ ngay bằng mô hình đã dựng, shader đã biên dịch.
+  // Đã chuẩn bị sẵn (preparePortraits) mà chưa kịp vẽ: vẽ ngay bằng mô hình đã dựng, shader đã / đang biên dịch.
   const p = ready && !cache.has(e.k) ? preps.find((x) => x.jobs.has(e.k)) : undefined;
   if (p) drawPrep(p, e.k);
   return cached(e.k, () => buildModel(e.key, o.opts ?? {}), o, ready);
@@ -167,14 +168,30 @@ export function modelPortrait(key: string, o: PortraitOpts = {}): string {
 /* Vẽ sẵn chân dung (người sắp nói chuyện trong khu vực)                 */
 /* ------------------------------------------------------------------ */
 
-/** Mô hình đã dựng + biên dịch shader, chờ vẽ các ảnh `jobs` (khóa bộ nhớ đệm → tùy chọn ảnh). */
+/** Mô hình đã dựng, chờ vẽ các ảnh `jobs` (khóa bộ nhớ đệm → tùy chọn ảnh). */
 interface Prep {
   obj: THREE.Object3D;
   jobs: Map<string, PortraitOpts>;
+  /**
+   * 'draw' = vẽ được (shader đã biên dịch, ảnh – texture – đã lên GPU). 'upload' = shader đã biên dịch, còn đưa ảnh lên GPU.
+   * 'compile' = trình duyệt còn đang biên dịch shader (song song): chưa làm gì – vẽ lúc này là phải chờ biên dịch xong
+   * (khựng). Mỗi việc một lúc rảnh.
+   */
+  stage: 'compile' | 'upload' | 'draw';
+  /** Ảnh (texture) còn phải đưa lên GPU (giai đoạn 'upload'; tính lúc bắt đầu đưa). */
+  tex?: THREE.Texture[];
 }
 
 let preps: Prep[] = [];
+/** Người thêm sau khi mở màn (`queuePortraits`), chờ dựng mô hình – mỗi lúc rảnh một người. */
+let queue: [key: string, opts: PortraitOpts[]][] = [];
 let prepGen = 0;
+/** Trạng thái khu vực cho vòng vẽ dần (`drawPrepared`); null = chưa mở màn hoặc đã bỏ. */
+let drawState: (() => 'go' | 'wait' | 'stop') | null = null;
+/** Vòng vẽ dần chưa làm gì trước lúc này (performance.now() – `drawPrepared` afterMs). */
+let startAt = 0;
+/** prepGen của vòng vẽ dần đang chạy (-1 = không có). */
+let loopGen = -1;
 
 /** Vẽ ảnh `k` của mô hình đã chuẩn bị vào bộ nhớ đệm; vẽ hết các ảnh của mô hình thì hủy mô hình. */
 function drawPrep(p: Prep, k: string): void {
@@ -182,6 +199,8 @@ function drawPrep(p: Prep, k: string): void {
   p.jobs.delete(k);
   if (o && !cache.has(k)) {
     const url = renderPortrait(p.obj, o);
+    // Đã vẽ: shader đã xong, ảnh đã lên GPU.
+    p.stage = 'draw';
     if (cache.size > 400) cache.clear();
     if (url) cache.set(k, url);
   }
@@ -190,40 +209,77 @@ function drawPrep(p: Prep, k: string): void {
   disposeTree(p.obj);
 }
 
-/** Bỏ các chân dung đã chuẩn bị mà chưa vẽ. */
+/** Bỏ các chân dung đã chuẩn bị mà chưa vẽ (cả người chờ chuẩn bị) và vòng vẽ dần đang chạy. */
 export function dropPrepared(): void {
   prepGen++;
   for (const p of preps) disposeTree(p.obj);
   preps = [];
+  queue = [];
+  drawState = null;
+}
+
+/**
+ * Biên dịch shader của mô hình cho cảnh chân dung (cùng đèn, cùng cách tô màu → lúc vẽ dùng lại). Xong khi trình duyệt
+ * báo đã biên dịch xong (biên dịch song song); không hỏi được thì xong ngay.
+ */
+function compileFor(obj: THREE.Object3D): Promise<unknown> {
+  return withoutProxies(obj, () => {
+    if (R!.extensions.has('KHR_parallel_shader_compile')) return R!.compileAsync(obj, cam, scene);
+    R!.compile(obj, cam, scene);
+    return Promise.resolve();
+  });
+}
+
+/** Biên dịch xong (`done`): chuyển `p` sang giai đoạn `next` và chạy lại vòng vẽ dần (bỏ qua nếu đã đổi khu vực / đã vẽ). */
+function whenCompiled(p: Prep, done: Promise<unknown>, next: 'upload' | 'draw'): void {
+  const gen = prepGen;
+  void done
+    .catch(() => undefined)
+    .then(() => {
+      if (gen !== prepGen || !preps.includes(p)) return;
+      if (p.stage === 'compile') p.stage = next;
+      kick();
+    });
+}
+
+/** Ảnh còn phải vẽ của mô hình `art` (bỏ ảnh đã có / đã chuẩn bị) + khóa mô hình thật; null nếu không còn ảnh nào. */
+function jobsFor(art: string, os: PortraitOpts[]): { key: string; jobs: Map<string, PortraitOpts> } | null {
+  const jobs = new Map<string, PortraitOpts>();
+  let key = '';
+  for (const o of os) {
+    const e = modelEntry(art, o);
+    if (!e || !glbReady([e.key]) || cache.has(e.k) || preps.some((x) => x.jobs.has(e.k))) continue;
+    key = e.key;
+    jobs.set(e.k, o);
+  }
+  return jobs.size ? { key, jobs } : null;
 }
 
 /**
  * Chuẩn bị vẽ sẵn chân dung mô hình: dựng mô hình và biên dịch shader ngay (gọi lúc màn chuyển cảnh còn che – trình duyệt
- * biên dịch song song với phần chờ của khu vực), còn vẽ thì để sau, lúc rảnh (`drawPrepared`). Mỗi phần tử: khóa mô hình +
- * các ảnh cần (cùng `opts`, khác cỡ ảnh). Chỉ mô hình đã sẵn sàng (mô hình AI đã tải xong, không tải thêm), bỏ ảnh đã có.
- * Thay cho lần chuẩn bị trước. Trả về số mô hình đã chuẩn bị.
+ * biên dịch song song với phần chờ của khu vực), còn vẽ thì để sau, lúc rảnh (`drawPrepared`). Người đứng đầu (hộp thoại
+ * đầu tiên thường với người này): đưa luôn ảnh (texture) lên GPU – lúc rảnh đầu tiên chỉ còn vẽ; những người khác đưa ảnh
+ * lên vào một lúc rảnh riêng. Mỗi phần tử: khóa mô hình + các ảnh cần (cùng `opts`, khác cỡ ảnh). Chỉ mô hình đã sẵn sàng
+ * (mô hình AI đã tải xong, không tải thêm), bỏ ảnh đã có. Thay cho lần chuẩn bị trước. Trả về số mô hình đã chuẩn bị.
  */
 export function preparePortraits(list: [key: string, opts: PortraitOpts[]][], max = 6): number {
   dropPrepared();
   if (!list.length || !ensure() || !R) return 0;
   for (const [art, os] of list) {
     if (preps.length >= max) break;
-    const jobs = new Map<string, PortraitOpts>();
-    let key = '';
-    for (const o of os) {
-      const e = modelEntry(art, o);
-      if (!e || !glbReady([e.key]) || cache.has(e.k) || preps.some((x) => x.jobs.has(e.k))) continue;
-      key = e.key;
-      jobs.set(e.k, o);
-    }
-    if (!jobs.size) continue;
+    const j = jobsFor(art, os);
+    if (!j) continue;
     let obj: THREE.Object3D | null = null;
     try {
-      const built = buildModel(key, os[0].opts ?? {});
+      const built = buildModel(j.key, os[0].opts ?? {});
       obj = built;
-      // Shader cho đúng cảnh chân dung (cùng đèn, cùng cách tô màu) → lúc vẽ dùng lại, không biên dịch nữa.
-      withoutProxies(built, () => R!.compile(built, cam, scene));
-      preps.push({ obj: built, jobs });
+      const done = compileFor(built);
+      const lead = !preps.length;
+      if (lead) withoutProxies(built, () => uploadTextures(R!, built));
+      const p: Prep = { obj: built, jobs: j.jobs, stage: 'compile' };
+      preps.push(p);
+      // Thường đã xong trước khi mở màn; chưa xong thì lúc rảnh đầu tiên chờ thêm, không vẽ (vẽ là phải chờ – khựng).
+      whenCompiled(p, done, lead ? 'draw' : 'upload');
     } catch (err) {
       console.warn('[portrait] prepare', err);
       if (obj) disposeTree(obj);
@@ -243,37 +299,137 @@ export function fitPrepared(): void {
   if (first) fitCanvas(sizeOf(first));
 }
 
-/** Ảnh vẽ tiếp theo: ưu tiên ảnh cùng cỡ khung vẽ hiện tại (vẽ hết ảnh lớn rồi mới tới ảnh nhỏ, chỉ đổi cỡ một lần). */
+/**
+ * Việc tiếp theo của các mô hình đã biên dịch xong: ảnh lớn trước (ảnh hộp thoại trước ảnh thẻ câu hỏi – vẽ hết ảnh lớn rồi
+ * mới tới ảnh nhỏ, chỉ đổi cỡ khung vẽ một lần), cùng cỡ thì theo thứ tự trong `preps`.
+ */
 function nextJob(): [Prep, string] | null {
-  const w = R?.domElement.width;
-  for (const p of preps) for (const [k, o] of p.jobs) if (sizeOf(o) === w) return [p, k];
-  for (const p of preps) for (const k of p.jobs.keys()) return [p, k];
-  return null;
+  let best: [Prep, string] | null = null;
+  let px = -1;
+  for (const p of preps) {
+    if (p.stage === 'compile') continue;
+    for (const [k, o] of p.jobs)
+      if (sizeOf(o) > px) {
+        best = [p, k];
+        px = sizeOf(o);
+      }
+  }
+  return best;
 }
 
 /**
- * Vẽ dần các chân dung đã chuẩn bị (theo thứ tự chuẩn bị, ảnh cùng cỡ vẽ liền nhau), mỗi lúc rảnh một ảnh – kể cả ảnh
- * đầu tiên: ngay lúc mở màn máy còn bận vẽ cảnh, đọc ảnh ra phải chờ lâu.
- * `state()`: 'go' = vẽ được, 'wait' = để lúc khác (vd. bé đang chạy), 'stop' = bỏ hết (đã rời khu vực).
+ * Đưa ảnh (texture) lên GPU trong một lúc rảnh: ít nhất một ảnh, thêm ảnh nữa khi chưa quá chừng này ms (một khung hình) –
+ * máy chậm, ảnh lớn: mỗi lúc rảnh một ảnh.
  */
-export function drawPrepared(state: () => 'go' | 'wait' | 'stop'): void {
-  const gen = prepGen;
-  const later = (fn: () => void) => {
-    // Safari chưa có requestIdleCallback.
-    if (typeof requestIdleCallback === 'function') requestIdleCallback(fn, { timeout: 1200 });
-    else setTimeout(fn, 150);
-  };
+const UPLOAD_MS = 16;
+
+/**
+ * Làm việc `k` của mô hình `p`: chưa đưa hết ảnh (texture) lên GPU thì đưa tiếp (xem UPLOAD_MS), xong rồi mới vẽ (lúc rảnh
+ * sau).
+ */
+function doJob([p, k]: [Prep, string]): void {
+  if (p.stage !== 'upload') return drawPrep(p, k);
+  const tex = (p.tex ??= withoutProxies(p.obj, () => texturesOf(p.obj)));
+  const t0 = performance.now();
+  while (tex.length) {
+    R!.initTexture(tex.shift()!);
+    if (performance.now() - t0 > UPLOAD_MS) break;
+  }
+  if (!tex.length) p.stage = 'draw';
+}
+
+/**
+ * Chạy `fn` lúc máy rảnh, chậm nhất sau `timeout` ms (máy chậm ít khi rảnh). Safari chưa có requestIdleCallback: sau 150 ms.
+ */
+function later(fn: () => void, timeout = 1200): void {
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(fn, { timeout });
+  else setTimeout(fn, 150);
+}
+
+/**
+ * Việc đầu tiên sau khi mở màn: lúc rảnh, chậm nhất sau chừng này ms (sau `afterMs` của `drawPrepared`) – ảnh hộp thoại
+ * của người đứng đầu phải xong trước hộp thoại đầu tiên (người mới chơi: Thỏ Bông chào sau chừng 1,4 giây).
+ */
+const FIRST_MS = 400;
+
+/**
+ * Một việc nhỏ cho một lúc rảnh: vẽ một ảnh, đưa ảnh (texture) của một mô hình lên GPU, hoặc dựng mô hình một người chờ
+ * (`queuePortraits`) và bắt đầu biên dịch shader song song. Thứ tự: người đứng đầu (gần bé nhất lúc vào khu vực – hộp thoại
+ * đầu tiên thường với người này), rồi người vừa thêm (vừa đổi sang mô hình AI, lấp lánh – bé hay tới hỏi), rồi những người
+ * còn lại.
+ */
+function work(): void {
+  const next = nextJob();
+  if (next && next[0] === preps[0]) return doJob(next);
+  while (queue.length) {
+    const [art, os] = queue.shift()!;
+    const j = jobsFor(art, os);
+    if (!j) continue;
+    let obj: THREE.Object3D | null = null;
+    try {
+      const built = buildModel(j.key, os[0].opts ?? {});
+      obj = built;
+      const p: Prep = { obj: built, jobs: j.jobs, stage: 'compile' };
+      const done = compileFor(built);
+      // Ngay sau người đứng đầu (người mới nhất trước).
+      preps.splice(Math.min(1, preps.length), 0, p);
+      whenCompiled(p, done, 'upload');
+    } catch (err) {
+      console.warn('[portrait] queue', err);
+      if (obj) disposeTree(obj);
+    }
+    return;
+  }
+  if (next) doJob(next);
+}
+
+/** Bắt đầu vòng vẽ dần (đã mở màn – `drawPrepared`, còn việc, chưa có vòng nào đang chạy). */
+function kick(): void {
+  const state = drawState;
+  if (!state || loopGen === prepGen || (!preps.length && !queue.length)) return;
+  const gen = (loopGen = prepGen);
   const step = () => {
-    if (gen !== prepGen || !preps.length) return;
-    const s = state();
+    if (gen !== prepGen) return;
+    const s = ensure() ? state() : 'stop';
     if (s === 'stop') return dropPrepared();
     if (s === 'go') {
-      const j = nextJob();
-      if (j) drawPrep(j[0], j[1]);
+      try {
+        work();
+      } catch (err) {
+        console.warn('[portrait] idle', err);
+      }
     }
-    if (preps.length) later(step);
+    // Chỉ còn mô hình đang biên dịch: nghỉ, biên dịch xong thì chạy lại (whenCompiled → kick).
+    if (queue.length || preps.some((p) => p.stage !== 'compile')) later(step);
+    else loopGen = -1;
   };
-  later(step);
+  const ms = startAt - performance.now();
+  if (ms > 0) setTimeout(() => later(step, FIRST_MS), ms);
+  else later(step);
+}
+
+/**
+ * Vẽ dần các chân dung đã chuẩn bị và những người thêm sau (`queuePortraits`), mỗi lúc rảnh một việc (thứ tự: xem `work`) –
+ * kể cả ảnh đầu tiên: ngay lúc mở màn máy còn bận vẽ cảnh, đọc ảnh ra phải chờ lâu.
+ * `state()`: 'go' = vẽ được, 'wait' = để lúc khác (vd. bé đang chạy), 'stop' = bỏ hết (đã rời khu vực).
+ * `afterMs`: chưa làm gì trong chừng này ms (màn che còn đang mờ dần: GPU còn bận với cảnh vừa hiện – mọi lệnh phải chờ GPU,
+ * cả trên khung vẽ chân dung, lúc này đều chờ lâu, khựng ngay lúc cảnh hiện ra).
+ */
+export function drawPrepared(state: () => 'go' | 'wait' | 'stop', afterMs = 0): void {
+  drawState = state;
+  startAt = performance.now() + afterMs;
+  kick();
+}
+
+/**
+ * Thêm người sẽ nói chuyện sau khi đã mở màn (vd. mô hình AI tải sau vừa xong – world/zone.ts lateLoaded): cùng dạng với
+ * `preparePortraits` nhưng không làm gì ngay – vòng vẽ dần (`drawPrepared`) dựng mô hình, biên dịch shader, đưa ảnh lên GPU
+ * rồi vẽ, mỗi lúc rảnh một việc. Chỉ mô hình đã sẵn sàng, bỏ ảnh đã có / đang chuẩn bị. Bỏ khi rời khu vực (`dropPrepared`).
+ */
+export function queuePortraits(list: [key: string, opts: PortraitOpts[]][]): void {
+  if (failed) return;
+  for (const [art, os] of list) if (jobsFor(art, os)) queue.push([art, os]);
+  kick();
 }
 
 /* ------------------------------------------------------------------ */

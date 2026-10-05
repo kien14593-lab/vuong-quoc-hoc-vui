@@ -2,7 +2,7 @@ import { sfx } from '../core/audio';
 import { plainText, speak, stopSpeech } from '../core/speech';
 import { modelDef } from '../models/registry';
 import { h, wait } from './dom';
-import { modelPortrait, preparePortraits, type PortraitOpts } from './portrait';
+import { modelPortrait, preparePortraits, queuePortraits, type PortraitOpts } from './portrait';
 import { layer, popBlock, pushBlock } from './root';
 
 /** Người nói trong hộp hội thoại. */
@@ -34,13 +34,26 @@ export function speakerArt(sp: Speaker | null | undefined, size = 256): string {
   return modelPortrait(sp.art, artOpts(sp, size));
 }
 
+/** Chân dung cần vẽ sẵn của những người nói: cỡ hộp thoại và cỡ thẻ câu hỏi (cùng tùy chọn với lúc vẽ thật). */
+function speakerJobs(list: Speaker[]): [string, PortraitOpts[]][] {
+  return list.filter(modelArt).map((sp) => [sp.art, [artOpts(sp, 256), artOpts(sp, 160)]]);
+}
+
 /**
  * Chuẩn bị vẽ sẵn chân dung những người sắp nói chuyện (cỡ hộp thoại và cỡ thẻ câu hỏi, người đứng đầu danh sách trước):
  * gọi lúc màn chuyển cảnh còn che, mở màn rồi gọi `drawPrepared` (ui/portrait.ts) để vẽ dần lúc rảnh – hộp thoại mở ra
  * là có ảnh ngay, không khựng.
  */
 export function prepareSpeakers(list: Speaker[]): number {
-  return preparePortraits(list.filter(modelArt).map((sp) => [sp.art, [artOpts(sp, 256), artOpts(sp, 160)]]));
+  return preparePortraits(speakerJobs(list));
+}
+
+/**
+ * Thêm người nói chuyện sau khi đã mở màn (vd. vừa đổi sang mô hình AI tải sau – world/zone.ts lateLoaded): vẽ sẵn dần lúc
+ * rảnh như `prepareSpeakers`, giữ nguyên phần đang chuẩn bị.
+ */
+export function prepareLateSpeakers(list: Speaker[]): void {
+  queuePortraits(speakerJobs(list));
 }
 
 let queue: Promise<unknown> = Promise.resolve();
