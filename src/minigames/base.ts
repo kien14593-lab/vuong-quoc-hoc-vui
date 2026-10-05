@@ -18,6 +18,7 @@ import { buildModel, collectTicks } from '../models/registry';
 import { animateRig, rigOf, type AnimState, type Rig } from '../models/rig';
 import { uiInsets } from '../ui/root';
 import { miniCard, type MiniCard, type MiniText } from './registry';
+import { dropSky, keepSky } from './sky-cache';
 import { MiniUI } from './ui';
 
 /**
@@ -106,6 +107,7 @@ export abstract class MiniGame implements Stage {
   private raycaster = new THREE.Raycaster();
   private ndc = new THREE.Vector2();
   private disposed = false;
+  private prepared = false;
 
   constructor(
     readonly info: MiniInfo,
@@ -136,15 +138,30 @@ export abstract class MiniGame implements Stage {
   /** Cập nhật gameplay mỗi khung hình (chỉ chạy khi không tạm dừng). */
   protected tick(_dt: number, _t: number): void {}
 
-  /** Bắt đầu: dựng cảnh, hướng dẫn, chơi, kết quả. Gọi sau `engine.setStage(game)`. */
+  /**
+   * Dựng cảnh rồi chuẩn bị trước cho GPU (biên dịch shader – cả shader vẽ bóng – và đưa ảnh lên). Gọi trước
+   * `engine.setStage(game)` (begin tự gọi nếu chưa). `capMs` > 0 (đang che màn, lần đầu chơi trò này): chờ tối đa chừng ấy ms
+   * – mở màn ra là chơi ngay, không phải biên dịch gì. 0: không chờ, phần còn lại làm trong lúc màn hướng dẫn hiện.
+   */
+  async prepare(capMs = 0): Promise<void> {
+    if (this.prepared) return;
+    this.prepared = true;
+    this.build();
+    const warm = warmUp(this.scene, { camera: this.camera, scene: this.scene, capMs: capMs || undefined });
+    if (capMs > 0) await warm;
+  }
+
+  /** Bắt đầu: (dựng cảnh nếu chưa), hướng dẫn, chơi, kết quả. Gọi sau `engine.setStage(game)`. */
   async begin(): Promise<void> {
     audio.music('mini');
-    this.build();
-    // Biên dịch trước shader + đưa ảnh lên GPU trong lúc màn hướng dẫn hiện (vào chơi không bị khựng).
-    void warmUp(this.scene, { camera: this.camera, scene: this.scene });
+    void this.prepare();
     this.ui.setRound(0, this.info.rounds);
     this.ui.setScore(0);
     await this.ui.intro();
+    if (this.disposed) return;
+    // Cú chạm "Bắt đầu" chỉ tắt thẻ hướng dẫn; vòng 1 (câu hỏi, vật thể, chữ) dựng ở việc kế tiếp để máy chậm không dồn
+    // cả hai vào một khung hình. Dùng setTimeout (không dùng rAF): Safari vẫn tính lời đọc câu hỏi là do trẻ chạm.
+    await new Promise<void>((r) => window.setTimeout(r, 0));
     if (this.disposed) return;
     this.paused = false;
     try {
@@ -185,8 +202,9 @@ export abstract class MiniGame implements Stage {
       if (l.isLight) l.dispose();
     });
     disposeTree(this.scene);
-    // Ảnh bầu trời không nằm trong cây cảnh; hủy nó mới giải phóng cả khối lập phương 256² three dựng từ nó.
-    (this.scene.background as THREE.Texture | null)?.dispose?.();
+    // Ảnh bầu trời không nằm trong cây cảnh; hủy nó mới giải phóng cả khối lập phương 256² three dựng từ nó
+    // (trừ ảnh đang giữ lại cho lượt sau – keepSky).
+    dropSky(this.scene.background);
     this.current = null;
   }
 
@@ -199,8 +217,9 @@ export abstract class MiniGame implements Stage {
   /* ================================================================== */
   /** Bầu trời + sương mù. */
   sky(top: string, horizon: string, fogNear = 60, fogFar = 160): void {
-    (this.scene.background as THREE.Texture | null)?.dispose?.();
+    dropSky(this.scene.background);
     setupSky(this.scene, top, horizon, fogNear, fogFar);
+    this.scene.background = keepSky(`${top}|${horizon}`, this.scene.background as THREE.Texture);
   }
 
   /** Đặt camera: vị trí và điểm nhìn. */

@@ -817,6 +817,11 @@
   pointer-events: auto;
 }
 
+/* Sắp mở màn (game/app.ts playMini): gần như đặc – không ai thấy khác, nhưng trình duyệt phải vẽ sẵn phần phía sau. */
+.layer > .fade-veil.on.peek {
+  opacity: 0.99;
+}
+
 .fade-veil-text {
   font-size: 52px;
   font-weight: 800;

@@ -34,6 +34,8 @@ export class MiniUI {
   private offResize: () => void;
   private cleanups = new Set<() => void>();
   private destroyed = false;
+  /** Đổi mỗi lần có đề mới / xóa đề: thẻ đề bài đang chờ gắn (prompt) của lượt cũ thì bỏ. */
+  private promptSeq = 0;
 
   constructor(
     readonly info: MiniInfo,
@@ -105,22 +107,31 @@ export class MiniUI {
    * `en` = phần tiếng Anh của câu hỏi (nút "Nghe lại" của câu hỏi nghe chỉ đọc phần này).
    */
   prompt(text: string, context?: string, speech?: string, visual?: Visual, en?: string): void {
-    const say = h('button.mg-speak', { title: 'Nghe lại', 'aria-label': 'Nghe lại' }, '🔊');
-    say.addEventListener('click', () => speak(speech ?? text, { force: true }));
-    this.promptEl.replaceChildren(
-      ...(context ? [h('div.mg-context', rich(context))] : []),
-      h('div.mg-q', h('span.mg-qtext', rich(text)), say),
-      ...(visual ? [renderVisual(visual, { onListen: () => en && speakEnglish(en, { force: true }) })] : []),
-    );
-    this.promptEl.classList.remove('hidden');
-    this.promptEl.classList.remove('pop');
-    void this.promptEl.offsetWidth;
-    this.promptEl.classList.add('pop');
+    const seq = ++this.promptSeq;
     this.hideFeedback();
     speak(speech ?? text);
+    // Thẻ đề bài gắn vào sau khung hình kế tiếp: khung đó dành vẽ lần đầu các vật 3D vừa dựng của vòng mới, dồn thêm bố cục
+    // thẻ đề vào cùng khung thì máy yếu khựng đúng lúc vòng chơi bắt đầu. Lời đọc vẫn bắt đầu ngay (còn trong lượt chạm).
+    requestAnimationFrame(() =>
+      setTimeout(() => {
+        if (seq !== this.promptSeq || this.destroyed) return;
+        const say = h('button.mg-speak', { title: 'Nghe lại', 'aria-label': 'Nghe lại' }, '🔊');
+        say.addEventListener('click', () => speak(speech ?? text, { force: true }));
+        this.promptEl.replaceChildren(
+          ...(context ? [h('div.mg-context', rich(context))] : []),
+          h('div.mg-q', h('span.mg-qtext', rich(text)), say),
+          ...(visual ? [renderVisual(visual, { onListen: () => en && speakEnglish(en, { force: true }) })] : []),
+        );
+        this.promptEl.classList.remove('hidden');
+        this.promptEl.classList.remove('pop');
+        void this.promptEl.offsetWidth;
+        this.promptEl.classList.add('pop');
+      }),
+    );
   }
 
   clearPrompt(): void {
+    this.promptSeq++;
     this.promptEl.classList.add('hidden');
     this.hideFeedback();
     this.clearChoices();

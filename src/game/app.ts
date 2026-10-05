@@ -60,6 +60,7 @@ async function fade(on: boolean, text = ''): Promise<void> {
   const v = veilEl();
   if (on) (v.firstElementChild as HTMLElement).textContent = text;
   else v.querySelector('.fade-veil-load')?.classList.remove('on');
+  v.classList.remove('peek');
   v.classList.toggle('on', on);
   // Sau màn che máy đang tải / dựng cảnh: khung hình chậm lúc này không tính khi tự chỉnh độ nét.
   engine.setLoading(on);
@@ -191,6 +192,41 @@ export async function goZone(id: ZoneId, spawn: Spawn = 'start'): Promise<void> 
   }
 }
 
+/**
+ * Lần đầu chơi mỗi trò trong phiên (hoặc còn phải chờ tải mô hình): che màn, dựng cảnh + biên dịch shader, đưa ảnh lên GPU,
+ * vẽ vài khung hình đầu – sau màn che, chờ tối đa chừng này ms (tính từ lúc bắt đầu dựng; thêm MINI_SETTLE_MIN cho vài khung
+ * hình nếu đã hết). Máy quá chậm thì mở màn luôn, phần còn lại làm tiếp trong lúc màn hướng dẫn hiện (như các lần sau).
+ * Mở màn ra là chơi ngay, không khựng. Các lần sau vào thẳng, không che màn.
+ */
+const MINI_WARM_MS = 800;
+/** Trò chơi nhỏ đã chuẩn bị sau màn che trong phiên này. */
+const warmedMinis = new Set<string>();
+
+/**
+ * Chờ trình duyệt dựng xong phần giao diện vừa thêm (bố cục, chữ, hình vẽ lần đầu – vẫn sau màn che): khung hình đều và
+ * nhanh trở lại liền một quãng ≥ SETTLE_STEADY_MS thì thôi, tối đa `capMs`. Không dựa vào một, hai khung nhanh: trong lúc
+ * GPU còn đang vẽ dở giao diện, trình duyệt vẫn cho chạy trước một, hai khung rồi mới dừng chờ. Máy nhanh chỉ thêm chừng ấy ms.
+ */
+async function settle(capMs: number): Promise<void> {
+  const t0 = performance.now();
+  await nextFrame();
+  let last = performance.now();
+  let calm = 0;
+  let calmSince = last;
+  while (performance.now() - t0 < capMs) {
+    await nextFrame();
+    const t = performance.now();
+    if (t - last < 50) {
+      if (calm++ === 0) calmSince = last;
+    } else calm = 0;
+    last = t;
+    if (calm >= 3 && t - calmSince >= SETTLE_STEADY_MS) return;
+  }
+}
+const SETTLE_STEADY_MS = 100;
+/** Trò chơi đã lên sân khấu: luôn cho vài khung hình đầu vẽ sau màn che (settle), kể cả khi đã hết MINI_WARM_MS. */
+const MINI_SETTLE_MIN = 150;
+
 /** Chơi một trò chơi nhỏ từ khu vực hiện tại rồi quay lại đúng chỗ cũ. */
 async function playMini(id: string): Promise<MiniResult | null> {
   const z = zone;
@@ -198,7 +234,7 @@ async function playMini(id: string): Promise<MiniResult | null> {
   z.pause();
   const me = playerNeed();
   const keys = miniModels(id, me);
-  const veiled = !glbReady(keys);
+  const veiled = !glbReady(keys) || !warmedMinis.has(id);
   if (veiled) {
     const info = miniDef(id)?.info;
     const models = waitModels(keys, playerModels(me));
@@ -210,9 +246,17 @@ async function playMini(id: string): Promise<MiniResult | null> {
     }
   }
   return new Promise((resolve) => {
+    let covered = veiled;
+    const unveil = () => {
+      if (!covered) return;
+      covered = false;
+      void fade(false);
+    };
+    const t0 = performance.now();
     const ok = runMini(
       id,
       (res) => {
+        unveil();
         if (zone === z) {
           engine.setStage(z);
           z.enter();
@@ -224,13 +268,26 @@ async function playMini(id: string): Promise<MiniResult | null> {
         checkBadges();
         resolve(res);
       },
-      { keepPrev: true },
+      {
+        keepPrev: true,
+        warmMs: veiled ? MINI_WARM_MS : 0,
+        // Mở màn khi trò chơi đã vẽ được vài khung – vẫn sau màn che: dựng khối bầu trời, bản đồ bóng... của lần vẽ đầu,
+        // bố cục + vẽ chữ lần đầu của màn hướng dẫn.
+        shown: () => {
+          if (!veiled) return;
+          warmedMinis.add(id);
+          // Màn che gần như đặc (hud.css .peek): trình duyệt vẽ sẵn giao diện trò chơi phía sau. Màn che đặc hẳn thì phần bị
+          // che chưa được vẽ, mở màn ra mới vẽ cả loạt – khựng đúng lúc trò chơi hiện ra.
+          veilEl().classList.add('peek');
+          void settle(Math.max(MINI_SETTLE_MIN, t0 + MINI_WARM_MS - performance.now())).then(unveil);
+        },
+      },
     );
     if (!ok) {
+      unveil();
       z.enter();
       resolve(null);
     }
-    if (veiled) void fade(false);
   });
 }
 
