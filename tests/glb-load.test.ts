@@ -396,3 +396,113 @@ describe('preloadGlb inOrder: màn hình tiêu đề tải lần lượt từng 
     expect(glb.glbReady(['npc1', 'npc2'])).toBe(true);
   });
 });
+
+describe('bản phát hành: tệp có mã băm lấy thẳng từ bộ nhớ đệm, kể cả khi đã quá hạn (GitHub Pages max-age=600)', () => {
+  const H1 = 'assets/h1-Ab3_x-9Z.glb';
+  const H2 = 'assets/h2-q0W-e1R_.glb';
+  const H3 = 'assets/h3-ZZZZZZZZ.glb';
+  const DATA = 'data:model/gltf-binary;base64,Z2xURg==';
+  /** [tệp, chế độ bộ nhớ đệm] của từng lần gọi fetch, theo thứ tự. */
+  const modes = () => vi.mocked(fetch).mock.calls.map(([u, i]) => [u, i?.cache]);
+
+  beforeEach(() => {
+    vi.stubEnv('PROD', true);
+    glb.defineGlbModel('h1', { src: H1 });
+    glb.defineGlbModel('h2', { src: H2 });
+    glb.defineGlbModel('h3', { src: H3 });
+    glb.defineGlbModel('d', { src: DATA });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('tên có mã băm: force-cache; tên không mã băm và tệp nhúng (data:, bản một tệp) tải như cũ', async () => {
+    const p = glb.ensureGlb(['h1', 'npc1', 'd']);
+    await tick();
+    expect(modes()).toEqual([
+      [H1, 'force-cache'],
+      ['npc1.glb', undefined],
+      [DATA, undefined],
+    ]);
+    await finish(H1);
+    await finish('npc1.glb');
+    await finish(DATA);
+    await expect(p).resolves.toBe(true);
+  });
+
+  it('bản chạy thử (dev): tên có mã băm cũng tải như cũ', async () => {
+    vi.stubEnv('PROD', false);
+    const p = glb.ensureGlb(['h1']);
+    await tick();
+    expect(modes()).toEqual([[H1, undefined]]);
+    await finish(H1);
+    await expect(p).resolves.toBe(true);
+  });
+
+  it('tiến độ và "đến nhanh" tính như cũ: tệp đầu đến nhanh thì các tệp còn lại tải cùng lúc', async () => {
+    const prog: number[] = [];
+    const p = glb.preloadGlb(['h1', 'h2', 'h3'], { inOrder: true, onProgress: (f) => prog.push(f) });
+    await tick();
+    expect(started()).toEqual([H1]);
+    req(H1).send(30, 100);
+    await new Promise((r) => setTimeout(r, 150));
+    expect(prog.at(-1)).toBeCloseTo(0.1);
+    const r = req(H1);
+    r.send(4 << 20);
+    r.end();
+    await tick();
+    expect(started()).toEqual([H1, H2, H3]);
+    expect(modes().map(([, c]) => c)).toEqual(['force-cache', 'force-cache', 'force-cache']);
+    await finish(H2);
+    await finish(H3);
+    await p;
+    expect(glb.glbReady(['h1', 'h2', 'h3'])).toBe(true);
+    expect(prog.at(-1)).toBe(1);
+  });
+
+  it('bộ nhớ đệm giữ phản hồi lỗi (404): hỏi lại máy chủ một lần (reload), mô hình vẫn nạp được', async () => {
+    vi.mocked(fetch).mockImplementationOnce(() => Promise.resolve(new Response('', { status: 404 })));
+    const p = glb.ensureGlb(['h1']);
+    await tick();
+    expect(modes()).toEqual([
+      [H1, 'force-cache'],
+      [H1, 'reload'],
+    ]);
+    await finish(H1);
+    await expect(p).resolves.toBe(true);
+    expect(glb.glbLoaded('h1')).toBe(true);
+  });
+
+  it('máy chủ cũng báo lỗi: chỉ thử lại một lần, giữ mô hình dựng bằng code', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.mocked(fetch).mockImplementation(() => Promise.resolve(new Response('', { status: 404 })));
+    await expect(glb.ensureGlb(['h1'])).resolves.toBe(false);
+    expect(modes()).toEqual([
+      [H1, 'force-cache'],
+      [H1, 'reload'],
+    ]);
+    expect(glb.glbReady(['h1'])).toBe(true);
+    expect(glb.glbLoaded('h1')).toBe(false);
+    expect(warn).toHaveBeenCalledOnce();
+  });
+
+  it('tệp nền nhường đường (bị hủy) rồi tải lại: vẫn dừng được, vẫn lấy từ bộ nhớ đệm', async () => {
+    glb.prefetchGlb(['h1']);
+    await tick();
+    expect(req(H1).priority).toBe('low');
+    const p = glb.ensureGlb(['h2']);
+    await tick();
+    expect(req(H1).signal.aborted).toBe(true);
+    await finish(H2);
+    await expect(p).resolves.toBe(true);
+    expect(modes()).toEqual([
+      [H1, 'force-cache'],
+      [H2, 'force-cache'],
+      [H1, 'force-cache'],
+    ]);
+    expect(req(H1).signal.aborted).toBe(false);
+    await finish(H1);
+    expect(glb.glbLoaded('h1')).toBe(true);
+  });
+});

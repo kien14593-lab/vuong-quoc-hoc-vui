@@ -286,8 +286,20 @@ function urlsFor(keys: Iterable<string>): string[] {
   return [...out];
 }
 
+/**
+ * Tên tệp có mã băm nội dung (bản phát hành – Vite: assets/<tên>-<8 ký tự>.glb): cùng tên là cùng nội dung, nên lấy thẳng
+ * bản trong bộ nhớ đệm của trình duyệt kể cả khi đã "quá hạn". GitHub Pages chỉ cho giữ 10 phút (max-age=600): bé quay
+ * lại sau đó thì mỗi tệp phải hỏi lại máy chủ (một lượt đi – về, ≈ 0,6 s trên 3G) dù tệp không đổi. Bản chạy thử (dev)
+ * và bản một tệp (data:) không có mã băm → tải như cũ.
+ */
+const HASHED = /-[\w-]{8}\.glb$/;
+
 async function download(url: string, ld: Load): Promise<ArrayBuffer> {
-  const res = await fetch(url, { signal: ld.ctrl.signal, priority: ld.low ? 'low' : 'high' } as RequestInit);
+  const init = { signal: ld.ctrl.signal, priority: ld.low ? 'low' : 'high' } as RequestInit;
+  const cached = import.meta.env.PROD && HASHED.test(url);
+  let res = await fetch(url, cached ? { ...init, cache: 'force-cache' } : init);
+  // Bộ nhớ đệm giữ một phản hồi lỗi (vd. 404 lúc trang đang cập nhật): hỏi lại máy chủ một lần.
+  if (!res.ok && cached) res = await fetch(url, { ...init, cache: 'reload' });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const reader = res.body?.getReader();
   if (!reader) return res.arrayBuffer();
