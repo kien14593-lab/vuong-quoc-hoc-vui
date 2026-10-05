@@ -44,6 +44,12 @@ export interface WarmOpts {
   capMs?: number;
 }
 
+/** Đang chơi: sau mỗi khung hình chỉ đưa ảnh lên GPU chừng này mili-giây (Engine.uploadSpread). */
+const UPLOAD_SLOT_MS = 4;
+
+/** Chờ tới ngay sau khung hình kế tiếp: việc làm lúc ấy không làm trễ khung hình vừa vẽ. */
+const afterFrame = (): Promise<void> => new Promise((res) => requestAnimationFrame(() => setTimeout(res, 0)));
+
 /**
  * Bộ máy hiển thị 3D dùng chung cho toàn game:
  * một WebGLRenderer phủ toàn cửa sổ, vòng lặp khung hình, chất lượng đồ họa.
@@ -286,6 +292,7 @@ class Engine {
    * Chuẩn bị trước cho đối tượng sắp hiện (khu vực mới, mô hình AI tải xong muộn, bộ đồ mới): đưa ảnh lên GPU
    * và biên dịch shader – kể cả phần chưa lọt vào khung hình – để lúc bé bắt đầu đi, camera quay sang hay mô hình
    * vừa thay vào không bị khựng. Trình duyệt hỗ trợ thì biên dịch song song (không chặn màn hình chờ).
+   * Sau màn che: đưa hết ảnh lên một lượt. Đang chơi (không có màn che): đưa dần sau từng khung hình (uploadSpread).
    * Gọi khi đối tượng chưa hiện hoặc sau màn chờ; nên chờ xong (await) rồi mới thay / mở màn.
    */
   async warmUp(obj: THREE.Object3D, o: WarmOpts = {}): Promise<void> {
@@ -293,26 +300,60 @@ class Engine {
     const r = this.renderer;
     const camera = o.camera ?? this.stage?.camera;
     const scene = o.scene ?? ((obj as THREE.Scene).isScene ? (obj as THREE.Scene) : this.stage?.scene);
+    const spread = !this.drs.loading;
     let timer = 0;
     try {
-      uploadTextures(r, obj);
+      if (!spread) uploadTextures(r, obj);
+      const jobs: Promise<unknown>[] = [];
       if (camera && scene) {
         // Có biên dịch song song: chờ tối đa capMs. Không có: biên dịch ngay (compileAsync cũng chỉ làm vậy, kèm một cảnh báo).
         const par = r.extensions.has('KHR_parallel_shader_compile');
-        const jobs: Promise<unknown>[] = [];
         if (par) jobs.push(r.compileAsync(obj, camera, scene));
         else r.compile(obj, camera, scene);
         const shadow = this.warmShadows(obj, camera, scene, par);
         if (shadow) jobs.push(shadow);
-        if (jobs.length)
-          await Promise.race([Promise.all(jobs), new Promise<void>((res) => (timer = window.setTimeout(res, o.capMs ?? 2500)))]);
       }
+      if (spread) jobs.push(this.uploadSpread(obj));
+      if (jobs.length)
+        await Promise.race([Promise.all(jobs), new Promise<void>((res) => (timer = window.setTimeout(res, o.capMs ?? 2500)))]);
     } catch (e) {
       console.warn('[engine] warmUp', e);
     } finally {
       clearTimeout(timer);
     }
     this.skipWindow();
+  }
+
+  /**
+   * Đang chơi: đưa ảnh của `obj` lên GPU dần – ngay sau mỗi khung hình chỉ làm chừng UPLOAD_SLOT_MS (ít nhất một ảnh) –
+   * thay vì dồn cả vào một lần: mỗi ảnh 1024×1024 mất chừng 7–14 ms trên máy yếu, mô hình AI có hai ảnh như thế.
+   * Ảnh đã lên GPU (vd. mô hình đã hiện, lần vẽ đầu tự đưa lên) thì thôi; ảnh bị hủy giữa chừng thì bỏ (không đưa lên lại).
+   * Không bao giờ báo lỗi (warmUp có thể đã thôi chờ).
+   */
+  private async uploadSpread(obj: THREE.Object3D): Promise<void> {
+    const r = this.renderer;
+    const fresh = (t: THREE.Texture) => (r.properties.get(t) as { __version?: number }).__version !== t.version;
+    const all = texturesOf(obj).filter(fresh);
+    if (!all.length) return;
+    const left = new Set(all);
+    const drop = (e: { target: THREE.Texture }) => left.delete(e.target);
+    for (const t of all) t.addEventListener('dispose', drop);
+    try {
+      while (left.size) {
+        await afterFrame();
+        if (this.lost) return;
+        const t0 = performance.now();
+        for (const t of left) {
+          left.delete(t);
+          if (fresh(t)) r.initTexture(t);
+          if (performance.now() - t0 >= UPLOAD_SLOT_MS) break;
+        }
+      }
+    } catch (e) {
+      console.warn('[engine] warmUp', e);
+    } finally {
+      for (const t of all) t.removeEventListener('dispose', drop);
+    }
   }
 
   /** Khung vẽ 1×1 giả làm bản đồ bóng lúc biên dịch trước shader vẽ bóng (warmShadows). */
@@ -463,6 +504,7 @@ export const engine = new Engine();
 /**
  * Chuẩn bị trước (ảnh + shader) cho `obj` – xem Engine.warmUp. Dùng khi thay mô hình tại chỗ:
  * dựng `next` → `await warmUp(next, { scene: zone.scene })` → kiểm tra lại còn cần không → `actor.swapModel(next)` → hủy mô hình cũ.
+ * Đang chơi thì ảnh lên GPU dần trong vài khung hình (không khựng), nên chờ xong rồi hãy thay.
  */
 export function warmUp(obj: THREE.Object3D, o?: WarmOpts): Promise<void> {
   return engine.warmUp(obj, o);
