@@ -32,6 +32,7 @@ import { Labels, type Label } from './labels';
 import { nav } from './nav';
 import { buildLook, disposeLook, Player } from './player';
 import { inArea, Terrain, TERRAIN_COLORS, waterUniforms, type Area } from './terrain';
+import { angDiff, behindYaw, bestYaw, shoulderYaw } from './wander';
 
 /**
  * NỀN TẢNG KHU VỰC (zone) – mỗi khu vực trong thế giới (Làng, Rừng, Mê cung...) kế thừa `Zone`
@@ -250,6 +251,16 @@ const PICK_ICON: Record<Exclude<PickupKind, 'coin'>, string> = { star: '⭐', ke
 /** Biểu tượng bay lên khi nhặt; đồng xu là hình vẽ (ui/icons.ts) vì emoji đồng xu không hiện trên Windows 10. */
 const pickIcon = (k: PickupKind): Child => (k === 'coin' ? coinIcon() : PICK_ICON[k]);
 const UP = new THREE.Vector3(0, 1, 0);
+/**
+ * Camera câu đố nhìn vào ngực NPC: tỉ lệ chiều cao tính từ chân (nhân vật chibi đầu to nên ngực thấp).
+ * Chiều cao đọc lúc bắt đầu câu đố vì mô hình AI có thể tải muộn và thay mô hình tạm.
+ */
+const QUIZ_FOCUS_K = 0.35;
+/** Hai chỗ trên NPC phải nhìn thấy được: mặt và thân (tỉ lệ chiều cao). */
+const QUIZ_SIGHT_K = [0.78, 0.4];
+/** Vật liệu che được tầm nhìn (giống cách camera vẽ: bỏ vật ẩn, gần như trong suốt, không ghi màu). */
+const solidMat = (m: THREE.Material | THREE.Material[]): boolean =>
+  (Array.isArray(m) ? m : [m]).some((x) => x && x.visible !== false && x.colorWrite !== false && !(x.transparent && x.opacity < 0.5));
 
 export abstract class Zone implements Stage {
   readonly scene = new THREE.Scene();
@@ -288,6 +299,8 @@ export abstract class Zone implements Stage {
   private near: Interactable | null = null;
   private pendingInter: Interactable | null = null;
   private ray = new THREE.Raycaster();
+  /** Tia kiểm tra camera câu đố có bị che không (riêng, không dùng chung tia chọn bằng chuột). */
+  private sightRay = new THREE.Raycaster();
   private plane = new THREE.Plane(UP, 0);
   private lookTimer = 0;
   private lookTok = 0;
@@ -679,24 +692,128 @@ export abstract class Zone implements Stage {
     });
   }
 
-  /** Giữ camera sao cho điểm (x,y,z) hiện ở nửa trên màn hình – phía trên bảng câu hỏi. */
-  focusTop(x: number, y: number, z: number, dist = 12): void {
+  /** Độ dời điểm nhìn (m, ngược hướng nhìn) để điểm cần xem nằm ở nửa trên màn hình – phía trên bảng câu hỏi. */
+  private topShift(dist: number): number {
     const fov = (this.cam.camera.fov * Math.PI) / 180;
-    const d = (0.4 * dist * Math.tan(fov / 2)) / Math.max(0.3, Math.sin(this.cam.pitch));
-    this.cam.hold([x + Math.sin(this.cam.yaw) * d, y, z + Math.cos(this.cam.yaw) * d], dist);
+    return (0.4 * dist * Math.tan(fov / 2)) / Math.max(0.3, Math.sin(this.cam.pitch));
   }
 
-  /** Hỏi một câu toán ngay trong thế giới (camera nhìn vào đồ vật liên quan). Luôn kết thúc khi trẻ chọn đúng. */
-  async quiz(q: Question, o: AskOptions, focus?: THREE.Object3D | [number, number, number], dist = 12): Promise<AskResult> {
+  /** Giữ camera sao cho điểm (x,y,z) hiện ở nửa trên màn hình – phía trên bảng câu hỏi. `yaw`: hướng camera sẽ nhìn. */
+  focusTop(x: number, y: number, z: number, dist = 12, yaw = this.cam.yaw): void {
+    const d = this.topShift(dist);
+    this.cam.hold([x + Math.sin(yaw) * d, y, z + Math.cos(yaw) * d], dist);
+  }
+
+  /**
+   * Hỏi một câu toán ngay trong thế giới (camera nhìn vào đồ vật liên quan). Luôn kết thúc khi trẻ chọn đúng.
+   * `focus` là NPC (`npc.actor`) thì camera nhìn vào chỗ NPC đang đứng, đứng chéo sau vai bé (thấy mặt NPC 3/4)
+   * và né vật che (tán cây, hàng rào...); hỏi xong camera xoay về hướng cũ.
+   */
+  async quiz(q: Question, o: AskOptions, focus?: Actor | THREE.Object3D | [number, number, number], dist = 12): Promise<AskResult> {
+    const prev = this.cam.yawGoal;
+    let setYaw: number | null = null;
     if (focus) {
-      const p = Array.isArray(focus) ? new THREE.Vector3(...focus) : focus.getWorldPosition(new THREE.Vector3());
-      this.focusTop(p.x, p.y + (Array.isArray(focus) ? 0 : 0.6), p.z, dist);
+      const obj = Array.isArray(focus) || focus instanceof Actor ? null : focus;
+      const actor = focus instanceof Actor ? focus : obj ? (this.actors.find((a) => a.root === obj) ?? null) : null;
+      // Đọc vị trí và chiều cao lúc bắt đầu hỏi: NPC đi lang thang, mô hình AI có thể vừa thay mô hình tạm.
+      let p: THREE.Vector3;
+      if (actor) p = new THREE.Vector3(actor.pos.x, actor.pos.y + QUIZ_FOCUS_K * actor.height, actor.pos.z);
+      else if (obj) {
+        p = obj.getWorldPosition(new THREE.Vector3());
+        p.y += 0.6;
+      } else p = new THREE.Vector3(...(focus as [number, number, number]));
+      const yaw = this.quizYaw(p, dist, actor, actor?.root ?? obj);
+      if (yaw !== null) {
+        setYaw = prev + angDiff(yaw, prev);
+        this.cam.yawGoal = setYaw;
+        this.focusTop(p.x, p.y, p.z, dist, yaw);
+      } else this.focusTop(p.x, p.y, p.z, dist);
     }
     try {
       return await ask(q, o);
     } finally {
-      if (focus) await this.cam.release();
+      if (focus) {
+        // Trả camera về hướng bé đang xem trước câu đố (trừ khi hướng đã bị đổi giữa chừng).
+        if (setYaw !== null && this.cam.yawGoal === setYaw) this.cam.yawGoal = prev;
+        await this.cam.release();
+      }
     }
+  }
+
+  /**
+   * Chọn hướng camera cho câu đố, chỉ tính một lần lúc bắt đầu hỏi (bắn tia từ vị trí camera dự kiến tới chỗ cần xem).
+   *  - NPC: góc chéo sau vai bé; bị che thì thử lệch ±20°… ±80°, lấy góc gần nhất thấy rõ cả mặt lẫn thân.
+   *  - Đồ vật / điểm cố định: giữ hướng hiện tại nếu thấy rõ, chỉ xoay khi bị che.
+   * Trả về null = giữ nguyên hướng hiện tại (không góc nào tốt hơn).
+   */
+  quizYaw(p: THREE.Vector3, dist: number, actor: Actor | null, subject: THREE.Object3D | null): number | null {
+    const skip = new Set<THREE.Object3D>([this.player.root, this.fx.root]);
+    if (this.pet) skip.add(this.pet.root);
+    if (this.buddy) skip.add(this.buddy.root);
+    if (subject) skip.add(subject);
+    // Điểm cố định thường nằm ngay trong NPC đứng đó (Nhà Vua...): NPC đó không tính là vật che.
+    else for (const a of this.actors) if (Math.hypot(a.pos.x - p.x, a.pos.z - p.z) < 1) skip.add(a.root);
+    const meshes: THREE.Object3D[] = [];
+    const layers = this.cam.camera.layers;
+    const walk = (o: THREE.Object3D): void => {
+      if (!o.visible || skip.has(o)) return;
+      const m = o as THREE.Mesh & { isSkinnedMesh?: boolean; isInstancedMesh?: boolean; count?: number };
+      if (m.isMesh && !m.isSkinnedMesh && o.layers.test(layers) && solidMat(m.material) && !(m.isInstancedMesh && m.count === 0)) meshes.push(o);
+      for (const c of o.children) walk(c);
+    };
+    walk(this.scene);
+    const targets = actor
+      ? QUIZ_SIGHT_K.map((k) => new THREE.Vector3(actor.pos.x, actor.pos.y + k * actor.height, actor.pos.z))
+      : [p.clone()];
+    // Chủ thể đã bỏ khỏi danh sách nên tia được đi sát tới nơi; điểm cố định có thể nằm lọt trong vật → chừa 0.5 m.
+    const margin = subject ? 0.05 : 0.5;
+    const d = this.topShift(dist);
+    const cp = Math.cos(this.cam.pitch);
+    const sp = Math.sin(this.cam.pitch);
+    const eye = new THREE.Vector3();
+    const dir = new THREE.Vector3();
+    const ray = this.sightRay;
+    const hits: THREE.Intersection[] = [];
+    const memo = new Map<number, number>();
+    const score = (yaw: number): number => {
+      const key = Math.round(angDiff(yaw, 0) * 1e4);
+      const known = memo.get(key);
+      if (known !== undefined) return known;
+      const sx = Math.sin(yaw);
+      const sz = Math.cos(yaw);
+      eye.set(p.x + sx * (d + dist * cp), p.y + dist * sp, p.z + sz * (d + dist * cp));
+      let n = 0;
+      for (const t of targets) {
+        dir.subVectors(t, eye);
+        const len = dir.length();
+        ray.set(eye, dir.divideScalar(len));
+        ray.far = Math.max(0, len - margin);
+        let hit = false;
+        for (const m of meshes) {
+          hits.length = 0;
+          m.raycast(ray, hits);
+          if (hits.length) {
+            hit = true;
+            break;
+          }
+        }
+        if (!hit) n++;
+      }
+      memo.set(key, n);
+      return n;
+    };
+    const full = targets.length;
+    const cur = this.cam.yawGoal;
+    if (!actor) {
+      if (score(cur) >= full) return null;
+      const y = bestYaw(cur, score, full);
+      return y !== null && score(y) > score(cur) ? y : null;
+    }
+    const kid = this.player.pos;
+    const base = shoulderYaw(actor.pos.x, actor.pos.z, kid.x, kid.z, cur);
+    const y = bestYaw(base, score, full, behindYaw(actor.pos.x, actor.pos.z, kid.x, kid.z));
+    if (y === null || (score(y) < full && score(cur) >= score(y))) return null;
+    return y;
   }
 
   /**

@@ -409,9 +409,9 @@ export class MazeZone extends Zone {
       radius: 0.7,
       action: 'Giải đố',
       icon: '🧩',
-      talk: async () => {
+      talk: async (npc) => {
         await say(CAST.rua, ['Chậm mà chắc là bí quyết đi mê cung.', 'Ông có một câu đố nhỏ cho cháu đây.']);
-        await this.quiz(mixedQuestion(MAZE_TOPICS[profile().grade]), { src: 'maze:turtle', speaker: CAST.rua, title: 'Câu đố của Ông Rùa', icon: '🧩' }, [-5.8, 1.2, -12.7], 10);
+        await this.quiz(mixedQuestion(MAZE_TOPICS[profile().grade]), { src: 'maze:turtle', speaker: CAST.rua, title: 'Câu đố của Ông Rùa', icon: '🧩' }, npc.actor, 10);
         await say(CAST.rua, 'Tuyệt lắm! Cháu nhớ nhìn biển chỉ dẫn và đi từng bước nhé.');
       },
     });
@@ -421,9 +421,9 @@ export class MazeZone extends Zone {
       rot: 110,
       action: 'Hỏi mẹo',
       icon: '💡',
-      talk: async () => {
+      talk: async (npc) => {
         await say(CAST.soc, ['Nếu gặp nhiều cửa, cháu đọc câu hỏi trước rồi nhìn số trên từng cửa.', 'Cô Sóc tặng cháu một bài luyện nhanh nhé!']);
-        await this.quiz(mixedQuestion(MAZE_TOPICS[profile().grade]), { src: 'maze:squirrel', speaker: CAST.soc, title: 'Mẹo đi mê cung', icon: '💡' }, [-23.7, 1.2, 9.3], 10);
+        await this.quiz(mixedQuestion(MAZE_TOPICS[profile().grade]), { src: 'maze:squirrel', speaker: CAST.soc, title: 'Mẹo đi mê cung', icon: '💡' }, npc.actor, 10);
       },
     });
   }

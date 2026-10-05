@@ -1,9 +1,12 @@
 import type { Body } from './collide';
 
 /**
- * Các phép tính thuần (không cần cảnh 3D) cho NPC đi lang thang:
- * chọn điểm đi tiếp không xuyên qua vật trang trí (luống hoa, bụi cây thấp...).
+ * Các phép tính thuần (không cần cảnh 3D) cho NPC đi lang thang và camera câu đố:
+ *  - chọn điểm đi tiếp không xuyên qua vật trang trí (luống hoa, bụi cây thấp...),
+ *  - góc camera "qua vai" bé và tìm góc nhìn thoáng khi bị che.
  */
+
+const DEG = Math.PI / 180;
 
 /** Hiệu hai góc, đưa về (−π, π]. */
 export function angDiff(a: number, b: number): number {
@@ -59,4 +62,50 @@ export function pickWanderTarget(
     if (ok(x, z)) return { x, z };
   }
   return null;
+}
+
+/** Góc camera đứng sau lưng bé nhìn về NPC (camera ở phía +Z khi yaw = 0, giống FollowCam). */
+export function behindYaw(nx: number, nz: number, kx: number, kz: number): number {
+  return Math.atan2(kx - nx, kz - nz);
+}
+
+/**
+ * Góc camera "qua vai" khi bé nói chuyện với NPC: sau lưng bé, lệch sang một bên `off` để thấy mặt NPC
+ * 3/4 mà bé không che. Chọn bên gần góc camera hiện tại (xoay ít nhất).
+ */
+export function shoulderYaw(nx: number, nz: number, kx: number, kz: number, cur: number, off = 40 * DEG): number {
+  if (Math.hypot(kx - nx, kz - nz) < 0.05) return cur;
+  const line = behindYaw(nx, nz, kx, kz);
+  const a = line + off;
+  const b = line - off;
+  return Math.abs(angDiff(a, cur)) <= Math.abs(angDiff(b, cur)) ? a : b;
+}
+
+/** Thứ tự thử góc: `base`, rồi ±step, ±2·step… tới ±max; cùng độ lệch thì phía gần `prefer` trước. */
+export function* yawOrder(base: number, prefer = base, step = 20 * DEG, max = 80 * DEG): Generator<number> {
+  yield base;
+  const side = angDiff(prefer, base) >= 0 ? 1 : -1;
+  for (let k = step; k <= max + 1e-9; k += step) {
+    yield base + side * k;
+    yield base - side * k;
+  }
+}
+
+/**
+ * Tìm góc camera nhìn thoáng, chấm điểm từng góc theo `yawOrder` (điểm = số chỗ trên NPC/vật nhìn thấy):
+ * lấy góc đầu tiên đạt `full`; không góc nào đạt thì lấy góc điểm cao nhất (gần `base` nhất);
+ * mọi góc đều 0 điểm → null.
+ */
+export function bestYaw(base: number, score: (yaw: number) => number, full: number, prefer = base, step = 20 * DEG, max = 80 * DEG): number | null {
+  let best: number | null = null;
+  let top = 0;
+  for (const y of yawOrder(base, prefer, step, max)) {
+    const s = score(y);
+    if (s >= full) return y;
+    if (s > top) {
+      top = s;
+      best = y;
+    }
+  }
+  return best;
 }

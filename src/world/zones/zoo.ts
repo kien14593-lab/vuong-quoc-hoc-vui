@@ -497,9 +497,9 @@ export class ZooZone extends Zone {
       name: CAST.nai.name,
       color: CAST.nai.color,
       wander: 2.4,
-      talk: async () => {
+      talk: async (npc) => {
         await say(CAST.nai, 'Mình có một câu đố nhỏ về các con vật đây!');
-        await this.quiz(mixedQuestion(), { src: 'zoo:riddle', speaker: CAST.nai, title: 'Câu đố sở thú', icon: '🧩' }, [7.6, 1.2, 4.7], 10);
+        await this.quiz(mixedQuestion(), { src: 'zoo:riddle', speaker: CAST.nai, title: 'Câu đố sở thú', icon: '🧩' }, npc.actor, 10);
         await say(CAST.nai, 'Bạn thông minh quá! Khám phá tiếp nhé.');
       },
     });

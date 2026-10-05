@@ -269,9 +269,9 @@ export class CastleZone extends Zone {
       opts: { v: 3 },
       rot: 40,
       wander: 1.2,
-      talk: async () => {
+      talk: async (npc) => {
         await say({ name: 'Thị vệ Mây', color: '#ffb38a', voice: 'v3' }, 'Mình có một câu đố trong sân lâu đài!');
-        await this.quiz(mixedQuestion(GRADE_TOPICS[profile().grade]), { src: 'castle:riddle', speaker: { name: 'Thị vệ Mây', color: '#ffb38a' }, title: 'Câu đố trong sân', icon: '🧩' }, [-8.8, 1.4, -4.8], 10);
+        await this.quiz(mixedQuestion(GRADE_TOPICS[profile().grade]), { src: 'castle:riddle', speaker: { name: 'Thị vệ Mây', color: '#ffb38a' }, title: 'Câu đố trong sân', icon: '🧩' }, npc.actor, 10);
         await say({ name: 'Thị vệ Mây', color: '#ffb38a', voice: 'v3' }, 'Hay quá! Bạn suy luận như một hiệp sĩ toán học.');
       },
     });

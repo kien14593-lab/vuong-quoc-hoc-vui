@@ -3,10 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { defineModel, type Collider } from '../src/models/registry';
 import { Actor } from '../src/world/actor';
 import { World, yawTo, type Body } from '../src/world/collide';
-import { angDiff, bodyDist, pickWanderTarget, segmentClear } from '../src/world/wander';
+import { angDiff, behindYaw, bestYaw, bodyDist, pickWanderTarget, segmentClear, shoulderYaw, yawOrder } from '../src/world/wander';
 
 /**
- * NPC đi lang thang: đứng lại chờ bé, không đi xuyên vật trang trí.
+ * NPC đi lang thang: đứng lại chờ bé, không đi xuyên vật trang trí; camera câu đố tìm góc nhìn thoáng.
  */
 const DEG = Math.PI / 180;
 // Chạy hết các lời hứa đang chờ (setImmediate: không phụ thuộc độ phân giải đồng hồ ~15 ms của Windows như setTimeout)
@@ -109,6 +109,48 @@ describe('pickWanderTarget', () => {
     let n = 0;
     expect(pickWanderTarget({ x: 0, z: 0, r: 1 }, () => (n++, false))).toBeNull();
     expect(n).toBe(6);
+  });
+});
+
+describe('shoulderYaw / yawOrder / bestYaw', () => {
+  it('camera sau lưng bé, lệch 40° về phía gần góc hiện tại', () => {
+    // NPC ở gốc, bé ở phía +Z → camera "sau lưng bé" có yaw 0 (giống FollowCam: yaw 0 = camera ở +Z).
+    expect(behindYaw(0, 0, 0, 2)).toBeCloseTo(0);
+    expect(behindYaw(0, 0, 2, 0)).toBeCloseTo(Math.PI / 2);
+    expect(shoulderYaw(0, 0, 0, 2, 0.3)).toBeCloseTo(40 * DEG);
+    expect(shoulderYaw(0, 0, 0, 2, -0.3)).toBeCloseTo(-40 * DEG);
+    // Bé ở phía -Z, camera đang ở +Z (yaw 0): xoay về bên gần hơn, góc lệch luôn đúng 40° so với đường sau lưng bé
+    const y = shoulderYaw(0, 0, 0, -2, 0.1);
+    expect(Math.abs(angDiff(y, Math.PI))).toBeCloseTo(40 * DEG);
+    expect(Math.abs(angDiff(y, 0.1))).toBeLessThan(Math.PI - 40 * DEG + 1e-6);
+    // Bé đứng trùng chỗ NPC → giữ nguyên
+    expect(shoulderYaw(1, 1, 1, 1, 0.7)).toBe(0.7);
+  });
+
+  // Góc thử, tính bằng độ so với base = 1 rad
+  const rel = (y: number) => Math.round(((y - 1) / DEG) * 10) / 10 + 0;
+
+  it('thử lần lượt 0, ±20°… ±80°, ưu tiên phía `prefer`', () => {
+    expect([...yawOrder(1, 1 + 0.5)].map(rel)).toEqual([0, 20, -20, 40, -40, 60, -60, 80, -80]);
+    expect([...yawOrder(1, 1 - 0.5)].map(rel).slice(0, 3)).toEqual([0, -20, 20]);
+    expect([...yawOrder(1)].map(rel).slice(0, 3)).toEqual([0, 20, -20]);
+  });
+
+  it('bestYaw: góc đầu tiên thấy đủ; không có thì góc thấy nhiều nhất (gần base nhất); không thấy gì → null', () => {
+    const tried: number[] = [];
+    expect(bestYaw(1, (y) => (tried.push(rel(y)), 0), 2, 1 + 0.5)).toBeNull();
+    expect(tried).toEqual([0, 20, -20, 40, -40, 60, -60, 80, -80]);
+    expect(bestYaw(1, () => 2, 2)).toBe(1);
+    // Chỉ 60° thấy đủ → dừng ngay ở 60°, không tốn tia cho các góc sau
+    tried.length = 0;
+    const at60 = (y: number) => (tried.push(rel(y)), rel(y) === 60 ? 2 : 0);
+    expect(rel(bestYaw(1, at60, 2, 1 + 0.5)!)).toBe(60);
+    expect(tried).toEqual([0, 20, -20, 40, -40, 60]);
+    // Không góc nào đủ: lấy điểm cao nhất; bằng điểm thì góc thử trước (gần base hơn)
+    const part = (y: number) => ([-40, 60, -80].includes(rel(y)) ? 1 : 0);
+    expect(rel(bestYaw(1, part, 2, 1 + 0.5)!)).toBe(-40);
+    const more = (y: number) => (rel(y) === 80 ? 1.5 : part(y));
+    expect(rel(bestYaw(1, more, 2, 1 + 0.5)!)).toBe(80);
   });
 });
 

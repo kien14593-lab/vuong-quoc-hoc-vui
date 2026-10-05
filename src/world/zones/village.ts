@@ -4,7 +4,6 @@ import { CAST, villager } from '../../game/cast';
 import { mixedQuestion, storyQuestion } from '../../game/challenge';
 import { bearStage, on, reward, starsQuestDone, villageStars, VILLAGE_STARS, zoneLock } from '../../game/story';
 import { choose, say } from '../../ui/dialog';
-import { ask } from '../../ui/question';
 import { openQuestBoard } from '../../ui/screens/quests';
 import { openShop } from '../../ui/screens/shop';
 import { toast } from '../../ui/toast';
@@ -234,10 +233,10 @@ export class VillageZone extends Zone {
         opts: { v },
         wander: w,
         rot: this.rnd() * 360,
-        talk: async () => {
+        talk: async (npc) => {
           if (v === 4) {
             await say(sp, 'Bà có một câu đố nhỏ cho cháu đây!');
-            await ask(mixedQuestion(), { src: 'village:riddle', speaker: sp, title: 'Câu đố của Bà Ba', icon: '🧩' });
+            await this.quiz(mixedQuestion(), { src: 'village:riddle', speaker: sp, title: 'Câu đố của Bà Ba', icon: '🧩' }, npc.actor, 10);
             await say(sp, 'Cháu giỏi quá! Lúc nào rảnh lại ghé chơi với bà nhé.');
             return;
           }
