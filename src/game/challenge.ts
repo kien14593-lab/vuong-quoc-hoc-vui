@@ -23,6 +23,14 @@ export interface SubmitResult {
   message: string;
 }
 
+/**
+ * Dòng phản hồi ngay dưới câu hỏi. Ở mức gợi ý và từng bước, bóng nói trợ giúp đã hiện
+ * cùng nội dung → để trống dòng này cho bé chỉ đọc một lần.
+ */
+export function feedbackLine(r: SubmitResult): string {
+  return r.stage === 'hint' || r.stage === 'steps' ? '' : r.message;
+}
+
 /** Theo dõi số lần thử của một câu hỏi và quyết định mức hỗ trợ. */
 export class AttemptTracker {
   attempts = 0;

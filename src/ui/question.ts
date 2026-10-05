@@ -1,6 +1,6 @@
 import { sfx } from '../core/audio';
 import { speak, speakEnglish, speakParts, stopSpeech } from '../core/speech';
-import { AttemptTracker, finishQuestion, type Stage, type SubmitResult } from '../game/challenge';
+import { AttemptTracker, feedbackLine, finishQuestion, type Stage, type SubmitResult } from '../game/challenge';
 import type { Question } from '../math/types';
 import { speakerArt, type Speaker } from './dialog';
 import { h, wait } from './dom';
@@ -140,8 +140,9 @@ export function ask(q: Question, o: AskOptions): Promise<AskResult> {
       const btn = buttons[i];
       if (!c || btn.disabled) return;
       const r: SubmitResult = tracker.submit(c.value);
-      feedback.replaceChildren(...[rich(r.message)].flat());
-      feedback.className = `q-feedback show stage-${r.stage}`;
+      const line = feedbackLine(r);
+      feedback.replaceChildren(...[rich(line)].flat());
+      feedback.className = line ? `q-feedback show stage-${r.stage}` : 'q-feedback';
       if (r.correct) {
         busy = true;
         btn.classList.add('correct');
@@ -249,8 +250,9 @@ export function promptCard(q: Question, o: { src: string; speaker?: Speaker | nu
     tracker,
     submit(value: string) {
       const r = tracker.submit(value);
-      feedback.replaceChildren(...[rich(r.message)].flat());
-      feedback.className = `q-feedback show stage-${r.stage}`;
+      const line = feedbackLine(r);
+      feedback.replaceChildren(...[rich(line)].flat());
+      feedback.className = line ? `q-feedback show stage-${r.stage}` : 'q-feedback';
       if (r.correct) {
         sfx('correct');
         praise(q);

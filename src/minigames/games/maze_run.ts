@@ -10,6 +10,9 @@ import { defineMini } from '../registry';
 
 type GateChoice = THREE.Group & { userData: { value: string; home: THREE.Vector3 } };
 
+/** Mọi cửa cùng một màu – tô riêng cửa đúng sẽ lộ đáp án. */
+const DOOR_COLOR = '#d7a56d';
+
 function shuffle<T>(a: T[]): T[] {
   return [...a].sort(() => Math.random() - 0.5);
 }
@@ -97,8 +100,7 @@ class MazeRunGame extends MiniGame {
     const z = this.pathZ + 0.15;
     const xs = [-1.2, 0, 1.2];
     q.choices.slice(0, 3).forEach((c, i) => {
-      const correct = c.value === q.answer;
-      const door = this.answerGate(c.label, correct ? '#7bd389' : '#d7a56d');
+      const door = this.answerGate(c.label, DOOR_COLOR);
       door.position.set(xs[i], 0, z);
       this.scene.add(door);
       (door as GateChoice).userData.value = c.value;
