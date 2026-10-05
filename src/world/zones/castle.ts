@@ -263,12 +263,12 @@ export class CastleZone extends Zone {
         await say({ name: 'Lính gác Piko', color: '#8fd3ff', voice: 'v1' }, ['Mẹo nhỏ nhé!', 'Nếu thấy đá đáp án, hãy đi tới và chọn bằng nút tròn. Sai cũng không sao, lâu đài sẽ gợi ý cho bạn.']);
       },
     });
-    this.npc('npc_villager', -8.8, -4.8, {
+    this.npc('npc_villager', -10.3, -5.0, {
       name: 'Thị vệ Mây',
       color: '#ffb38a',
       opts: { v: 3 },
       rot: 40,
-      wander: 1.2,
+      wander: 1.0,
       talk: async (npc) => {
         await say({ name: 'Thị vệ Mây', color: '#ffb38a', voice: 'v3' }, 'Mình có một câu đố trong sân lâu đài!');
         await this.quiz(mixedQuestion(GRADE_TOPICS[profile().grade]), { src: 'castle:riddle', speaker: { name: 'Thị vệ Mây', color: '#ffb38a' }, title: 'Câu đố trong sân', icon: '🧩' }, npc.actor, 10);

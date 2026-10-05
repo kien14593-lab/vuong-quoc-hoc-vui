@@ -80,7 +80,8 @@ const ROLE_HINT = {
 const KEY_VI = {
   npc_bear: 'Chú Gấu', npc_rabbit: 'Thỏ Bông', npc_robot: 'Robot Bíp', npc_cat: 'Cô Mèo', npc_owl: 'Bác Cú', npc_squirrel: 'Cô Sóc',
   npc_turtle: 'Ông Rùa', npc_deer: 'Bạn Nai', npc_elephant: 'Bác Voi', npc_king: 'Nhà Vua', npc_knight: 'Hiệp Sĩ Thỏ', npc_clown: 'Chú Hề',
-  npc_villager: 'Dân làng', player_trai: 'Bé trai', player_gai: 'Bé gái',
+  npc_be_na: 'Bé Na', npc_anh_ti: 'Anh Tí', npc_chi_mai: 'Chị Mai', npc_be_bin: 'Bé Bin', npc_ba_ba: 'Bà Ba', npc_chu_tu: 'Chú Tư',
+  player_trai: 'Bé trai', player_gai: 'Bé gái',
   pet_dog: 'Cún con', pet_cat: 'Mèo mướp con', pet_rabbit: 'Thỏ con', pet_panda: 'Gấu trúc con', pet_fox: 'Cáo con',
   pet_penguin: 'Chim cánh cụt con', pet_dino: 'Khủng long tí hon',
   animal_giraffe: 'Hươu cao cổ', animal_monkey: 'Khỉ', animal_penguin: 'Chim cánh cụt (Sở Thú)', animal_zebra: 'Ngựa vằn',
@@ -709,7 +710,9 @@ async function main() {
   for (const f of glbs) {
     const p = parseName(f);
     if (!p.key) {
-      console.log(`  ✖ ${f}: không nhận ra nhân vật. Đổi tên tệp, ví dụ: gau.glb, tho.glb, meo.glb, cu.glb, vua.glb (xem danh sách trong hướng dẫn).`);
+      if (/^(dan-lang|villager)(-|$)/.test(slug(f.replace(/\.(glb|gltf)$/i, ''))))
+        console.log(`  ✖ ${f}: mỗi dân làng có tệp riêng – đổi tên thành be-na.glb, anh-ti.glb, chi-mai.glb, be-bin.glb, ba-ba.glb hoặc chu-tu.glb.`);
+      else console.log(`  ✖ ${f}: không nhận ra nhân vật. Đổi tên tệp, ví dụ: gau.glb, tho.glb, meo.glb, cu.glb, vua.glb (xem danh sách trong hướng dẫn).`);
       bad++;
       continue;
     }

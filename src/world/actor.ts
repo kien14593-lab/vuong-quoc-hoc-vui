@@ -1,6 +1,8 @@
 import * as THREE from 'three';
+import { disposeTree } from '../engine/merge';
 import { dampAngle } from '../engine/tween';
-import { buildModel, collectTicks } from '../models/registry';
+import { glbLoaded } from '../models/glb';
+import { buildModel, collectTicks, modelKeyFor } from '../models/registry';
 import { animateRig, rigOf, type AnimState, type Rig } from '../models/rig';
 import { yawTo, type Body, type World } from './collide';
 import { pickWanderTarget, segmentClear } from './wander';
@@ -72,12 +74,15 @@ export class Actor {
   private resume = 2.5;
   /** Tỉ lệ riêng của nhân vật này (opts.scale), áp lại khi đổi mô hình. */
   private readonly scaleK: number;
+  /** Tùy chọn dựng mô hình (để dựng lại khi thay mô hình AI tải sau). */
+  private readonly opts: Record<string, unknown>;
 
   constructor(
     readonly key: string,
     o: ActorOpts = {},
   ) {
-    this.model = buildModel(key, o.opts ?? {});
+    this.opts = o.opts ?? {};
+    this.model = buildModel(key, this.opts);
     this.rig = rigOf(this.model);
     const s = (this.scaleK = o.scale ?? 1);
     this.model.scale.multiplyScalar(s);
@@ -109,6 +114,31 @@ export class Actor {
     this.ticks = collectTicks(next);
     this.height = ((next.userData.height as number | undefined) ?? 1.6) * this.scaleK;
     return old;
+  }
+
+  /** Khóa mô hình thật (dân làng 'npc_villager' + { v } → khóa riêng của từng người, models/villagers.ts). */
+  get modelKey(): string {
+    return modelKeyFor(this.key, this.opts);
+  }
+
+  /** Đang nói chuyện / đố / vui mừng: chưa thay mô hình tải sau (để xong mới thay). */
+  get busy(): boolean {
+    return this.talking || this.t < this.happyUntil;
+  }
+
+  /**
+   * Mô hình AI tải sau (world/late.ts – cảnh không chờ) vừa xong: dựng lại và thay ngay tại chỗ.
+   * Trả về true nếu đã thay; false nếu đang dùng mô hình AI rồi, hoặc tệp chưa tải/tải lỗi (giữ nguyên mô hình cũ).
+   */
+  upgradeModel(): boolean {
+    if (this.model.userData.glb || !glbLoaded(this.modelKey)) return false;
+    const next = buildModel(this.key, this.opts);
+    if (!next.userData.glb) {
+      disposeTree(next);
+      return false;
+    }
+    disposeTree(this.swapModel(next));
+    return true;
   }
 
   setPos(x: number, z: number, y = this.root.position.y): void {

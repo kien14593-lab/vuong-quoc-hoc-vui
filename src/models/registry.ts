@@ -59,6 +59,8 @@ const defs = new Map<string, ModelDef<any>>();
 const baseDefs = new Map<string, ModelDef<any>>();
 /** Hàm tạo định nghĩa thay thế (mô hình GLB) theo khóa; áp dụng bất kể thứ tự nạp tệp. */
 const overrides = new Map<string, (base: ModelDef<any> | undefined) => ModelDef<any>>();
+/** Khóa chung → khóa riêng theo tùy chọn (dân làng: 'npc_villager' + { v: 2 } → 'npc_chi_mai'). */
+const routes = new Map<string, (opts: any) => string>();
 
 export function defineModel<O = Record<string, unknown>>(key: string, def: ModelDef<O>): void {
   if (baseDefs.has(key)) console.warn(`[models] trùng khóa mô hình: ${key}`);
@@ -81,12 +83,43 @@ export function baseModelDef(key: string): ModelDef<any> | undefined {
   return baseDefs.get(key);
 }
 
+/**
+ * Khóa chung dẫn tới khóa riêng theo tùy chọn: `pick(opts)` trả về khóa thật (đã đăng ký riêng, có thể thay
+ * bằng GLB riêng). Khóa chung vẫn có trong thư viện xem thử (variants) và hasModel/modelKeys.
+ */
+export function defineRoute<O = Record<string, unknown>>(
+  key: string,
+  pick: (opts: O) => string,
+  info: Pick<ModelDef<O>, 'tags' | 'desc' | 'variants'> = {},
+): void {
+  routes.set(key, pick as (opts: any) => string);
+  const real = (o: O) => defs.get(pick(o));
+  defineModel<O>(key, {
+    ...info,
+    build: (o) => buildModel(pick(o), o),
+    colliders: (o) => {
+      const c = real(o)?.colliders;
+      return (typeof c === 'function' ? c(o) : c) ?? [];
+    },
+    height: (o) => {
+      const h = real(o)?.height;
+      return (typeof h === 'function' ? h(o) : h) ?? 0;
+    },
+  });
+}
+
+/** Khóa mô hình thật sẽ được dựng cho (khóa, tùy chọn) – khóa chung đổi sang khóa riêng, khóa khác giữ nguyên. */
+export function modelKeyFor(key: string, opts: Record<string, unknown> = {}): string {
+  return routes.get(key)?.(opts) ?? key;
+}
+
 export function hasModel(key: string): boolean {
   return defs.has(key);
 }
 
-export function modelDef(key: string): ModelDef<any> | undefined {
-  return defs.get(key);
+/** Định nghĩa của khóa; có `opts` thì khóa chung (dân làng) trả về định nghĩa của khóa riêng. */
+export function modelDef(key: string, opts?: Record<string, unknown>): ModelDef<any> | undefined {
+  return defs.get(opts ? modelKeyFor(key, opts) : key);
 }
 
 /**
@@ -94,6 +127,7 @@ export function modelDef(key: string): ModelDef<any> | undefined {
  * NPC dùng số này để đẩy người chơi ra đúng cỡ nhân vật (Bác Voi 0.7, Thỏ Bông 0.45). Không có → undefined.
  */
 export function modelRadius(key: string, opts: Record<string, unknown> = {}): number | undefined {
+  key = modelKeyFor(key, opts);
   for (const def of [defs.get(key), baseDefs.get(key)]) {
     const col = def && (typeof def.colliders === 'function' ? def.colliders(opts) : def.colliders);
     const circles = (col ?? []).filter((c: Collider): c is CircleCollider => c.kind === 'circle');
@@ -109,6 +143,7 @@ export function modelKeys(prefix = ''): string[] {
 
 /** Dựng mô hình theo khóa; nếu thiếu, trả về khối hồng báo lỗi (để dễ phát hiện). */
 export function buildModel<O = Record<string, unknown>>(key: string, opts?: O): THREE.Object3D {
+  key = modelKeyFor(key, (opts ?? {}) as Record<string, unknown>);
   const def = defs.get(key);
   if (!def) {
     console.warn(`[models] thiếu mô hình: ${key}`);

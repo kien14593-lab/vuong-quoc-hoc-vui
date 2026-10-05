@@ -21,7 +21,7 @@ export interface Speaker {
 export function speakerArt(sp: Speaker | null | undefined, size = 256): string {
   if (!sp?.art) return '';
   if (sp.art.startsWith('data:') || sp.art.startsWith('blob:')) return sp.art;
-  return modelPortrait(sp.art, { framing: modelDef(sp.art)?.portrait ?? 'head', size, yaw: 18, opts: sp.artOpts });
+  return modelPortrait(sp.art, { framing: modelDef(sp.art, sp.artOpts)?.portrait ?? 'head', size, yaw: 18, opts: sp.artOpts });
 }
 
 let queue: Promise<unknown> = Promise.resolve();

@@ -5,7 +5,7 @@ import { disposeTree } from '../engine/merge';
 import type { PlayerOpts } from '../models/character';
 import { ensureGlb, glbReady } from '../models/glb';
 import { kidModelKey } from '../models/kid';
-import { buildModel, hasModel } from '../models/registry';
+import { buildModel, hasModel, modelKeyFor } from '../models/registry';
 
 /**
  * Ảnh chân dung 3D (data URL) của nhân vật/NPC/vật phẩm – dùng cho hộp thoại, HUD, cửa hàng, túi đồ.
@@ -131,6 +131,8 @@ function cached(k: string, make: () => THREE.Object3D | null, o: PortraitOpts, k
 /** Chân dung theo khóa mô hình (NPC, thú cưng, đồ vật...). */
 export function modelPortrait(key: string, o: PortraitOpts = {}): string {
   if (!hasModel(key)) return '';
+  // Khóa chung (dân làng 'npc_villager' + { v }) → khóa riêng của từng người (mô hình AI riêng).
+  key = modelKeyFor(key, o.opts ?? {});
   const k = JSON.stringify(['m', key, o]);
   // Mô hình AI chưa tải xong: vẽ tạm bằng mô hình dựng bằng code nhưng không lưu (lần sau vẽ lại bằng mô hình AI).
   const ready = glbReady([key]);
@@ -217,6 +219,7 @@ export function setModelPortrait(
   load: (key: string) => Promise<unknown> = (k) => ensureGlb([k]),
 ): boolean {
   if (!hasModel(key)) return false;
+  key = modelKeyFor(key, o.opts ?? {});
   const tok = String(++reqSeq);
   img.dataset.portraitReq = tok;
   const ready = glbReady([key]);

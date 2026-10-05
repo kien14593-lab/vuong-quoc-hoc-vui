@@ -196,7 +196,7 @@ export class ParkZone extends Zone {
       'Vòng quay ở phía đông nam, đẹp nhất lúc trời nắng!',
       'Có đủ 5 vé thì đi Sở Thú nhé!',
     ];
-    [[0, 0.8, 3.6, 3], [2, -1.8, -5.8, 2.5], [3, 18.8, 11.0, 2.6], [5, 22.2, -9.0, 2.8]].forEach(([v, x, z, w], i) => {
+    [[0, 0.8, 3.6, 3], [2, -1.8, -5.8, 2.5], [3, 19.3, 12.0, 1.4], [5, 21.5, -8.8, 1.6]].forEach(([v, x, z, w], i) => {
       const sp = villager(v);
       this.npc('npc_villager', x, z, {
         name: sp.name,

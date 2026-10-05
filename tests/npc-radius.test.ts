@@ -54,7 +54,10 @@ describe('modelRadius', () => {
     expect(modelRadius('npc_king')).toBe(0.55);
     expect(modelRadius('npc_rabbit')).toBe(0.45);
     expect(modelRadius('npc_deer')).toBe(0.6);
-    expect(modelRadius('npc_villager')).toBe(0.44);
+    // Dân làng: theo từng người (v), không ghi v = Bé Na.
+    expect(modelRadius('npc_villager')).toBe(0.5);
+    expect(modelRadius('npc_villager', { v: 3 })).toBe(0.44);
+    expect(modelRadius('npc_villager', { v: 5 })).toBe(0.8);
   });
 });
 

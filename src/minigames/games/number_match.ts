@@ -117,6 +117,9 @@ class NumberMatchGame extends MiniGame {
     this.model('flower', { v: 2 }, [-3.6, 0, 2.8], 0, 1.4);
     this.model('flower', { v: 4 }, [4.1, 0, 2.9], 0, 1.2);
     this.mascot = this.model('npc_villager', { v: 1 }, [-4.2, 0, 1.6], 0.45, 1.25);
+    // Anh Tí bản AI cao 1.75 m (bản dựng bằng code 1.35 m): giữ cỡ linh vật như thiết kế để không tràn mép trái.
+    const mh = Number(this.mascot.children[0]?.userData.height) || 1.35;
+    this.mascot.scale.setScalar((1.25 * 1.35) / mh);
     const st = this.mascot && this.anim(this.mascot);
     if (st) st.wave = true;
     this.onPointer('tap', (e) => this.tap(e));

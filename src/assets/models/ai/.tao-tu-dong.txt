@@ -7,8 +7,14 @@
     "animal_monkey.glb",
     "animal_penguin.glb",
     "animal_zebra.glb",
+    "npc_anh_ti.glb",
+    "npc_ba_ba.glb",
+    "npc_be_bin.glb",
+    "npc_be_na.glb",
     "npc_bear.glb",
     "npc_cat.glb",
+    "npc_chi_mai.glb",
+    "npc_chu_tu.glb",
     "npc_clown.glb",
     "npc_deer.glb",
     "npc_elephant.glb",
@@ -47,11 +53,29 @@
     "animal_zebra": [
       "ngua-van.glb"
     ],
+    "npc_anh_ti": [
+      "anh-ti.glb"
+    ],
+    "npc_ba_ba": [
+      "ba-ba.glb"
+    ],
+    "npc_be_bin": [
+      "be-bin.glb"
+    ],
+    "npc_be_na": [
+      "be-na.glb"
+    ],
     "npc_bear": [
       "gau.glb"
     ],
     "npc_cat": [
       "meo.glb"
+    ],
+    "npc_chi_mai": [
+      "chi-mai.glb"
+    ],
+    "npc_chu_tu": [
+      "chu-tu.glb"
     ],
     "npc_clown": [
       "he.glb"

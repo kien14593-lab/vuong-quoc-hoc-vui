@@ -2,8 +2,10 @@ import * as THREE from 'three';
 import { engine, type Quality, type Stage } from '../engine/core';
 import { setupLights, setupSky, type LightRig } from '../engine/lighting';
 import { bakeStatic, disposeTree } from '../engine/merge';
+import { TITLE_LATE_MODELS, TITLE_MODELS } from '../game/needs';
 import { buildModel, collectTicks } from '../models/registry';
 import { Actor } from './actor';
+import { loadLate } from './late';
 import { Terrain, TERRAIN_COLORS, waterUniforms } from './terrain';
 
 /**
@@ -105,6 +107,15 @@ export class TitleStage implements Stage {
       this.actors.push(a);
     }
     this.actors[0].waving = true;
+    // Dân làng không chờ lúc khởi động (game/needs.ts TITLE_LATE_MODELS): mô hình AI tải sau rồi thay tại chỗ.
+    void loadLate(TITLE_LATE_MODELS, TITLE_MODELS, {
+      gone: () => this.disposed,
+      scene: this.scene,
+      camera: this.camera,
+      swap: (k) => {
+        for (const a of this.actors) if (a.modelKey === k) a.upgradeModel();
+      },
+    });
   }
 
   update(dt: number, t: number): void {

@@ -108,8 +108,8 @@ Chép tệp `.glb` (tạo bằng Tencent HY 3D, Meshy, Tripo…) vào thư mục
 
 Công nghệ: **Three.js** (3D), **TypeScript**, **Vite**, **Vitest**. Mọi mô hình đều có bản dựng bằng code
 (pastel, low-poly), có thể thay bằng tệp GLB (Chú Gấu, Thỏ Bông, Cô Mèo, Bác Cú, Robot Bíp, Chú Hề Bibo, Bác Voi, Nhà Vua, Hiệp Sĩ Thỏ,
-Ông Rùa, Bạn Nai, cả 7 thú cưng và 6 thú Sở Thú đã dùng mô hình AI). Mô hình AI được tải theo cảnh: màn hình tiêu đề tải trước, mỗi khu vực/mini-game chờ mô hình của mình lúc
-chuyển cảnh (quá 15 giây thì dùng bản dựng bằng code; thú cưng và thú Sở Thú không bắt chờ mà tải ngay sau đó rồi tự thay tại chỗ), phần còn lại tải dần ở chế độ nền.
+Ông Rùa, Bạn Nai, 6 dân làng, cả 7 thú cưng và 6 thú Sở Thú đã dùng mô hình AI). Mô hình AI được tải theo cảnh: màn hình tiêu đề tải trước, mỗi khu vực/mini-game chờ mô hình của mình lúc
+chuyển cảnh (quá 15 giây thì dùng bản dựng bằng code; thú cưng, thú Sở Thú và dân làng không bắt chờ mà tải ngay sau đó rồi tự thay tại chỗ), phần còn lại tải dần ở chế độ nền.
 Thú Sở Thú ở xa được giảm chi tiết tự động (`src/world/lod.ts`; việc rút gọn lưới chạy trong luồng phụ `src/world/lod-worker.ts` nên không làm giật hình) để Sở Thú vẫn mượt. Danh sách nằm trong
 `src/game/needs.ts`; `tests/needs.test.ts` báo lỗi nếu một cảnh dùng nhân vật chưa có trong danh sách.
 

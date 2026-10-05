@@ -1,9 +1,10 @@
 ﻿import * as THREE from 'three';
 import { ball, box, capsule, cone, cyl, DEG, extrude, lathe, panel, pivot, rbox, sphPart, starShape, torus, tube } from '../engine/kit';
 import { tint } from '../engine/materials';
-import { defineModel, type ModelDef } from './registry';
+import { defineModel, defineRoute, type ModelDef } from './registry';
 import type { Rig } from './rig';
 import { buildCharacter, type CharSpec } from './character';
+import { VILLAGER_KEYS, villagerKey } from './villagers';
 
 const ss = { flat: false } as const;
 const ink = '#2b2233';
@@ -385,4 +386,16 @@ reg('npc_elephant', buildElephant, 2.2, 0.7, 'Bác Voi: tai earL/earR, trunk cus
 reg('npc_owl', buildOwl, 1.55, 0.5, 'Bác Cú: wings as armL/armR, glasses, mortarboard.');
 reg('npc_king', buildKing, 1.9, 0.55, 'Nhà Vua: buildCharacter crown/cape/beard, scepter.', undefined, { portrait: 'bust' });
 reg('npc_knight', () => buildRabbit(true), 1.5, 0.48, 'Hiệp Sĩ Thỏ: earL/earR, sword, shield, cape, armor.', undefined, { portrait: 'bust' });
-reg('npc_villager', buildVillager, 1.35, 0.44, 'Dân làng thú dễ thương; variants v=0..5: pig, duck, puppy, hamster, frog, chick.', [{ v: 0 }, { v: 1 }, { v: 2 }, { v: 3 }, { v: 4 }, { v: 5 }]);
+// Dân làng: mỗi người một khóa riêng (để thay từng người bằng mô hình AI riêng); màn chơi gọi chung 'npc_villager' + { v }.
+const VILLAGER_DESC = ['Bé Na (heo con)', 'Anh Tí (vịt)', 'Chị Mai (cún)', 'Bé Bin (chuột hamster)', 'Bà Ba (ếch)', 'Chú Tư (gà)'];
+// Vật cản + khung chân dung theo mô hình AI của từng người (đo lẹm khi bé đứng sát): hoa cài Bé Na, mỏ Anh Tí, tai Chị Mai,
+// tay Bà Ba, ngực + đuôi xòe Chú Tư; Bé Bin tính theo thân (đuôi chuột mảnh, thấp – bỏ qua).
+const VILLAGER_FIT: [r: number, portrait: 'head' | 'bust'][] = [[0.5, 'bust'], [0.54, 'bust'], [0.65, 'bust'], [0.44, 'bust'], [0.58, 'head'], [0.8, 'head']];
+VILLAGER_KEYS.forEach((key, v) =>
+  reg(key, () => buildVillager({ v }), 1.35, VILLAGER_FIT[v][0], `Dân làng ${VILLAGER_DESC[v]} – npc_villager { v: ${v} }.`, undefined, { portrait: VILLAGER_FIT[v][1] }),
+);
+defineRoute<{ v?: number }>('npc_villager', (o) => villagerKey(o.v), {
+  tags: ['npc'],
+  desc: 'Dân làng thú dễ thương; v=0..5 → npc_be_na, npc_anh_ti, npc_chi_mai, npc_be_bin, npc_ba_ba, npc_chu_tu.',
+  variants: VILLAGER_KEYS.map((_, v) => ({ v })),
+});

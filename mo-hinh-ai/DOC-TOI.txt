@@ -8,6 +8,10 @@ Chep cac tep .glb tai tu Tencent HY 3D / Meshy / Tripo vao day, dat ten theo nha
   gau-vay-tay.glb  Chu Gau - dong tac vay tay
   tho.glb, meo.glb, cu.glb, robot.glb, vua.glb ...
 
+Dan lang - moi nguoi mot tep (khong dung dan-lang.glb):
+
+  be-na.glb, anh-ti.glb, chi-mai.glb, be-bin.glb, ba-ba.glb, chu-tu.glb
+
 Be (nhan vat chinh) va bo do:
 
   be-trai.glb               Be trai - do thuong ngay

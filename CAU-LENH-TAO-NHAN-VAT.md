@@ -161,11 +161,13 @@ xương và động tác thật** (đi, chạy, vẫy tay…).
    một bộ (mục 8).
 5. **Thú cưng** ✅ – cả 7 con: Cún, Mèo, Thỏ, Gấu trúc, Cáo, Chim cánh cụt, Khủng long (đã xong – Tencent HY 3D).
 6. **Thú Sở Thú** ✅ – cả 6 con: Hươu cao cổ, Khỉ, Chim cánh cụt, Ngựa vằn, Hà mã, Sư tử (đã xong – Tencent HY 3D).
+7. **Dân làng** ✅ – cả 6 người, mỗi người một tệp: Bé Na, Anh Tí, Chị Mai, Bé Bin, Bà Ba, Chú Tư (đã xong – Tencent
+   HY 3D, mục 5.13–5.18).
 
-**Không nên thay:**
-
-- **Dân làng** – một tệp `dan-lang.glb` sẽ thay **cả 6 loài** (heo, vịt, cún, chuột hamster, ếch, gà con) thành một
-  nhân vật giống hệt nhau → làng mất đa dạng.
+**Dân làng:** mỗi người có **tệp riêng** (`be-na.glb`, `anh-ti.glb`, `chi-mai.glb`, `be-bin.glb`, `ba-ba.glb`,
+`chu-tu.glb`) – không dùng tên chung `dan-lang.glb` (công cụ sẽ nhắc đổi tên). Ở Lâu Đài, Sở Thú và trò chơi
+*Ghép số*, vài nhân vật dùng chung hình dân làng: Lính gác Piko và linh vật *Ghép số* (hình Anh Tí), Thị vệ Mây
+(Bé Bin), Quan thư ký (Bà Ba), Chú Tư Giữ Thú (Chú Tư).
 
 ## 5. Câu lệnh từng nhân vật
 
@@ -292,6 +294,66 @@ Mô hình đã có: tai **to, dày**, lòng tai hồng (tai mảnh dễ bị th�
 
 ```text
 A shy baby deer (fawn) standing upright on two legs: light caramel fur with small white spots, cream belly and muzzle, big pointy ears with pink inside, tiny brown antler nubs, small white fluffy tail. Cute chibi 3D cartoon for a kids game: big round head, small round body, short limbs, big shiny eyes, friendly smile, rosy cheeks, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from body, legs apart, facing front, empty hands, no base, no background.
+```
+
+### 5.13. Bé Na – dân làng: cô bé heo con khoảng 5 tuổi (Làng, Khu Vui Chơi, màn hình tiêu đề) ✅ đã có mô hình AI (Tencent HY 3D)
+
+Tệp: `be-na.glb`
+
+Sáu dân làng (mục 5.13–5.18) **mỗi người một tệp riêng** và đều dùng *"plain light grey background"* ở bước 1. Đuôi xoăn của Bé Na nhỏ, mảnh – trong trò chơi hơi mờ đi, không sao.
+
+```text
+A sweet little piglet girl (about 5 years old) standing upright on two legs: soft light pink skin, a round pink snout with two small nostrils, small floppy triangle ears that are thick and soft (not paper-thin), a tiny curly tail at the back, one big thick rounded yellow flower hair clip beside one ear, a sky-blue short-sleeved dress with small white flower dots that ends above the knees, small round pink feet. Cute chibi 3D cartoon for a kids game: big round head, small round body, short thick limbs, big shiny eyes, friendly closed-mouth smile, rosy cheeks, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from the body with a clear gap under each arm, legs apart with a clear gap between them, facing front, empty hands, no base, no ground, no shadow.
+```
+
+### 5.14. Anh Tí – dân làng: cậu bé vịt con khoảng 12 tuổi (Làng; Lính gác Piko ở Lâu Đài; linh vật trò chơi *Ghép số*) ✅ đã có mô hình AI (Tencent HY 3D)
+
+Tệp: `anh-ti.glb`
+
+Mỏ **khép** (cười mỉm); ghi rõ *"No hat, no sailor shirt, no bow tie"* để không giống chú vịt nổi tiếng trong phim hoạt hình.
+
+```text
+A cheerful duckling boy, an older child about 12 years old (a little taller and slimmer than a toddler, still chibi), standing upright on two legs: bright yellow feathers, a small soft tuft of feathers on top of the head, a wide flat rounded orange beak that stays closed in a smile, short thick rounded wings shaped like arms with small rounded wing-tip hands, orange webbed feet, a red T-shirt with a small white star on the chest, blue denim shorts. No hat, no sailor shirt, no bow tie. Cute chibi 3D cartoon for a kids game: big round head, small round body, short thick limbs, big shiny eyes, friendly closed-mouth smile, rosy cheeks, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from the body with a clear gap under each arm, legs apart with a clear gap between them, facing front, empty hands, no base, no ground, no shadow.
+```
+
+### 5.15. Chị Mai – dân làng: cô bé cún khoảng 12 tuổi (Làng, Khu Vui Chơi, màn hình tiêu đề) ✅ đã có mô hình AI (Tencent HY 3D)
+
+Tệp: `chi-mai.glb`
+
+Tai dài, **dày**, buông cạnh má (tai mảnh dễ bị thủng khi tạo 3D) – không chạm tay khi nhân vật nhún nhảy, nói chuyện.
+
+```text
+A kind big-sister puppy girl, about 12 years old (a little taller and slimmer than a toddler, still chibi), standing upright on two legs: warm caramel-brown fur, cream muzzle and belly, a small black nose, long floppy dark brown ears that are thick and soft (not paper-thin) and hang beside her cheeks, a short soft brown tail, a mint-green short-sleeved dress with a round white collar and a small yellow flower on the chest that ends above the knees, small brown paws. Cute chibi 3D cartoon for a kids game: big round head, small round body, short thick limbs, big shiny eyes, friendly closed-mouth smile, rosy cheeks, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from the body with a clear gap under each arm, legs apart with a clear gap between them, facing front, empty hands, no base, no ground, no shadow.
+```
+
+### 5.16. Bé Bin – dân làng: cậu bé chuột hamster khoảng 5 tuổi (Khu Vui Chơi; Thị vệ Mây ở Lâu Đài) ✅ đã có mô hình AI (Tencent HY 3D)
+
+Tệp: `be-bin.glb`
+
+HY 3D tự thêm một **đuôi chuột dài, mảnh màu hồng** (ảnh mẫu không có) – vẫn giữ; trò chơi tính chỗ đứng, bóng và khung chân dung theo thân, không theo đuôi.
+
+```text
+A tiny cheerful hamster boy (about 5 years old) standing upright on two legs: golden-tan fur with a cream face and cream belly, chubby round cheeks, small round ears that are thick and soft (not paper-thin) with pink inside, a tiny pink nose, a sunny yellow T-shirt and blue shorts, small pink paws. Cute chibi 3D cartoon for a kids game: big round head, small round body, short thick limbs, big shiny eyes, friendly closed-mouth smile, rosy cheeks, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from the body with a clear gap under each arm, legs apart with a clear gap between them, facing front, empty hands, no base, no ground, no shadow.
+```
+
+### 5.17. Bà Ba – dân làng: bà ếch (Làng – *Câu đố của Bà Ba*; Quan thư ký ở Lâu Đài) ✅ đã có mô hình AI (Tencent HY 3D)
+
+Tệp: `ba-ba.glb`
+
+Kính gọng **dày** (gọng mảnh dễ bị thủng khi tạo 3D), áo bà ba tím. Hai vành kính có hai màu (tím nhạt và xanh lá đậm) giống ảnh mẫu – giữ nguyên.
+
+```text
+A kind, gentle frog grandma standing upright on two legs: soft green skin, pale cream belly and chin, big round eyes on top of the head with small smile lines at the corners, small round glasses with thick soft frames (not thin wire), a loose purple Vietnamese-style blouse with long sleeves, no collar and a row of small round buttons down the front, loose dark brown trousers, small green feet. Cute chibi 3D cartoon for a kids game: big round head, small round body, short thick limbs, big shiny eyes, friendly closed-mouth smile, rosy cheeks, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from the body with a clear gap under each arm, legs apart with a clear gap between them, facing front, empty hands, no base, no ground, no shadow.
+```
+
+### 5.18. Chú Tư – dân làng: chú gà trống (Khu Vui Chơi; Chú Tư Giữ Thú ở Sở Thú) ✅ đã có mô hình AI (Tencent HY 3D)
+
+Tệp: `chu-tu.glb`
+
+Mào ba khối tròn **dày**, yếm và mỏ ngắn, đuôi xòe **ngắn, dày** sau lưng (không che tay). Chỉ mô hình AI là gà trống – thiếu tệp hoặc tệp lỗi thì trò chơi dùng hình **gà con** dựng bằng code như trước.
+
+```text
+A friendly grown-up rooster uncle (a little taller than the children, still chibi) standing upright on two legs: warm golden-orange feathers with a cream chest, a big bright red comb on top of the head made of three thick rounded bumps, a small thick red wattle under a short yellow beak that stays closed in a smile, short thick rounded wings shaped like arms with small rounded wing-tip hands, a short fan of thick rounded tail feathers in dark green and brown behind his back (not covering his arms), yellow-orange feet, an orange short-sleeved shirt with white buttons, dark blue trousers. Cute chibi 3D cartoon for a kids game: big round head, small round body, short thick limbs, big shiny eyes, friendly closed-mouth smile, rosy cheeks, soft rounded shapes, pastel matte vinyl toy look. Full body, A-pose, arms slightly away from the body with a clear gap under each arm, legs apart with a clear gap between them, facing front, empty hands, no base, no ground, no shadow.
 ```
 
 ## 6. Thú cưng & thú Sở Thú (không bắt buộc)

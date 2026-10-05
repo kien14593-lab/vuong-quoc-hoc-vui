@@ -226,6 +226,9 @@ export function defineGlbModel(key: string, spec: GlbSpec): void {
       height: (o: Record<string, unknown> = {}) => {
         const vi = variantIndex(entry, o);
         const look = lookOf(entry, vi);
+        // Tệp chưa tải xong (mô hình tải sau, tải lỗi) hoặc đang tắt GLB: build() trả về mô hình dựng bằng code → dùng chiều cao của nó.
+        const shown = enabled && gltfs.has(look.src) ? undefined : baseHeight(entry, o);
+        if (shown !== undefined) return shown;
         const h = entry.prepared.get(vi)?.height ?? look.height;
         // Đỉnh mô hình tính từ mặt đất (để đặt nhãn tên) – gồm cả độ nâng của nhân vật bay.
         return h !== undefined ? h + liftOf(entry, look) : baseHeight(entry, o) ?? 1.5;

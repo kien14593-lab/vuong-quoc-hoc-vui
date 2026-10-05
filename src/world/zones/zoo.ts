@@ -1,14 +1,12 @@
 import * as THREE from 'three';
 import { sfx } from '../../core/audio';
-import { addTickets, giveItem, hasItem, hasProfile, profile, setFlag, takeItem } from '../../core/state';
+import { addTickets, giveItem, hasItem, profile, setFlag, takeItem } from '../../core/state';
 import { CAST, villager } from '../../game/cast';
 import { mixedQuestion, storyQuestion } from '../../game/challenge';
-import { zoneLateModels, zoneModels } from '../../game/needs';
 import { bearStage, checkBadges, on, reward, ZOO_TICKETS, zoneLock } from '../../game/story';
-import { ensureGlb, glbLoaded, glbReady } from '../../models/glb';
+import { glbLoaded, glbReady } from '../../models/glb';
 import { buildModel, collectTicks } from '../../models/registry';
 import { say } from '../../ui/dialog';
-import { wait } from '../../ui/dom';
 import { toast } from '../../ui/toast';
 import { addLod } from '../lod';
 import { Zone, type Spawn } from '../zone';
@@ -118,41 +116,18 @@ export class ZooZone extends Zone {
     this.applySolvedState();
   }
 
-  protected afterBuild(): void {
-    void this.loadAnimals();
-  }
-
   dispose(): void {
     this.gone = true;
     super.dispose();
   }
 
   /**
-   * Thú AI trong chuồng (game/needs.ts ZONE_LATE_MODELS) không chờ lúc vào khu vực: tạm dùng thú dựng bằng code,
-   * tải lần lượt sau nhân vật của khu vực, thú cưng và bé, rồi thay ngay tại chỗ.
-   * Đang chơi trò chơi nhỏ thì chưa tải con tiếp theo; rời khu vực thì thôi (phần còn lại tải dần ở nền).
+   * Mô hình AI tải sau (game/needs.ts ZONE_LATE_MODELS, world/late.ts) vừa xong: ngoài NPC (Chú Tư), thú trong chuồng
+   * cũng thay ngay tại chỗ – lúc vào khu vực tạm dùng thú dựng bằng code.
    */
-  private async loadAnimals(): Promise<void> {
-    const late = zoneLateModels('zoo');
-    if (glbReady(late)) return;
-    const p = hasProfile() ? profile() : null;
-    const must = zoneModels('zoo', p?.equipped.pet, p ? { kid: p.kid, outfit: p.equipped.outfit } : null);
-    while (!glbReady(must)) {
-      await wait(300);
-      if (this.gone) return;
-    }
-    for (const key of late) {
-      while (!glbLoaded(key) && (this.paused || this.leaving)) {
-        await wait(300);
-        if (this.gone) return;
-      }
-      if (!glbLoaded(key)) {
-        await ensureGlb([key]);
-        // Chưa xong mà thôi tải (rời khu vực): dừng hẳn.
-        if (this.gone || !glbReady([key])) return;
-      }
-      if (glbLoaded(key)) this.swapIn(key);
-    }
+  protected lateLoaded(key: string): void {
+    super.lateLoaded(key);
+    this.swapIn(key);
   }
 
   /** Mỏ neo của một con thú: vị trí, hướng, cỡ và tư thế; mô hình (AI hoặc dựng bằng code) là con của mỏ neo. */
@@ -483,11 +458,12 @@ export class ZooZone extends Zone {
 
   private buildNpcAndActivities(): void {
     const keeper = villager(5);
-    this.npc('npc_villager', -3.4, 2.9, {
+    // Cách mép bồn hoa phía tây (-3.2, 2.2) ≥ 0.85 m – thân Chú Tư rộng 0.8 m.
+    this.npc('npc_villager', -4.3, 2.9, {
       name: 'Chú Tư Giữ Thú',
       color: keeper.color,
       opts: { v: 5 },
-      wander: 2.3,
+      wander: 1.9,
       talk: async () => {
         if (!on('zoo.open')) await say(keeper, 'Bác Voi ở quầy vé sẽ mở cổng khi bạn có đủ vé nhé!');
         else await say(keeper, 'Bạn hãy ghé từng chuồng, giải toán rồi cho các bạn thú ăn. Các bạn ấy thích bạn lắm!');

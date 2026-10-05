@@ -25,5 +25,11 @@
   "rua": { "chieu-cao": 1.4, "xoay": 0, "tam-giac": 30000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
   "nai": { "chieu-cao": 1.55, "xoay": 0, "tam-giac": 30000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
   "be-trai": { "chieu-cao": 1.7, "xoay": 0, "tam-giac": 40000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
-  "be-gai": { "chieu-cao": 1.62, "xoay": 0, "tam-giac": 40000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" }
+  "be-gai": { "chieu-cao": 1.62, "xoay": 0, "tam-giac": 40000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
+  "be-na": { "chieu-cao": 1.35, "xoay": 0, "tam-giac": 25000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
+  "anh-ti": { "chieu-cao": 1.75, "xoay": 0, "tam-giac": 25000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
+  "chi-mai": { "chieu-cao": 1.72, "xoay": 0, "tam-giac": 30000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
+  "be-bin": { "chieu-cao": 1.3, "xoay": 0, "tam-giac": 20000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
+  "ba-ba": { "chieu-cao": 1.6, "xoay": 0, "tam-giac": 25000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" },
+  "chu-tu": { "chieu-cao": 1.95, "xoay": 0, "tam-giac": 30000, "vat-lieu": "mem", "nguon": "Tencent HY 3D (hy3d.tencent.ai)" }
 }
