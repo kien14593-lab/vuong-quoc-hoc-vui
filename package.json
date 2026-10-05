@@ -2,7 +2,7 @@
   "name": "vuong-quoc-toan-hoc",
   "private": true,
   "version": "1.0.0",
-  "description": "Vương Quốc Học Vui – game phiêu lưu 3D giúp học sinh tiểu học vừa chơi vừa học",
+  "description": "Vương Quốc Học Vui – game phiêu lưu 3D giúp học sinh tiểu học vừa chơi vừa học Toán và Tiếng Anh",
   "type": "module",
   "scripts": {
     "dev": "vite",

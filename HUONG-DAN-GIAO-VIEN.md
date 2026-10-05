@@ -1,7 +1,77 @@
 # 👩‍🏫 Hướng dẫn cho giáo viên – Vương Quốc Học Vui
 
-Tài liệu ngắn cho thầy cô và phụ huynh: cách để trò chơi đọc to bằng giọng hay nhất trên máy ở trường,
-trên điện thoại và máy tính bảng; cách chơi mượt trên iPhone / iPad; cách chuyển hồ sơ của bé sang máy khác.
+Tài liệu ngắn cho thầy cô và phụ huynh: chọn môn học (Toán / Tiếng Anh) và Unit đang học cho từng học sinh; cách để
+trò chơi đọc to bằng giọng hay nhất trên máy ở trường, trên điện thoại và máy tính bảng; cách chơi mượt trên
+iPhone / iPad; cách chuyển hồ sơ của bé sang máy khác.
+
+## 📚 Môn học: Toán, Tiếng Anh hoặc Cả hai
+
+Mỗi hồ sơ học sinh có một môn học. **Mọi câu hỏi trong game theo môn đó:** câu đố của các bạn thú, thử thách trong
+cốt truyện, các phòng trong Lâu Đài và thử thách của Nhà Vua, Mê Cung, Khu Vui Chơi, Sở Thú và cả 12 mini-game.
+
+| Môn | Bé gặp gì |
+|---|---|
+| 🔢 Toán | Câu hỏi toán theo lớp 1–5 (đếm, cộng, trừ, nhân, chia, phân số, hình học…), như trước đây. |
+| 🔤 Tiếng Anh | Từ vựng, nghe, chữ cái và âm, chính tả, mẫu câu, số đếm, giờ và lịch – theo lớp và theo Unit. |
+| 🔢🔤 Cả hai | Xen kẽ hai môn (không quá 3 câu liền một môn); môn bé còn yếu được hỏi nhiều hơn một chút. |
+
+Tên các khu, danh hiệu và huy hiệu chung giống nhau cho cả lớp. Phần mô tả thử thách đổi theo môn (ví dụ cây cầu
+trong rừng là *Cầu Phép Cộng* với môn Toán, *Cầu Từ Vựng* với môn Tiếng Anh). Ngoài 12 huy hiệu chung, môn Toán có
+"Cộng Siêu Tốc", "Bảng Nhân"; môn Tiếng Anh có "Nhà Ngôn Ngữ Nhí", "Từ Vựng Siêu Tốc", "Đôi Tai Vàng",
+"Bậc Thầy Đánh Vần", "Trăm Từ Tiếng Anh".
+
+### Chọn môn ở đâu?
+
+- **Khi tạo hồ sơ:** mục **"Bạn muốn học môn gì?"** (chọn sẵn "Cả hai").
+- **⚙️ Cài đặt → 📚 Môn học:** bé tự đổi được, trừ khi người lớn đã khóa (xem dưới).
+- **Góc phụ huynh → Quản lý → Môn học** (có câu hỏi kiểm tra người lớn):
+  - **Môn học** và **Tiếng Anh: đang học đến** (Unit).
+  - **Cho bé tự đổi môn trong Cài đặt** (bật sẵn). Bỏ chọn thì trong Cài đặt bé chỉ xem môn học, kèm dòng
+    "🔒 Thầy cô hoặc bố mẹ đã chọn môn học này cho bạn."
+  - **Lưu môn học** (chỉ hồ sơ này) hoặc **Áp dụng cho mọi hồ sơ lớp X trên máy này** – tiện cho máy dùng chung của
+    cả lớp: môn học, Unit và quyền tự đổi môn được chép cho mọi hồ sơ cùng lớp.
+- Hồ sơ tạo trước khi có Tiếng Anh vẫn học **Toán**, tiến độ giữ nguyên. Tệp xuất cũ vẫn nhập được.
+- Đổi môn không làm mất tiến độ: nhiệm vụ đã xong vẫn xong; thử thách chưa làm sẽ hỏi theo môn mới.
+
+### "Tiếng Anh: đang học đến Unit N"
+
+Nội dung Tiếng Anh bám theo **chủ đề các Unit** của bộ sách *Tiếng Anh Global Success* (Kết nối tri thức với cuộc
+sống, NXB Giáo dục Việt Nam) lớp 1–5. Danh sách chọn hiện tên từng Unit của lớp.
+
+- **Tất cả các bài** (mặc định): câu hỏi lấy từ mọi Unit của lớp.
+- **Unit N:** câu hỏi chỉ lấy từ Unit 1 đến Unit N của lớp (và từ đã học ở các lớp dưới); Unit N và N−1 được hỏi
+  nhiều hơn. Lớp 1: chữ cái và âm chỉ hỏi các chữ của Unit 1 đến Unit N.
+- Số đếm, giờ và lịch (không thuộc riêng Unit nào) chiếm khoảng **20%** câu hỏi, để bài đang học chiếm phần lớn.
+- Khi lớp học sang bài mới, thầy cô đổi Unit (có thể áp dụng cho cả lớp một lần). Đổi lớp cho hồ sơ thì Unit trở về
+  "Tất cả các bài".
+
+### Theo lớp
+
+- **Lớp 1–2:** làm quen qua **hình và âm thanh** (nghe từ rồi chọn hình, chữ cái đầu, đếm bằng tiếng Anh), không có
+  câu dài.
+- **Lớp 3–5:** thêm **chính tả** và **mẫu câu** ngắn (mỗi câu tối đa 8 từ). **Lớp 4–5** thêm **giờ và lịch** vào câu
+  hỏi chung. Riêng trò **Đồng hồ tiếng Anh**: lớp 1–3 đọc giờ đúng (*o'clock*), lớp 4–5 thêm giờ rưỡi và 15 phút.
+- Câu sai: trò chơi cho thử lại, rồi gợi ý bằng tiếng Việt (nghĩa của từ, đánh vần từng chữ, bấm 🔊 để nghe lại).
+
+### Giọng tiếng Anh
+
+- Từ và câu tiếng Anh (chữ **xanh đậm**) được đọc bằng **giọng tiếng Anh** của máy; bấm 🔊 để nghe lại.
+- **⚙️ Cài đặt → 🔤 Giọng tiếng Anh** cho biết giọng đang dùng; nút **Nghe thử tiếng Anh**.
+- Edge có mạng có sẵn giọng tiếng Anh tự nhiên. Máy **chưa có giọng tiếng Anh** thì trò chơi tạm bỏ các câu hỏi nghe
+  (vẫn chơi bình thường). Cách thêm: Cài đặt Windows → Thời gian & ngôn ngữ → Giọng nói → Thêm giọng nói →
+  **English (United Kingdom)** hoặc **English (United States)**; điện thoại: tải giọng English trong mục
+  "Chuyển văn bản thành giọng nói".
+
+### Theo dõi kết quả
+
+**Góc phụ huynh** chia kết quả theo chủ đề thành hai nhóm **Toán** và **Tiếng Anh**; phần đầu ghi môn học và Unit
+của bé. Mục tiêu tuần chọn được chủ đề của môn bé đang học (hồ sơ **Cả hai**: chủ đề của cả hai môn).
+
+### Bản quyền
+
+Trò chơi chỉ dùng **tên chủ đề Unit** và **từ vựng thông dụng** để bám chương trình. Mọi câu hỏi, câu mẫu, hội thoại
+và gợi ý do dự án tự soạn; không chép câu, hội thoại, bài hát, bài chant, truyện hay bài tập của sách; không dùng hình
+của sách (hình minh họa là emoji).
 
 ## 🗣️ Giọng đọc
 

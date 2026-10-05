@@ -1,8 +1,9 @@
 # 🏰 Vương Quốc Học Vui
 
-Game phiêu lưu 3D giúp học sinh tiểu học (lớp 1–5) vừa chơi vừa học. Tên cũ: *"Vương Quốc Toán Học"* (xây dựng theo
+Game phiêu lưu 3D giúp học sinh tiểu học (lớp 1–5) vừa chơi vừa học **Toán và Tiếng Anh**. Tên cũ: *"Vương Quốc Toán Học"* (xây dựng theo
 kịch bản cùng tên).
-Bé đi khám phá 7 khu vực, giúp các bạn thú giải toán, chơi 12 mini-game, sưu tầm sao, vé, xu và huy hiệu.
+Bé đi khám phá 7 khu vực, giúp các bạn thú giải câu đố, chơi 12 mini-game, sưu tầm sao, vé, xu và huy hiệu.
+Mỗi hồ sơ chọn môn **Toán**, **Tiếng Anh** hoặc **Cả hai** – mọi câu hỏi trong game theo môn đã chọn.
 Câu hỏi tự điều chỉnh độ khó theo lớp và theo kết quả làm bài của từng bé.
 
 ## ▶️ Chơi ngay
@@ -32,8 +33,8 @@ Câu hỏi tự điều chỉnh độ khó theo lớp và theo kết quả làm 
 - Tiến độ được **tự động lưu trên trình duyệt** (localStorage), mỗi máy có thể có nhiều hồ sơ học sinh.
   Bản web và bản tệp HTML lưu **riêng** – dùng xuất / nhập tệp JSON trong Góc phụ huynh để chuyển tiến độ.
 - **Góc phụ huynh** (ở màn hình chính và trong Cài đặt, có câu hỏi kiểm tra người lớn): tổng quan, kết quả theo
-  chủ đề, tiến bộ theo tuần, mục tiêu, nhật ký hoạt động; xuất / nhập tệp JSON (chuyển máy), đổi lớp,
-  đặt lại tiến độ, xóa hồ sơ.
+  chủ đề (Toán / Tiếng Anh), tiến bộ theo tuần, mục tiêu, nhật ký hoạt động; xuất / nhập tệp JSON (chuyển máy), đổi lớp,
+  chọn môn học và Unit Tiếng Anh, đặt lại tiến độ, xóa hồ sơ.
   Nhập tệp của hồ sơ **đã có trên máy** thì game hỏi lại trước, kèm bảng so sánh "Trên máy này" / "Trong tệp"
   (tên, lớp, ⭐, cấp, lần chơi cuối). Tệp **cũ hơn** bản trên máy thì có thêm lời cảnh báo và nút "Thôi" được chọn sẵn.
   Hồ sơ chưa có trên máy thì nhập luôn, không hỏi.
@@ -42,6 +43,18 @@ Câu hỏi tự điều chỉnh độ khó theo lớp và theo kết quả làm 
 - **Chuyển hồ sơ sang máy khác:** máy cũ: Góc phụ huynh → Quản lý → **Xuất hồ sơ JSON**; máy mới: Góc phụ huynh →
   **Nhập hồ sơ JSON**. Máy mới **chưa có hồ sơ nào** vẫn nhập được ngay (nút hiện ngay sau câu hỏi kiểm tra người
   lớn), không cần tạo hồ sơ tạm; nhập xong bấm **▶ Chơi** ở màn hình chính để chơi tiếp. Các bước chi tiết:
+  **[HUONG-DAN-GIAO-VIEN.md](HUONG-DAN-GIAO-VIEN.md)**.
+
+### 📚 Môn học: Toán · Tiếng Anh · Cả hai
+
+- Chọn khi **tạo hồ sơ** ("Bạn muốn học môn gì?"). Mọi câu hỏi theo môn đó: câu đố của các bạn thú, thử thách trong
+  cốt truyện, các phòng trong Lâu Đài và thử thách của Nhà Vua, Mê Cung, Khu Vui Chơi, Sở Thú và cả 12 mini-game.
+  **Cả hai** = xen kẽ hai môn, môn bé còn yếu được hỏi nhiều hơn một chút.
+- Bé tự đổi môn trong **⚙️ Cài đặt → 📚 Môn học**. Thầy cô / bố mẹ có thể khóa việc này, chọn **"Tiếng Anh: đang học
+  đến Unit N"** và áp dụng cho mọi hồ sơ cùng lớp trên máy trong **Góc phụ huynh → Quản lý → Môn học**.
+- Tiếng Anh bám theo **chủ đề các Unit** của bộ sách *Tiếng Anh Global Success* (Kết nối tri thức với cuộc sống)
+  lớp 1–5. Mọi câu hỏi, câu mẫu và gợi ý do dự án tự soạn; hình minh họa là emoji.
+- Hồ sơ cũ (tạo trước khi có Tiếng Anh) vẫn học Toán như trước. Chi tiết:
   **[HUONG-DAN-GIAO-VIEN.md](HUONG-DAN-GIAO-VIEN.md)**.
 
 ### 🗣️ Giọng đọc
@@ -57,6 +70,8 @@ Câu hỏi tự điều chỉnh độ khó theo lớp và theo kết quả làm 
 - **Điện thoại / máy tính bảng:** giọng có sẵn thường nghe như máy – tải giọng tốt hơn (iPhone/iPad: "Linh (Nâng cao)")
   theo mục **💡 Giọng đọc chưa hay?** trong Cài đặt hoặc **[HUONG-DAN-GIAO-VIEN.md](HUONG-DAN-GIAO-VIEN.md)**.
 - Bản offline (tệp HTML) không có mạng thì dùng giọng cài trong Windows (ví dụ Microsoft An); Hoài My / Nam Minh cần mạng.
+- **Tiếng Anh:** từ và câu tiếng Anh (chữ xanh đậm) được đọc bằng giọng tiếng Anh của máy (**⚙️ Cài đặt → 🔤 Giọng
+  tiếng Anh**, nút **Nghe thử tiếng Anh**). Máy chưa có giọng tiếng Anh thì trò chơi tạm bỏ các câu hỏi nghe.
 
 ### 📱 iPhone / iPad
 
@@ -75,25 +90,35 @@ Câu hỏi tự điều chỉnh độ khó theo lớp và theo kết quả làm 
 |---|---|---|
 | 🏡 Ngôi Làng Khởi Đầu | Hướng dẫn, đếm hộp, tìm 5 ngôi sao cho Thỏ Bông, cửa hàng | – |
 | 🏠 Ngôi Nhà Của Bạn | Trang trí nhà, trồng cây – thu hoạch, tủ huy hiệu | – |
-| 🌳 Rừng Thông Thái | Cầu phép cộng, tảng đá phép trừ, cây cầu của chú Gấu, chọn viên đá lớn nhất | Xong nhiệm vụ 5 ngôi sao |
-| 🌀 Mê Cung Kỳ Bí | Giải toán để chọn đường, tìm 3 chìa khóa, nhận vé sở thú | Xong Rừng Thông Thái |
+| 🌳 Rừng Thông Thái | Cây cầu bị khóa của Bác Cú, tảng đá chắn đường, cây cầu của chú Gấu, chọn viên đá đúng | Xong nhiệm vụ 5 ngôi sao |
+| 🌀 Mê Cung Kỳ Bí | Giải câu đố để chọn đường, tìm 3 chìa khóa, nhận vé sở thú | Xong Rừng Thông Thái |
 | 🎡 Khu Vui Chơi | Tàu lượn, ném bóng, vòng quay, chú hề – mỗi trò 1 vé | Có 10 ⭐ |
 | 🦁 Sở Thú Kỳ Diệu | Đưa 5 vé mở cổng, giúp hươu cao cổ, khỉ, chim cánh cụt | Qua Mê Cung hoặc Khu Vui Chơi |
-| 🏰 Lâu Đài Trí Tuệ | 3 phòng: Bảng Nhân, Phân Số, Hình Học + thử thách của Nhà Vua | Đạt cấp 3 |
+| 🏰 Lâu Đài Trí Tuệ | 3 phòng thử thách (Toán: Bảng Nhân, Phân Số, Hình Học · Tiếng Anh: Từ Vựng, Lắng Nghe, Chữ Cái hoặc Mẫu Câu) + thử thách của Nhà Vua | Đạt cấp 3 |
+
+Thử thách ở mỗi khu theo môn của hồ sơ (ví dụ cây cầu trong rừng là *Cầu Phép Cộng* với môn Toán, *Cầu Từ Vựng* với
+môn Tiếng Anh).
 
 **12 mini-game:** Ghép số · Bắn đáp án · Chạy vượt chướng ngại · Mê cung · Câu cá số · Siêu thị · Đồng hồ bí ẩn ·
 Xây nhà (hình học) · Chia bánh (phân số) · Tàu hỏa (dãy số) · Cho khỉ ăn · Vòng quay (nhân/chia).
+Trò nào cũng có bản **Tiếng Anh**: Ghép từ · Bắn từ · Chạy vượt chướng ngại · Mê cung chữ · Câu cá chữ ·
+Siêu thị tiếng Anh · Đồng hồ tiếng Anh · Xây nhà – hình và màu · Làm bánh pizza · Tàu chữ cái · Cho khỉ ăn – trái cây ·
+Vòng quay tiếng Anh.
 Chơi tại các điểm trong thế giới hoặc từ nút **Trò chơi** (một số trò mở khi bé lên cấp).
 
 **17 chủ đề toán** (đếm, so sánh, cộng, trừ, nhân, chia, dãy số, thời gian, độ dài, tiền, hình học, chu vi,
 diện tích, phân số, số thập phân, tỉ số – phần trăm, toán có lời văn) với mức khởi đầu theo lớp 1–5 và tự
-tăng / giảm độ khó theo kết quả. Lời thoại và câu hỏi được đọc to, mỗi nhân vật một giọng (mục **🗣️ Giọng đọc** ở trên).
+tăng / giảm độ khó theo kết quả.
+**7 chủ đề Tiếng Anh** (từ vựng, nghe, chữ cái & âm, chính tả, mẫu câu, số đếm, giờ & lịch) theo lớp và theo Unit:
+lớp 1–2 làm quen qua hình và âm thanh; lớp 3–5 thêm chính tả và mẫu câu ngắn; lớp 4–5 thêm giờ và lịch.
+Lời thoại và câu hỏi được đọc to, mỗi nhân vật một giọng (mục **🗣️ Giọng đọc** ở trên).
 
 **Nhân vật chính:** khi tạo hồ sơ, học sinh chọn **Bé trai** hoặc **Bé gái** (nhân vật 3D tạo bằng AI, biết đi, chạy,
 vẫy tay) và đổi lại được trong **Túi đồ**. **Bộ đồ** mua ở cửa hàng của Cô Mèo; mũ, balo, phụ kiện, thú cưng và ván
 trượt dùng được cho cả hai bé.
 
-**14 huy hiệu**, sao, vé, xu, XP và cấp độ; cửa hàng, túi đồ, trang trí nhà.
+**19 huy hiệu** (12 huy hiệu chung, 2 của môn Toán, 5 của môn Tiếng Anh – bé thấy huy hiệu chung và huy hiệu của môn
+mình học), sao, vé, xu, XP và cấp độ; cửa hàng, túi đồ, trang trí nhà.
 
 ## 🧸 Thay nhân vật bằng mô hình AI
 
@@ -122,7 +147,7 @@ xương tự dựng lúc nạp từ dáng chữ A (`src/models/autorig.ts`), mũ
 npm install
 npm run dev          # chạy thử tại http://localhost:5173
 npm run typecheck    # kiểm tra kiểu TypeScript
-npm test             # chạy kiểm thử (bộ sinh câu hỏi toán, danh sách mô hình theo cảnh, hồ sơ cũ, bộ đồ)
+npm test             # chạy kiểm thử (bộ sinh câu hỏi toán và tiếng Anh, chọn môn, danh sách mô hình theo cảnh, hồ sơ cũ, bộ đồ)
 npm run build        # bản web vào dist/
 npm run build:single # bản 1 tệp HTML vào dist-single/ (DongGoi.bat dùng lệnh này)
 ```
@@ -150,8 +175,9 @@ src/
   world/      thế giới: camera, người chơi, va chạm, nhãn, các khu vực (world/zones/*)
   minigames/  khung mini-game + 12 trò chơi (minigames/games/*)
   math/       chương trình, bộ sinh câu hỏi theo chủ đề, độ khó thích ứng
+  english/    Tiếng Anh: tên Unit theo lớp (units.ts – sửa tên bài ở đây), ngân hàng từ, bộ sinh câu hỏi
   core/       trạng thái, lưu trữ, tiến trình, huy hiệu, âm thanh, đọc câu hỏi
-  game/       ứng dụng, cốt truyện, nhân vật, thử thách
+  game/       ứng dụng, cốt truyện, nhân vật, thử thách, chọn môn cho từng câu hỏi (subject.ts)
   ui/         HUD, hội thoại, bảng, màn hình (tiêu đề, bản đồ, túi đồ, Góc phụ huynh…)
   styles/     CSS giao diện
 dev/          trang thử nghiệm · tests/ kiểm thử · tools/ đóng gói & xử lý mô hình
@@ -162,5 +188,8 @@ mo-hinh-ai/   nơi đặt mô hình AI (.glb) · ban-phat-hanh/ bản đóng gó
 
 - Phông chữ **Baloo 2** và **Nunito** (SIL Open Font License) qua Fontsource.
 - Thư viện **three.js** (MIT). Mô hình, âm thanh và giao diện được tạo bằng code trong dự án.
+- Nội dung Tiếng Anh: chỉ dùng **tên chủ đề các Unit** và **từ vựng thông dụng** để bám bộ sách *Tiếng Anh Global
+  Success* (NXB Giáo dục Việt Nam). Mọi câu hỏi, câu mẫu, hội thoại và gợi ý do dự án tự soạn; không chép câu, bài hát,
+  truyện hay bài tập của sách, không dùng hình của sách (hình minh họa là emoji).
 - Mô hình nhân vật tạo bằng AI (nếu có): xem `src/assets/models/ai/GHI-CONG.md` và mục ⚙️ Cài đặt trong trò chơi.
 - Hỗ trợ mô hình CC0 tùy chọn (Quaternius, Kenney, KayKit, Poly Pizza) – xem `src/models/glb_cc0.ts`.
