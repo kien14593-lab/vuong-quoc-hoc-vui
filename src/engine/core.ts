@@ -290,24 +290,61 @@ class Engine {
    */
   async warmUp(obj: THREE.Object3D, o: WarmOpts = {}): Promise<void> {
     if (!this.renderer || this.lost) return;
+    const r = this.renderer;
     const camera = o.camera ?? this.stage?.camera;
     const scene = o.scene ?? ((obj as THREE.Scene).isScene ? (obj as THREE.Scene) : this.stage?.scene);
     let timer = 0;
     try {
-      uploadTextures(this.renderer, obj);
-      // Có biên dịch song song: chờ tối đa capMs. Không có: biên dịch ngay (compileAsync cũng chỉ làm vậy, kèm một cảnh báo).
-      if (camera && scene && this.renderer.extensions.has('KHR_parallel_shader_compile'))
-        await Promise.race([
-          this.renderer.compileAsync(obj, camera, scene),
-          new Promise<void>((r) => (timer = window.setTimeout(r, o.capMs ?? 2500))),
-        ]);
-      else if (camera && scene) this.renderer.compile(obj, camera, scene);
+      uploadTextures(r, obj);
+      if (camera && scene) {
+        // Có biên dịch song song: chờ tối đa capMs. Không có: biên dịch ngay (compileAsync cũng chỉ làm vậy, kèm một cảnh báo).
+        const par = r.extensions.has('KHR_parallel_shader_compile');
+        const jobs: Promise<unknown>[] = [];
+        if (par) jobs.push(r.compileAsync(obj, camera, scene));
+        else r.compile(obj, camera, scene);
+        const shadow = this.warmShadows(obj, camera, scene, par);
+        if (shadow) jobs.push(shadow);
+        if (jobs.length)
+          await Promise.race([Promise.all(jobs), new Promise<void>((res) => (timer = window.setTimeout(res, o.capMs ?? 2500)))]);
+      }
     } catch (e) {
       console.warn('[engine] warmUp', e);
     } finally {
       clearTimeout(timer);
     }
     this.skipWindow();
+  }
+
+  /** Khung vẽ 1×1 giả làm bản đồ bóng lúc biên dịch trước shader vẽ bóng (warmShadows). */
+  private shadowTarget: THREE.WebGLRenderTarget | null = null;
+
+  /**
+   * Biên dịch trước shader của lượt vẽ bóng (compile/compileAsync của three không làm phần này): mỗi kiểu vật đổ bóng
+   * (có xương / nhiều bản sao, có ảnh, mặt vẽ...) cần một shader bóng riêng – vật đang ở ngoài vùng bóng quanh bé
+   * (vd. Chú Gấu, nhân vật ở xa) lần đầu bước vào là khựng. Dựng vật thế thân dùng chung hình khối, vật liệu bóng giống
+   * hệt cái three sẽ dùng (WebGLShadowMap getDepthMaterial), rồi biên dịch như lúc vẽ bóng: vào khung vẽ riêng (không
+   * chỉnh màu), không sương mù – khóa shader trùng thì lúc vẽ thật dùng lại. Bỏ vật thế thân, không hủy (hủy là xóa shader).
+   */
+  private warmShadows(obj: THREE.Object3D, camera: THREE.Camera, scene: THREE.Scene, par: boolean): Promise<unknown> | null {
+    const r = this.renderer;
+    if (!r.shadowMap.enabled) return null;
+    const stand = shadowStandIns(obj, r.shadowMap.type === THREE.VSMShadowMap);
+    if (!stand) return null;
+    const rt = r.getRenderTarget();
+    const face = r.getActiveCubeFace();
+    const mip = r.getActiveMipmapLevel();
+    const fog = scene.fog;
+    this.shadowTarget ??= new THREE.WebGLRenderTarget(1, 1, { depthBuffer: false });
+    r.setRenderTarget(this.shadowTarget);
+    scene.fog = null;
+    try {
+      if (par) return r.compileAsync(stand, camera, scene);
+      r.compile(stand, camera, scene);
+      return null;
+    } finally {
+      scene.fog = fog;
+      r.setRenderTarget(rt, face, mip);
+    }
   }
 
   private onLost(e: Event): void {
@@ -349,6 +386,71 @@ function uploadTextures(r: THREE.WebGLRenderer, obj: THREE.Object3D): void {
     }
   });
   for (const t of seen) r.initTexture(t);
+}
+
+/** Mặt được vẽ vào bản đồ bóng (kiểu PCF, như three WebGLShadowMap): mặt trước ↔ mặt sau, hai mặt giữ nguyên. */
+const SHADOW_SIDE: Record<THREE.Side, THREE.Side> = { [THREE.FrontSide]: THREE.BackSide, [THREE.BackSide]: THREE.FrontSide, [THREE.DoubleSide]: THREE.DoubleSide };
+
+type ShadowMaps = { map?: THREE.Texture | null; alphaMap?: THREE.Texture | null; displacementMap?: THREE.Texture | null };
+
+/** Phần của một ảnh làm khác shader bóng: có hay không, kênh UV, ảnh video. */
+const texKey = (t?: THREE.Texture | null): string => (t ? `${t.channel}${(t as THREE.VideoTexture).isVideoTexture ? 'v' : ''}` : '-');
+
+/**
+ * Vật thế thân cho lượt vẽ bóng (Engine.warmShadows): một vật cho mỗi shader bóng khác nhau trong `obj` – cùng loại vật
+ * (thường / có xương / nhiều bản sao), cùng hình khối, vật liệu bóng giống hệt cái three dùng. Kể cả vật đang ẩn hay
+ * chỉ đổ bóng (lớp riêng, engine/layers.ts): hiện ra / đi vào vùng bóng lúc nào cũng không phải biên dịch nữa.
+ */
+function shadowStandIns(obj: THREE.Object3D, vsm: boolean): THREE.Scene | null {
+  const out = new THREE.Scene();
+  const seen = new Set<string>();
+  obj.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (!m.isMesh || !m.castShadow || !m.material || (o as THREE.BatchedMesh).isBatchedMesh) return;
+    const im = (o as THREE.InstancedMesh).isInstancedMesh ? (o as THREE.InstancedMesh) : null;
+    const g = m.geometry;
+    const mo = g.morphAttributes;
+    const type = (o as THREE.SkinnedMesh).isSkinnedMesh ? 'S' : im ? `I${im.instanceColor ? 'c' : ''}${im.morphTexture ? 'm' : ''}` : 'M';
+    const shape = `${g.attributes.normal ? 'n' : ''}${mo.position ? 'p' : ''}${mo.normal ? 'n' : ''}${mo.color ? 'c' : ''}${(mo.position ?? mo.normal ?? mo.color)?.length ?? 0}`;
+    for (const src of Array.isArray(m.material) ? m.material : [m.material]) {
+      const custom = m.customDepthMaterial;
+      const s = src as THREE.Material & ShadowMaps;
+      const side = src.shadowSide ?? (vsm ? src.side : SHADOW_SIDE[src.side]);
+      const look = custom
+        ? custom.uuid
+        : `${side}|${texKey(s.map)}|${texKey(s.alphaMap)}|${texKey(s.displacementMap)}|${src.alphaToCoverage || src.alphaTest > 0 ? 't' : ''}`;
+      const key = `${type}${shape}|${look}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.add(standIn(m, custom ?? depthLike(s, side)));
+    }
+  });
+  return out.children.length ? out : null;
+}
+
+/** Vật liệu bóng three dùng cho vật liệu `s` (WebGLShadowMap getDepthMaterial) – chép đúng các thuộc tính làm khác shader. */
+function depthLike(s: THREE.Material & ShadowMaps, side: THREE.Side): THREE.MeshDepthMaterial {
+  const d = new THREE.MeshDepthMaterial();
+  d.side = side;
+  d.map = s.map ?? null;
+  d.alphaMap = s.alphaMap ?? null;
+  d.alphaTest = s.alphaToCoverage ? 0.5 : s.alphaTest;
+  d.displacementMap = s.displacementMap ?? null;
+  d.clipShadows = s.clipShadows;
+  d.clippingPlanes = s.clippingPlanes;
+  d.clipIntersection = s.clipIntersection;
+  return d;
+}
+
+/** Vật thế thân cùng loại với `m` (loại vật làm khác shader: có xương, nhiều bản sao...), dùng chung hình khối. */
+function standIn(m: THREE.Mesh, mat: THREE.Material): THREE.Mesh {
+  if ((m as THREE.SkinnedMesh).isSkinnedMesh) return new THREE.SkinnedMesh(m.geometry, mat);
+  const im = m as THREE.InstancedMesh;
+  if (!im.isInstancedMesh) return new THREE.Mesh(m.geometry, mat);
+  const p = new THREE.InstancedMesh(m.geometry, mat, 1);
+  p.instanceColor = im.instanceColor;
+  p.morphTexture = im.morphTexture;
+  return p;
 }
 
 export const engine = new Engine();
