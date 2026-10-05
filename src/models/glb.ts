@@ -195,8 +195,18 @@ interface Load {
   total: number;
   /** Đã tải xong, đang giải nén – không hủy nữa. */
   parsing: boolean;
+  /** Xong phần tải về (hoặc lỗi / bị hủy) – chưa giải nén. */
+  fetched: Promise<void>;
+  /** Phần thân tệp đến không chậm (FAST_BODY): mạng 4G / Wi-Fi tốt, hoặc có sẵn trong bộ nhớ đệm. */
+  fast: boolean;
   promise: Promise<void>;
 }
+
+/**
+ * Byte/ms (≈ 4 Mbit/s): thân tệp đến chậm hơn mức này là mạng chậm (3G, Wi-Fi trường đông người); nhanh hơn là mạng 4G /
+ * Wi-Fi tốt hoặc tệp lấy từ bộ nhớ đệm (kể cả khi phải hỏi lại máy chủ).
+ */
+const FAST_BODY = 500;
 
 const entries = new Map<string, Entry>();
 const gltfs = new Map<string, GLTF>();
@@ -281,6 +291,7 @@ async function download(url: string, ld: Load): Promise<ArrayBuffer> {
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const reader = res.body?.getReader();
   if (!reader) return res.arrayBuffer();
+  const t0 = performance.now();
   const parts: Uint8Array[] = [];
   const head = new Uint8Array(12);
   for (;;) {
@@ -295,6 +306,7 @@ async function download(url: string, ld: Load): Promise<ArrayBuffer> {
       ld.total = dv.getUint32(0, true) === 0x46546c67 ? dv.getUint32(8, true) : -1;
     }
   }
+  ld.fast = ld.got >= FAST_BODY * (performance.now() - t0);
   const buf = new Uint8Array(ld.got);
   let at = 0;
   for (const p of parts) {
@@ -305,8 +317,13 @@ async function download(url: string, ld: Load): Promise<ArrayBuffer> {
 }
 
 function startLoad(url: string, low: boolean): Load {
-  const ld: Load = { low, ctrl: new AbortController(), got: 0, total: 0, parsing: false, promise: Promise.resolve() };
-  ld.promise = download(url, ld)
+  const ld: Load = { low, ctrl: new AbortController(), got: 0, total: 0, parsing: false, fetched: Promise.resolve(), fast: false, promise: Promise.resolve() };
+  const got = download(url, ld);
+  ld.fetched = got.then(
+    () => {},
+    () => {},
+  );
+  ld.promise = got
     .then((buf) => {
       ld.parsing = true;
       return getLoader().parseAsync(buf, url.startsWith('data:') ? '' : THREE.LoaderUtils.extractUrlBase(url));
@@ -472,9 +489,49 @@ export function prefetchGlb(keys?: Iterable<string>): void {
   pump();
 }
 
+export interface PreloadOpts extends EnsureOpts {
+  /**
+   * Mạng chậm: tải về lần lượt từng khóa theo thứ tự, không cùng lúc (màn hình tiêu đề): mô hình đầu xong sớm thay vì mọi
+   * mô hình cùng xong muộn, và bé bấm vào chơi ngay thì chỉ một tệp đang tải dở. Tệp trước tải về xong là tệp sau bắt
+   * đầu, không đợi giải nén. Tệp vừa xong đến không chậm (FAST_BODY – mạng 4G / Wi-Fi tốt; mở lại trang, tệp trong bộ nhớ
+   * đệm) thì các tệp còn lại tải cùng lúc như cũ – không phải chờ máy chủ trả lời từng tệp một. Quá hạn chờ: tệp đang tải tải
+   * tiếp, không bắt đầu tệp mới – người gọi tải phần còn lại (vd. world/title.ts loadLate).
+   */
+  inOrder?: boolean;
+}
+
 /** Nạp và chờ các tệp GLB của các khóa (mặc định: tất cả – cho trang xem thử). Gọi lại an toàn (chỉ nạp tệp mới). */
-export async function preloadGlb(keys?: Iterable<string>, o: EnsureOpts = {}): Promise<void> {
-  await ensureGlb(keys ?? [...entries.keys()], o);
+export async function preloadGlb(keys?: Iterable<string>, o: PreloadOpts = {}): Promise<void> {
+  const { inOrder, ...opts } = o;
+  const list = [...(keys ?? entries.keys())];
+  if (!inOrder) {
+    await ensureGlb(list, opts);
+    return;
+  }
+  const end = opts.timeoutMs ? performance.now() + opts.timeoutMs : Infinity;
+  const fracs = list.map(() => 0);
+  let shown = 0;
+  const all: Promise<boolean>[] = [];
+  let seq = true;
+  for (const [i, key] of list.entries()) {
+    const left = end - performance.now();
+    if (left <= 0) break;
+    const onProgress =
+      opts.onProgress &&
+      ((f: number) => {
+        fracs[i] = f;
+        const s = fracs.reduce((a, b) => a + b, 0) / list.length;
+        if (s > shown) opts.onProgress!((shown = s));
+      });
+    const done = ensureGlb([key], { ...opts, timeoutMs: Number.isFinite(left) ? left : undefined, onProgress });
+    all.push(done);
+    if (!seq) continue;
+    const urls = urlsFor([key]);
+    await Promise.race([done, Promise.all(urls.map((u) => loads.get(u)?.fetched))]);
+    if (urls.length) seq = !urls.every((u) => gltfs.has(u) || loads.get(u)?.fast);
+  }
+  await Promise.all(all);
+  opts.onProgress?.(1);
 }
 
 /* ------------------------------------------------------------------ */

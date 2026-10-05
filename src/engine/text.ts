@@ -7,7 +7,7 @@ import { mat } from './materials';
  */
 let fontsReady: Promise<void> | null = null;
 
-/** Nạp sẵn phông (cả bộ chữ có dấu) trước khi vẽ chữ lên canvas. */
+/** Nạp sẵn phông (cả bộ chữ có dấu) trước khi vẽ chữ lên canvas. Bản web tải sẵn các phông này ngay từ đầu (vite.config.ts BOOT_FONTS – đổi ở đây thì sửa cả ở đó). */
 export function loadFonts(): Promise<void> {
   if (!fontsReady) {
     fontsReady = Promise.all([

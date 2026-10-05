@@ -5,11 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
  * vào thế giới thì ảnh bé ở màn tiêu đề / tạo hồ sơ nhường đường. Không giải nén GLB thật – chỉ kiểm tra tệp nào
  * được tải, lúc nào, ưu tiên cao hay thấp.
  */
+const parse = vi.hoisted(() => ({ gate: null as Promise<void> | null }));
 vi.mock('three/examples/jsm/loaders/GLTFLoader.js', () => ({
   GLTFLoader: class {
     setMeshoptDecoder(): void {}
     parseAsync(): Promise<unknown> {
-      return Promise.resolve({ scene: null, animations: [] });
+      return (parse.gate ?? Promise.resolve()).then(() => ({ scene: null, animations: [] }));
     }
   },
 }));
@@ -72,6 +73,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  parse.gate = null;
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -310,5 +312,81 @@ describe('lowerGlb: vào thế giới thì ảnh bé ở màn tiêu đề / tạ
     expect(warn).not.toHaveBeenCalled();
     await finish('npc1.glb');
     expect(glb.glbReady(['npc1'])).toBe(true);
+  });
+});
+
+describe('preloadGlb inOrder: màn hình tiêu đề tải lần lượt từng mô hình (main.ts)', () => {
+  it('từng tệp theo thứ tự, ưu tiên cao: tệp sau bắt đầu ngay khi tệp trước tải về xong', async () => {
+    const prog: number[] = [];
+    const p = glb.preloadGlb(['npc1', 'npc2', 'x'], { inOrder: true, onProgress: (f) => prog.push(f) });
+    await tick();
+    expect(started()).toEqual(['npc1.glb']);
+    expect(req('npc1.glb').priority).toBe('high');
+    await finish('npc1.glb');
+    expect(started()).toEqual(['npc1.glb', 'npc2.glb']);
+    expect(req('npc2.glb').priority).toBe('high');
+    await finish('npc2.glb');
+    expect(started()).toEqual(['npc1.glb', 'npc2.glb', 'x.glb']);
+    await finish('x.glb');
+    await p;
+    expect(glb.glbReady(['npc1', 'npc2', 'x'])).toBe(true);
+    expect(prog.every((f, i) => i === 0 || f >= prog[i - 1])).toBe(true);
+    expect(prog.at(-1)).toBe(1);
+  });
+
+  it('quá hạn chờ: tệp đang tải tải tiếp, không bắt đầu tệp mới (world/title.ts loadLate tải phần còn lại)', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await glb.preloadGlb(['npc1', 'npc2'], { inOrder: true, timeoutMs: 20, quiet: true });
+    expect(warn).not.toHaveBeenCalled();
+    expect(started()).toEqual(['npc1.glb']);
+    expect(req('npc1.glb').signal.aborted).toBe(false);
+    await finish('npc1.glb');
+    await tick();
+    expect(glb.glbReady(['npc1'])).toBe(true);
+    expect(started()).toEqual(['npc1.glb']);
+  });
+
+  it('không đợi giải nén: tệp trước đang giải nén thì tệp sau đã tải (mở lại trang – bộ nhớ đệm – giải nén song song)', async () => {
+    let open!: () => void;
+    parse.gate = new Promise<void>((r) => (open = r));
+    const p = glb.preloadGlb(['npc1', 'npc2'], { inOrder: true });
+    await tick();
+    expect(started()).toEqual(['npc1.glb']);
+    await finish('npc1.glb');
+    expect(glb.glbReady(['npc1'])).toBe(false);
+    expect(started()).toEqual(['npc1.glb', 'npc2.glb']);
+    await finish('npc2.glb');
+    let over = false;
+    void p.then(() => (over = true));
+    await tick();
+    expect(over).toBe(false);
+    open();
+    await p;
+    expect(glb.glbReady(['npc1', 'npc2'])).toBe(true);
+  });
+
+  it('tệp đến không chậm (mạng 4G / Wi-Fi tốt, mở lại trang – bộ nhớ đệm): các tệp còn lại tải cùng lúc, không chờ từng tệp', async () => {
+    const p = glb.preloadGlb(['npc1', 'npc2', 'x'], { inOrder: true });
+    await tick();
+    expect(started()).toEqual(['npc1.glb']);
+    const r = req('npc1.glb');
+    r.send(4 << 20);
+    r.end();
+    await tick();
+    expect(started()).toEqual(['npc1.glb', 'npc2.glb', 'x.glb']);
+    await finish('npc2.glb');
+    await finish('x.glb');
+    await p;
+    expect(glb.glbReady(['npc1', 'npc2', 'x'])).toBe(true);
+  });
+
+  it('không có inOrder: tải mọi tệp cùng lúc như cũ (trang xem thử)', async () => {
+    const p = glb.preloadGlb(['npc1', 'npc2']);
+    await tick();
+    expect(started()).toEqual(['npc1.glb', 'npc2.glb']);
+    await finish('npc1.glb');
+    await finish('npc2.glb');
+    await p;
+    expect(glb.glbReady(['npc1', 'npc2'])).toBe(true);
   });
 });
