@@ -51,6 +51,8 @@ sống, NXB Giáo dục Việt Nam) lớp 1–5. Danh sách chọn hiện tên t
   câu dài.
 - **Lớp 3–5:** thêm **chính tả** và **mẫu câu** ngắn (mỗi câu tối đa 8 từ). **Lớp 4–5** thêm **giờ và lịch** vào câu
   hỏi chung. Riêng trò **Đồng hồ tiếng Anh**: lớp 1–3 đọc giờ đúng (*o'clock*), lớp 4–5 thêm giờ rưỡi và 15 phút.
+- Trò **Xây nhà** chọn khối theo **tên hình và màu** khi bé đã học tên các hình (lớp 2 từ Unit 13 *In the maths
+  class*, lớp 3–5 luôn có). **Lớp 1** (mọi Unit) và **lớp 2 trước Unit 13** thì chọn thẻ từ của các bài đã học.
 - Câu sai: trò chơi cho thử lại, rồi gợi ý bằng tiếng Việt (nghĩa của từ, đánh vần từng chữ, bấm 🔊 để nghe lại).
 
 ### Giọng tiếng Anh

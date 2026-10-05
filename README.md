@@ -105,8 +105,8 @@ môn Tiếng Anh).
 **12 mini-game:** Ghép số · Bắn đáp án · Chạy vượt chướng ngại · Mê cung · Câu cá số · Siêu thị · Đồng hồ bí ẩn ·
 Xây nhà (hình học) · Chia bánh (phân số) · Tàu hỏa (dãy số) · Cho khỉ ăn · Vòng quay (nhân/chia).
 Trò nào cũng có bản **Tiếng Anh**: Ghép từ · Bắn từ · Chạy vượt chướng ngại · Mê cung chữ · Câu cá chữ ·
-Siêu thị tiếng Anh · Đồng hồ tiếng Anh · Xây nhà – hình và màu · Làm bánh pizza · Tàu chữ cái · Cho khỉ ăn – trái cây ·
-Vòng quay tiếng Anh.
+Siêu thị tiếng Anh · Đồng hồ tiếng Anh · Xây nhà – hình và màu (lớp 1 và lớp 2 trước Unit 13: thẻ từ) · Làm bánh pizza ·
+Tàu chữ cái · Cho khỉ ăn – trái cây · Vòng quay tiếng Anh.
 Chơi tại các điểm trong thế giới hoặc từ nút **Trò chơi** (một số trò mở khi bé lên cấp).
 
 **17 chủ đề toán** (đếm, so sánh, cộng, trừ, nhân, chia, dãy số, thời gian, độ dài, tiền, hình học, chu vi,
