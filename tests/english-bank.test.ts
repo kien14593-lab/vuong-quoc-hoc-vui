@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { Rng } from '../src/core/rng';
 import { BANK, BY_UNIT, TAGS, conflicts, gradeWords, isBankWord, parseLine, unitWords } from '../src/english/bank';
 import { BLOCKED, COMMON } from '../src/english/common';
+import { plural } from '../src/english/frames';
+import { GRAMMAR } from '../src/english/grammar';
 import { QA_ITEMS } from '../src/english/qa-items';
 import { G1_LETTERS, G2_SOUNDS, UNIT_TITLES, clampUnit, phonicsTargets, unitCount, unitFocus, unitTitle } from '../src/english/units';
 import {
@@ -11,6 +14,7 @@ import { emojiIssues } from './emoji12';
 
 const GRADES: Grade[] = [1, 2, 3, 4, 5];
 const UNITS: Record<Grade, number> = { 1: 16, 2: 16, 3: 20, 4: 20, 5: 20 };
+const SRC = import.meta.glob<string>('../src/**/*.ts', { query: '?raw', import: 'default', eager: true });
 
 const tokens = (s: string) => s.toLowerCase().split(/[^a-z']+/).filter(Boolean);
 const sentences = (s: string) => s.split(/(?<=[.!?])\s+/).filter(Boolean);
@@ -33,6 +37,17 @@ describe('Unit theo bộ Global Success', () => {
     expect(unitTitle(2, 13)).toBe('Unit 13: In the maths class');
     expect(unitTitle(1, 3)).toBe('Unit 3: At the street market');
     expect(unitTitle(1, 99)).toBe('Unit 99');
+  });
+
+  it('unitTitle đã có "Unit N:" – nơi gọi không ghép thêm "Unit N" lần nữa', () => {
+    expect(unitTitle(3, 5)).toBe('Unit 5: My hobbies');
+    const bad: string[] = [];
+    for (const [file, text] of Object.entries(SRC)) {
+      text.split('\n').forEach((line, i) => {
+        if (line.includes('unitTitle(') && /Unit \$\{|'Unit '|"Unit "/.test(line)) bad.push(`${file}:${i + 1} ${line.trim()}`);
+      });
+    }
+    expect(bad).toEqual([]);
   });
 
   it('chính tả Anh – Anh trong tên Unit', () => {
@@ -64,6 +79,16 @@ describe('Ngân hàng từ', () => {
       if (w.hex) expect(w.hex, w.id).toMatch(/^#[0-9a-f]{6}$/i);
       if (w.pl) expect(w.pl, w.id).toMatch(/^[a-z][a-z ]*$/);
     }
+  });
+
+  it('từ không có emoji đúng nghĩa (rubber, desk, board) không làm câu hỏi chọn hình; hình đã sửa', () => {
+    const rows = BANK.filter((w) => ['rubber', 'desk', 'board'].includes(w.w));
+    expect(rows.length).toBeGreaterThanOrEqual(3);
+    for (const w of rows) expect(w.pic, w.id).toBe(false);
+    const find = (g: number, word: string) => BANK.find((w) => w.grade === g && w.w === word);
+    expect(find(3, 'zoo')?.e).toBe('🐼');
+    expect(find(5, 'grandparents')?.e).toBe('👴👵');
+    expect(find(5, 'play board games')?.vi).toBe('chơi trò chơi bàn cờ');
   });
 
   it('mã từ không trùng; trong một Unit không trùng từ, không trùng hình', () => {
@@ -271,10 +296,50 @@ describe('Quy tắc từ (words.ts)', () => {
     expect(pluralOf('teddy bear')).toBe('teddy bears');
     expect(pluralOf('box')).toBe('boxes');
     expect(pluralOf('knife')).toBe('knives');
+    expect(pluralOf('wife')).toBe('wives');
+    expect(pluralOf('giraffe')).toBe('giraffes');
+    expect(pluralOf('cafe')).toBe('cafes');
     expect(pluralOf('baby')).toBe('babies');
     expect(pluralOf('toy')).toBe('toys');
     expect(spellOut('apple')).toBe('a-p-p-l-e');
     expect(spellOut('ice cream')).toBe('i-c-e / c-r-e-a-m');
     expect(spellOut('T-shirt')).toBe('t-s-h-i-r-t');
+  });
+
+  it('số nhiều của mọi từ trong ngân hàng: không có «girafves», -f/-fe đúng quy tắc', () => {
+    const bad = BANK.map((w) => plural(w)).filter((p) => /fves\b/.test(p));
+    expect(bad).toEqual([]);
+    const byWord = new Map(BANK.map((w) => [w.w, w]));
+    const giraffe = byWord.get('giraffe');
+    expect(giraffe && plural(giraffe)).toBe('giraffes');
+    for (const [w, pl] of [['leaf', 'leaves'], ['wolf', 'wolves'], ['knife', 'knives'], ['scarf', 'scarves']]) {
+      const x = byWord.get(w);
+      if (x) expect(plural(x), w).toBe(pl);
+    }
+  });
+
+  it('bài điền số nhiều: đáp án đúng số nhiều, lời nhắc «o» đúng từng từ (hippo → hippos, potato → potatoes)', () => {
+    const item = GRAMMAR.find((x) => x.id === 'plural')!;
+    const bad: string[] = [];
+    let made = 0;
+    for (const w of BANK) {
+      const r = item.make(Rng.seeded(w.id), [w]);
+      if (!r) continue;
+      made++;
+      const pl = plural(w);
+      if (r.answer !== pl || /fves$/.test(r.answer) || r.wrong.includes(pl)) bad.push(`${w.w}: ${r.answer} | ${r.wrong.join(', ')}`);
+      if (w.w.endsWith('o')) {
+        const want = pl === `${w.w}s` ? /^Nhiều từ tận cùng bằng «o» chỉ thêm «s»/ : /^Vài từ tận cùng bằng «o» phải thêm «es»/;
+        if (!want.test(r.rule)) bad.push(`${w.w} → ${pl}: ${r.rule}`);
+      } else if (r.rule.includes('«o»')) bad.push(`${w.w} → ${pl}: ${r.rule}`);
+    }
+    expect(made).toBeGreaterThan(40);
+    expect(bad).toEqual([]);
+    const giraffes = BANK.filter((w) => w.w === 'giraffe').map((w) => item.make(Rng.seeded('g'), [w]));
+    expect(giraffes.length).toBeGreaterThan(0);
+    for (const r of giraffes) {
+      expect(r?.answer).toBe('giraffes');
+      expect(r?.wrong).not.toContain('girafves');
+    }
   });
 });

@@ -386,7 +386,7 @@ function subjectCard(p: Profile): HTMLElement {
     'select.dash-select',
     {},
     h('option', { value: '', selected: !p.enUnit }, 'Tất cả các bài'),
-    Array.from({ length: unitCount(p.grade) }, (_, i) => h('option', { value: String(i + 1), selected: p.enUnit === i + 1 }, `Unit ${i + 1}: ${unitTitle(p.grade, i + 1)}`)),
+    Array.from({ length: unitCount(p.grade) }, (_, i) => h('option', { value: String(i + 1), selected: p.enUnit === i + 1 }, unitTitle(p.grade, i + 1))),
   );
   const freeBox = h<HTMLInputElement>('input', { type: 'checkbox', checked: !p.subjectLocked });
   const syncUnit = () => {

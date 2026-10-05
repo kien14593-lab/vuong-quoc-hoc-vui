@@ -247,7 +247,7 @@ skateboarding|trượt ván|🛹|action
 park|công viên|🏞️|place`,
 
   // 20 At the zoo
-  `zoo|sở thú|🎪|place|np
+  `zoo|sở thú|🐼|place|np
 monkey|con khỉ|🐒|animal
 elephant|con voi|🐘|animal
 tiger|con hổ|🐯|animal

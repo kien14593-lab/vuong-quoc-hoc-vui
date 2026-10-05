@@ -6,6 +6,7 @@ import { isCountable } from '../src/english/frames';
 import { englishQuestion, forgetRecent, pickSet, resolveTopic, setStrict, type EnOptions, type Word } from '../src/english/gen';
 import { balanced, englishParts, giveaway, hasPhrase, sentencesOf, shortLen, viClue, viParts, wordCount } from '../src/english/gen-core';
 import { isRealWord, misspellings, soundsAlike } from '../src/english/gen-letters';
+import { hidesSilent } from '../src/english/silent';
 import { G1_LETTERS, phonicsTargets, unitCount } from '../src/english/units';
 import { spellOut } from '../src/english/words';
 import { capFoundation, EN_FOUNDATION, EN_GRADE_TOPICS, EN_TOPICS, maxLevelFor } from '../src/math/curriculum';
@@ -49,6 +50,10 @@ function hasWord(hay: string, needle: string): boolean {
   return new RegExp(`(^|[^\\p{L}\\p{N}])${esc}($|[^\\p{L}\\p{N}])`, 'iu').test(hay);
 }
 
+/** Từ không có emoji nào đúng nghĩa (🧽 là bọt biển, 🗄️ là tủ hồ sơ, 📋 là bìa kẹp giấy) → không bao giờ hiện hình. */
+const NO_PICTURE = ['rubber', 'desk', 'board'];
+const NO_PICTURE_EMOJI = [...new Set(BANK.filter((w) => NO_PICTURE.includes(w.w)).map((w) => w.e.replace(/\uFE0F/g, '')))];
+
 /** Kiểm tra một câu hỏi; trả về danh sách vi phạm "luật: chi tiết". */
 function audit(q: Question, t: EnTopic, L: number, o: EnOptions, v: Variant): string[] {
   const out: string[] = [];
@@ -77,6 +82,8 @@ function audit(q: Question, t: EnTopic, L: number, o: EnOptions, v: Variant): st
     if (!balanced(s)) bad('unbalanced', s);
     if (emojiIssues(s).length) bad('emoji', s);
   }
+  const shownEmoji = [(q.visual as { emoji?: string } | undefined)?.emoji ?? '', ...texts(q)].map((s) => s.replace(/\uFE0F/g, ''));
+  for (const e of NO_PICTURE_EMOJI) if (shownEmoji.some((s) => s.includes(e))) bad('no-picture', `${e} ${q.en ?? q.prompt}`);
   for (const e of englishOf(q)) {
     for (const s of sentencesOf(e)) if (wordCount(s) > 8) bad('long-en', s);
     for (const x of tokens(e)) if (BLOCKED.has(x)) bad('blocked', e);
@@ -115,6 +122,7 @@ function audit(q: Question, t: EnTopic, L: number, o: EnOptions, v: Variant): st
     if (gap >= 0) {
       const fill = (x: string) => tiles.map((c) => (c === null ? x : c)).join('');
       if (q.en && fill(q.answer).toLowerCase() !== q.en.toLowerCase()) bad('letters-fill', `${fill(q.answer)} ≠ ${q.en}`);
+      if (q.en && hidesSilent(q.en, gap, q.answer.length)) bad('silent-gap', `${fill('_'.repeat(q.answer.length))} «${q.answer}»`);
       for (const c of q.choices) {
         if (c.value !== q.answer && (isRealWord(fill(c.value)) || BLOCKED.has(fill(c.value)))) bad('letters-real', fill(c.value));
       }

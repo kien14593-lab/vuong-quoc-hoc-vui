@@ -121,14 +121,18 @@ export function past(phrase: string): string {
   return [pastWord(first), ...rest].join(' ');
 }
 
-/** Số nhiều theo quy tắc cho từ cuối cụm: "teddy bear" → "teddy bears". */
+/**
+ * Số nhiều theo quy tắc cho từ cuối cụm: "teddy bear" → "teddy bears".
+ * Chỉ «-ife» đổi thành «-ives» (knife → knives); giraffe, cafe, safe… chỉ thêm «s».
+ * Từ có dạng số nhiều khác (leaf → leaves, wolf → wolves) ghi `pl=` trong dữ liệu.
+ */
 export function pluralOf(phrase: string): string {
   const parts = phrase.split(' ');
   const last = parts.pop() as string;
   let p: string;
   if (/(s|x|z|ch|sh)$/.test(last)) p = last + 'es';
   else if (/[^aeiou]y$/.test(last)) p = last.slice(0, -1) + 'ies';
-  else if (/fe$/.test(last)) p = last.slice(0, -2) + 'ves';
+  else if (/ife$/.test(last)) p = last.slice(0, -2) + 'ves';
   else p = last + 's';
   return [...parts, p].join(' ');
 }

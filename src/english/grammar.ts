@@ -149,14 +149,20 @@ export const GRAMMAR: Grammar[] = [
       for (let tries = 0; tries < 6 && src.length; tries++) {
         const w = R.pick(src);
         const pl = plural(w);
+        // Từ tận cùng bằng «o» phải nhớ riêng: potato → potatoes nhưng hippo → hippos.
+        const endsO = w.w.endsWith('o');
         let bad: string;
         let rule: string;
         if (pl === w.w + 's') {
           bad = w.w + 'es';
-          rule = `Nhiều đồ vật thì thêm «s» vào cuối từ (${examples(w.w, [['book', 'books'], ['pen', 'pens']], 1)}).`;
+          rule = endsO
+            ? `Nhiều từ tận cùng bằng «o» chỉ thêm «s» (${examples(w.w, [['hippo', 'hippos'], ['kangaroo', 'kangaroos']], 1)}); chỉ vài từ như potato → potatoes mới thêm «es».`
+            : `Nhiều đồ vật thì thêm «s» vào cuối từ (${examples(w.w, [['book', 'books'], ['pen', 'pens']], 1)}).`;
         } else if (pl === w.w + 'es') {
           bad = w.w + 's';
-          rule = `Từ tận cùng bằng s, x, ch, sh, o thì thêm «es» (${examples(w.w, [['box', 'boxes'], ['bus', 'buses']], 1)}).`;
+          rule = endsO
+            ? `Vài từ tận cùng bằng «o» phải thêm «es» (${examples(w.w, [['potato', 'potatoes'], ['tomato', 'tomatoes']], 1)}), nhưng hippo → hippos chỉ thêm «s».`
+            : `Từ tận cùng bằng s, x, ch, sh thì thêm «es» (${examples(w.w, [['box', 'boxes'], ['bus', 'buses']], 1)}).`;
         } else if (/[^aeiou]y$/.test(w.w) && pl === w.w.slice(0, -1) + 'ies') {
           bad = w.w + 's';
           rule = `Từ tận cùng bằng phụ âm + y thì đổi y thành «ies» (${examples(w.w, [['baby', 'babies'], ['city', 'cities']], 1)}).`;

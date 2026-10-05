@@ -154,9 +154,9 @@ visit|đến thăm|📍|action|np`,
 eat out|đi ăn ở ngoài|🍽️|action
 watch films|xem phim|🎬|action
 go for a walk|đi dạo|🚶|action
-play board games|chơi cờ|🎲|action
+play board games|chơi trò chơi bàn cờ|🎲|action
 clean the house|dọn nhà|🧹|action
-grandparents|ông bà|👴|family|pw|np
+grandparents|ông bà|👴👵|family|pw|np
 parents|bố mẹ|👨‍👩‍👧|family|pw
 cousin|anh chị em họ|👧|family|np
 weekend|cuối tuần|🎡|time|np

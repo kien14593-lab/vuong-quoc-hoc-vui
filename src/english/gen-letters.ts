@@ -5,6 +5,7 @@ import type { Question } from '../math/types';
 import { type Word, isBankWord } from './bank';
 import { COMMON } from './common';
 import { type Ctx, giveaway, letterClue, meaning, mk, pickWord, textChoices, weighted, wordChoices, wordSteps, distractors } from './gen-core';
+import { hidesSilent } from './silent';
 import { G1_LETTERS, G2_SOUNDS, phonicsTargets } from './units';
 import { ALPHABET, US_SPELLINGS, VOWELS, spellOut } from './words';
 
@@ -20,10 +21,10 @@ const G2_START = G2_SOUNDS.filter((s) => s.kind === 'start').map((s) => s.sound)
 const plain = (min: number, max: number) => new RegExp(`^[a-z]{${min},${max}}$`);
 const shuffled = <T>(c: Ctx, a: readonly T[]): T[] => c.R.shuffle([...a]);
 
-/** Từ bắt đầu "sạch" bằng chữ/âm `t`: cat (không phải city, chair), tiger (không phải three)… */
+/** Từ bắt đầu "sạch" bằng chữ/âm `t`: cat (không phải city, chair), tiger (không phải three, hour)… */
 export function startsClean(word: string, t: string): boolean {
   const w = word.toLowerCase();
-  if (!w.startsWith(t)) return false;
+  if (!w.startsWith(t) || hidesSilent(w, 0, t.length)) return false;
   if (t === 'c') return /^c[aoulr]/.test(w);
   if (t === 'g') return /^g[aoulr]|^g(irl|ift|ive|et)/.test(w);
   if (t === 's') return /^s[^h]/.test(w);
@@ -32,6 +33,10 @@ export function startsClean(word: string, t: string): boolean {
   if (t === 'k') return !/^kn/.test(w);
   return true;
 }
+
+/** Từ bắt đầu bằng chữ/âm `t` và nghe được chữ đó (ví dụ trong lời gợi ý: không lấy «eye» cho «e», «hour» cho «h»). */
+const startsHeard = (word: string, t: string) =>
+  isVowel(t) ? word.startsWith(t) && !hidesSilent(word, 0, t.length) : startsClean(word, t);
 
 /** Từ bắt đầu bằng chữ/âm dễ nhầm với `t` (cùng chữ hoặc cùng âm: c/k/q, f/ph, s/ce…). */
 export function startsAlike(word: string, t: string): boolean {
@@ -69,8 +74,12 @@ function fills(c: Ctx, word: string, at: number, ans: string, pool: string[], sk
   return out.length >= c.k - 1 ? out : null;
 }
 
-/** Chữ đúng và các chữ sai cho chỗ trống một chữ ở vị trí `at` (nguyên âm ↔ nguyên âm, phụ âm ↔ phụ âm). */
+/**
+ * Chữ đúng và các chữ sai cho chỗ trống một chữ ở vị trí `at` (nguyên âm ↔ nguyên âm, phụ âm ↔ phụ âm).
+ * null khi chữ ở đó là chữ câm (w trong write, b trong climb…): bé nghe từ cũng không đoán ra.
+ */
 export function gapFills(c: Ctx, word: string, at: number): { ans: string; wrong: string[] } | null {
+  if (hidesSilent(word, at)) return null;
   const ans = word[at];
   const pool = shuffled(c, isVowel(ans) ? VOWELS : CONSONANTS).filter((x) => !soundsAlike(word, at, ans, x));
   const wrong = fills(c, word, at, ans, pool);
@@ -117,7 +126,8 @@ function startsWithQ(c: Ctx, level: number, t: string): Question | null {
 
 /** Chữ/âm đầu của từ (có hình): phonics L2 (t = âm đang học) và chính tả L1 (t = null). */
 function firstLetterQ(c: Ctx, level: number, t: string | null): Question | null {
-  const ok = (x: Word) => (x.pic || c.g >= 3) && plain(3, 8).test(x.w) && (!t || startsClean(x.w, t)) && !giveaway(x);
+  const ok = (x: Word) =>
+    (x.pic || c.g >= 3) && plain(3, 8).test(x.w) && (t ? startsClean(x.w, t) : !hidesSilent(x.w, 0)) && !giveaway(x);
   const w = pickWord(c, ok, !!t);
   if (!w) return null;
   const head = t ?? w.w[0];
@@ -133,7 +143,7 @@ function firstLetterQ(c: Ctx, level: number, t: string | null): Question | null 
   const { choices, answer } = textChoices(c, head, ds);
   const what = head.length > 1 ? 'Âm' : 'Chữ cái';
   const ask = `${what} đầu tiên là gì?`;
-  const ex = example(c, (x) => (isVowel(head) ? x.w.startsWith(head) : startsClean(x.w, head)), [w]);
+  const ex = example(c, (x) => startsHeard(x.w, head), [w]);
   return mk(c, level, {
     prompt: ask,
     speech: `${ask} «${w.w}»`,
@@ -162,7 +172,7 @@ function letterListen(c: Ctx, level: number, t: string): Question | null {
   const ds = pool.filter((x) => x.length === 1 && !group.includes(x)).slice(0, c.k - 1);
   if (ds.length < c.k - 1) return null;
   const T = t.toUpperCase();
-  const ex = example(c, (x) => (isVowel(t) ? x.w.startsWith(t) : startsClean(x.w, t)), []);
+  const ex = example(c, (x) => startsHeard(x.w, t), []);
   return mk(c, level, {
     prompt: 'Nghe và chọn chữ cái đúng.',
     speech: `Nghe nhé: «${t}». Chọn chữ cái đúng.`,
@@ -255,6 +265,7 @@ function digraphSpots(c: Ctx, word: string): { s: Spot; pool: string[] }[] {
     for (const d of fam) {
       for (let i = word.indexOf(d); i >= 0; i = word.indexOf(d, i + 1)) {
         if (fam === VOWEL_DIGRAPHS && !wholeVowel(word, i, d)) continue;
+        if (hidesSilent(word, i, d.length)) continue;
         const made = (x: string) => word.slice(0, i) + x + word.slice(i + d.length);
         const pool = fam.filter((x) => x !== d && !soundsAlike(word, i, d, x) && !isRealWord(made(x)));
         if (pool.length >= c.k - 1) out.push({ s: { at: i, d, fam }, pool });

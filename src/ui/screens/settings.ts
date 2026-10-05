@@ -158,7 +158,7 @@ function renderSubjectPanel(box: HTMLElement, onChange: () => void): void {
     );
     box.append(h('div.set-row', h('span.set-label', '📚 Môn học'), h('div.set-choices', choices)));
   }
-  if (p.subject !== 'math' && p.enUnit) box.append(h('div.set-sub', `Tiếng Anh: đang học đến Unit ${p.enUnit} – ${unitTitle(p.grade, p.enUnit)}`));
+  if (p.subject !== 'math' && p.enUnit) box.append(h('div.set-sub', `Tiếng Anh: đang học đến ${unitTitle(p.grade, p.enUnit)}`));
 }
 
 /** Giọng đọc tiếng Anh (chỉ hiện khi bé học Tiếng Anh, hoặc chưa chọn hồ sơ). */
