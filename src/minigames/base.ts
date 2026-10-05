@@ -185,6 +185,8 @@ export abstract class MiniGame implements Stage {
       if (l.isLight) l.dispose();
     });
     disposeTree(this.scene);
+    // Ảnh bầu trời không nằm trong cây cảnh; hủy nó mới giải phóng cả khối lập phương 256² three dựng từ nó.
+    (this.scene.background as THREE.Texture | null)?.dispose?.();
     this.current = null;
   }
 
@@ -197,6 +199,7 @@ export abstract class MiniGame implements Stage {
   /* ================================================================== */
   /** Bầu trời + sương mù. */
   sky(top: string, horizon: string, fogNear = 60, fogFar = 160): void {
+    (this.scene.background as THREE.Texture | null)?.dispose?.();
     setupSky(this.scene, top, horizon, fogNear, fogFar);
   }
 
