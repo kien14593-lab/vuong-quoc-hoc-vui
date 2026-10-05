@@ -3,7 +3,7 @@ import '../../styles/games/wheel.css';
 import { sfx } from '../../core/audio';
 import { ball, box, cone, cyl, rbox, torus } from '../../engine/kit';
 import { PAL, tint } from '../../engine/materials';
-import { textPlate } from '../../engine/text';
+import { fitPlate, textPlate } from '../../engine/text';
 import type { MiniHost, MiniInfo, MiniRound } from '../base';
 import { MiniGame } from '../base';
 import { defineMini } from '../registry';
@@ -92,7 +92,7 @@ class WheelGame extends MiniGame {
     }, { ease: 'outCubic' });
     sfx('tick');
     const factor = 2 + (Math.floor((((-this.wheel.rotation.z % (Math.PI * 2)) + Math.PI * 2) / (Math.PI * 2)) * 10) % 10);
-    this.ui.flash(`Bảng ${factor}!`, 'info', 900);
+    if (!this.isEn) this.ui.flash(`Bảng ${factor}!`, 'info', 900);
     await this.wait(0.25);
   }
 
@@ -108,7 +108,8 @@ class WheelGame extends MiniGame {
       g.add(cyl(0.02, 0.02, 1.0, '#ffffff', { p: [0, -0.55, 0], seg: 4, cast: false }));
       g.add(ball(0.72, color, { p: [0, 0.05, 0], s: [0.9, 1.15, 0.9], seg: 16, flat: false, shiny: 70 }));
       g.add(cone(0.14, 0.22, color, { p: [0, -0.62, 0], r: [180, 0, 0], seg: 8 }));
-      const t = textPlate(c.label, 0.42, { color: '#2b2233', bg: '#ffffff', border: tint(color, -0.06), radius: 30, pad: 12 });
+      const o = { color: '#2b2233', bg: '#ffffff', border: tint(color, -0.06), radius: 30, pad: 12 };
+      const t = this.isEn ? fitPlate(c.label, 1.9, 0.42, o) : textPlate(c.label, 0.42, o);
       t.position.set(0, 0.05, 0.66);
       g.add(t);
       this.answerRoot.add(g);
@@ -132,10 +133,10 @@ class WheelGame extends MiniGame {
   protected async play(): Promise<void> {
     while (this.more) {
       await this.spinWheel();
-      const q = this.question(['mul', 'div']);
+      const q = this.isEn ? this.enQ({ short: true }) : this.question(['mul', 'div']);
       if (q.context) q.prompt = `${q.context} ${q.prompt}`;
       q.context = 'Chạm bóng có đáp án đúng!';
-      const round = this.ask(q, { prompt: q.prompt });
+      const round = this.ask(q, { prompt: q.prompt, visual: this.isEn });
       this.activeRound = round;
       this.makeAnswers(round);
       await round.done;
@@ -159,6 +160,13 @@ defineMini(
     rounds: 8,
     color: '#c77dff',
     unlock: 1,
+    en: {
+      name: 'Vòng quay tiếng Anh',
+      skill: 'Từ vựng, số, giờ',
+      desc: 'Quay vòng quay may mắn, rồi chạm bóng có đáp án đúng.',
+    },
+    both: 'Vòng quay',
+    enTopics: ['en_vocab', 'en_numbers', 'en_time', 'en_spell'],
   },
   (info, host) => new WheelGame(info, host),
 );

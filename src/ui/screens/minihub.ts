@@ -1,6 +1,6 @@
 import { sfx } from '../../core/audio';
 import { level, profile } from '../../core/state';
-import { miniList, miniName } from '../../minigames';
+import { miniCard, miniList } from '../../minigames';
 import { h } from '../dom';
 import { openModal } from '../modal';
 import { toast } from '../toast';
@@ -28,6 +28,7 @@ export function openMiniHub(play: (id: string) => void): void {
   const grid = h('div.mh-grid');
   for (const d of miniList()) {
     const info = d.info;
+    const card = miniCard(info);
     const locked = lv < info.unlock;
     const rec = p.mini[info.id];
     grid.appendChild(
@@ -39,16 +40,16 @@ export function openMiniHub(play: (id: string) => void): void {
           onclick: () => {
             if (locked) {
               sfx('error');
-              toast(`Trò "${miniName(info)}" mở khi bạn đạt cấp ${info.unlock}. Cố lên nhé!`, { icon: '🔒', tone: 'warn', ms: 3200 });
+              toast(`Trò "${card.name}" mở khi bạn đạt cấp ${info.unlock}. Cố lên nhé!`, { icon: '🔒', tone: 'warn', ms: 3200 });
               return;
             }
             modal.close();
             play(info.id);
           },
         },
-        h('div.mh-icon', locked ? '🔒' : info.icon),
-        h('div.mh-name', miniName(info)),
-        h('div.mh-skill', info.skill),
+        h('div.mh-icon', locked ? '🔒' : card.icon),
+        h('div.mh-name', card.name),
+        h('div.mh-skill', card.skill),
         h('div.mh-foot', locked ? `Mở ở cấp ${info.unlock}` : rec?.plays ? `🏆 ${rec.best} điểm · ${rec.plays} lần` : 'Chưa chơi', h('span.mh-where', WHERE[info.id] ?? '')),
       ),
     );

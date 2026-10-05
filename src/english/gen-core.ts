@@ -79,6 +79,17 @@ export function makeCtx(o: EnOptions, topic: EnTopic): Ctx {
   return { o, g, n, k, R: rand(), topic, ...tiersFor(g, n) };
 }
 
+/** Kiểm thử bật chế độ nghiêm: lỗi trong bộ sinh được ném ra thay vì bỏ qua. */
+let strict = false;
+
+export function setStrictFlag(v: boolean): void {
+  strict = v;
+}
+
+export function isStrict(): boolean {
+  return strict;
+}
+
 /* ---------------- Tránh hỏi lại một từ ngay sau đó ---------------- */
 
 const recent: string[] = [];

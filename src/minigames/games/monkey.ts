@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { sfx } from '../../core/audio';
 import { ball, box, cyl, group, rbox, torus, tube } from '../../engine/kit';
 import { PAL, tint } from '../../engine/materials';
-import { numberBadge, textPlate } from '../../engine/text';
+import { fitPlate, numberBadge, textPlate } from '../../engine/text';
 import type { Question } from '../../math/types';
 import { parseVi } from '../../math/util';
 import { MiniGame, type MiniRound } from '../base';
@@ -11,18 +11,20 @@ import { defineMini } from '../registry';
 const BANANA = '#ffd166';
 const INK = '#2b2233';
 
-function answerBasket(label: string): THREE.Group {
+/** Giỏ đáp án. Lượt Tiếng Anh (word): giỏ trống, nhãn là hình hoặc tên món ăn (vừa khung). */
+function answerBasket(label: string, word = false): THREE.Group {
   const g = new THREE.Group();
   g.add(cyl(0.48, 0.38, 0.28, '#c8915a', { p: [0, 0.14, 0], seg: 16 }));
   g.add(torus(0.44, 0.035, '#8a5a3b', { p: [0, 0.31, 0], ts: 22 }));
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < (word ? 0 : 3); i++) {
     const b = tube([[-0.22, 0.42, 0], [-0.04, 0.54 + i * 0.015, 0], [0.22, 0.42, 0]], 0.035, BANANA, { radial: 7, seg: 12 });
     b.position.set((i - 1) * 0.08, 0, (i - 1) * 0.06);
     b.rotation.y = (i - 1) * 0.35;
     g.add(b);
   }
-  const badge = textPlate(label, label.length > 5 ? 0.36 : 0.46, { bg: '#fff8ee', color: INK, border: BANANA, size: 92, pad: 14 });
-  badge.position.set(0, 0.82, 0.18);
+  const o = { bg: '#fff8ee', color: INK, border: BANANA, size: 92, pad: 14 };
+  const badge = word ? fitPlate(label, 1.4, 0.46, o) : textPlate(label, label.length > 5 ? 0.36 : 0.46, o);
+  badge.position.set(0, word ? 0.62 : 0.82, 0.18);
   g.add(badge);
   return g;
 }
@@ -44,6 +46,13 @@ function operands(q: Question): [number, number] {
   const a = nums[0] ?? 3;
   const b = nums[1] ?? (q.topic === 'sub' ? a - parseVi(q.answer) : parseVi(q.answer) - a);
   return [a, b];
+}
+
+/** Hình của món ăn đúng (nhãn hình ở mức 1, tranh ở mức 2); không có thì khỉ ăn chuối. */
+function foodEmoji(q: Question): string | undefined {
+  if (q.visual?.kind === 'picture' && q.visual.emoji) return q.visual.emoji;
+  const label = q.choices.find((c) => c.value === q.answer)?.label;
+  return label && !/[a-z0-9]/i.test(label) ? label : undefined;
 }
 
 class MonkeyGame extends MiniGame {
@@ -73,25 +82,29 @@ class MonkeyGame extends MiniGame {
   protected async play(): Promise<void> {
     while (this.more) {
       this.clearRound();
-      const q = this.question(['add', 'sub'], { who: 'Khỉ', item: 'quả chuối', unit: 'quả', emoji: '🍌' });
+      const q = this.isEn
+        ? (this.enMake('en_vocab', (E, o, L) => E.itemRound(o, L, 'monkey')) ?? this.enQ({ short: true }))
+        : this.question(['add', 'sub'], { who: 'Khỉ', item: 'quả chuối', unit: 'quả', emoji: '🍌' });
       this.renderRound(q);
       const st = this.monkey && this.anim(this.monkey);
       if (st) st.talk = true;
-      const round = this.ask(q, { prompt: q.context ? `${q.context} ${q.prompt}` : q.prompt });
+      const round = this.isEn
+        ? this.ask(q, { visual: true })
+        : this.ask(q, { prompt: q.context ? `${q.context} ${q.prompt}` : q.prompt });
       this.roundNow = round;
       await round.done;
       this.roundNow = null;
       if (st) st.talk = false;
-      await this.feed(q.answer);
+      await this.feed(q.answer, this.isEn ? foodEmoji(q) : undefined);
       if (!(await this.nextRound())) break;
     }
   }
 
   private renderRound(q: Question): void {
-    this.renderBananaStory(q);
+    if (!this.isEn) this.renderBananaStory(q);
     q.choices.forEach((c, i) => {
       const x = (i - (q.choices.length - 1) / 2) * 1.55;
-      const b = answerBasket(c.label);
+      const b = answerBasket(c.label, this.isEn);
       b.position.set(x, 0, 2.35);
       this.scene.add(b);
       this.targets.push(b);
@@ -142,13 +155,19 @@ class MonkeyGame extends MiniGame {
     this.fx.burst('dust', [hit.position.x, 0.6, hit.position.z], { count: 10, spread: 0.45 });
   }
 
-  private async feed(answer: string): Promise<void> {
+  /** Món ăn bay tới khỉ: chuối, hoặc hình món bé vừa chọn (lượt Tiếng Anh). */
+  private async feed(answer: string, emoji?: string): Promise<void> {
     const target = this.targets.find((t) => this.targetValue.get(t) === answer) ?? this.targets[0];
     const st = this.monkey && this.anim(this.monkey);
     const start = target ? target.position.clone().add(new THREE.Vector3(0, 0.7, 0)) : new THREE.Vector3(0, 0.4, 2);
     const end = new THREE.Vector3(0, 2.55, -2.0);
     for (let i = 0; i < 5; i++) {
-      const b = this.model('pickup_banana', undefined, [start.x, start.y, start.z], 0, 0.55);
+      let b: THREE.Object3D;
+      if (emoji) {
+        b = textPlate(emoji, 0.42, { size: 110, pad: 8 });
+        b.position.copy(start);
+        this.scene.add(b);
+      } else b = this.model('pickup_banana', undefined, [start.x, start.y, start.z], 0, 0.55);
       this.roundObjs.push(b);
       const delay = i * 0.09;
       this.tween(0.75 + delay, (k) => {
@@ -184,6 +203,13 @@ defineMini(
     rounds: 8,
     color: '#f2b134',
     unlock: 1,
+    en: {
+      name: 'Cho khỉ ăn – trái cây',
+      skill: 'Từ vựng: đồ ăn',
+      desc: 'Nghe hoặc đọc tên món ăn, chạm giỏ có món đúng để món ăn bay tới chú khỉ.',
+    },
+    both: 'Cho khỉ ăn',
+    enTopics: ['en_vocab'],
   },
   (info, host) => new MonkeyGame(info, host),
 );

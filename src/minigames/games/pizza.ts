@@ -3,12 +3,14 @@ import '../../styles/games/pizza.css';
 import { sfx } from '../../core/audio';
 import { ball, box, cone, cyl, rbox } from '../../engine/kit';
 import { mat, PAL } from '../../engine/materials';
-import { textPlate } from '../../engine/text';
+import { fitPlate, textPlate } from '../../engine/text';
 import type { MiniHost, MiniInfo, MiniRound } from '../base';
 import { MiniGame } from '../base';
 import { defineMini } from '../registry';
 
 const TOPPING = ['#ff6b6b', '#7bd389', '#ffd166', '#b197fc'];
+/** Chữ trên nút nộp bài tô bánh. */
+const DONE = 'TÔ XONG';
 
 function frac(n: number, d: number): string {
   return `${n}/${d}`;
@@ -65,6 +67,8 @@ class PizzaGame extends MiniGame {
   private activeRound: MiniRound | null = null;
   private pieces = 4;
   private submitButton: THREE.Object3D | null = null;
+  /** Vòng Tiếng Anh tô số miếng: nút nộp gửi số miếng đã tô (không phải phân số). */
+  private countMode = false;
 
   constructor(info: MiniInfo, host: MiniHost) {
     super(info, host);
@@ -106,7 +110,7 @@ class PizzaGame extends MiniGame {
         return;
       }
       if (this.submitButton && this.pick(e.clientX, e.clientY, [this.submitButton])) {
-        const value = frac(this.selected.size, this.pieces);
+        const value = this.countMode ? String(this.selected.size) : frac(this.selected.size, this.pieces);
         const ok = this.activeRound.submit(value).correct;
         if (!ok) this.shake(this.submitButton);
       }
@@ -132,7 +136,7 @@ class PizzaGame extends MiniGame {
     const g = new THREE.Group();
     g.position.set(0, 0.75, 3.0);
     g.add(rbox(2.0, 0.75, 0.22, 0.15, '#7bd389', { shiny: 45 }));
-    const t = textPlate('TÔ XONG!', 0.34, { color: '#195b4a', bg: '#ffffff', border: '#7bd389', radius: 24, pad: 8 });
+    const t = textPlate(`${DONE}!`, 0.34, { color: '#195b4a', bg: '#ffffff', border: '#7bd389', radius: 24, pad: 8 });
     t.position.set(0, 0, 0.15);
     g.add(t);
     this.scene.add(g);
@@ -157,7 +161,8 @@ class PizzaGame extends MiniGame {
       g.position.set(x, 0.48, 2.75);
       g.userData.value = c.value;
       g.add(cyl(0.46, 0.52, 0.18, ['#ff9ec7', '#6cb8ff', '#ffd166', '#4ecdc4'][i % 4], { seg: 18, shiny: 30 }));
-      const t = textPlate(c.label, 0.54, { color: '#2b2233', bg: '#ffffff', border: '#ffd166', radius: 28, pad: 12 });
+      const o = { color: '#2b2233', bg: '#ffffff', border: '#ffd166', radius: 28, pad: 12 };
+      const t = this.isEn ? fitPlate(c.label, 1.3, 0.5, o) : textPlate(c.label, 0.54, o);
       t.position.set(0, 0.19, 0.0);
       t.rotation.x = -Math.PI / 2;
       g.add(t);
@@ -210,6 +215,23 @@ class PizzaGame extends MiniGame {
     });
   }
 
+  /** Lượt Tiếng Anh: xen kẽ tô số miếng bánh (số đọc bằng tiếng Anh) và chọn đĩa có món đầu bếp cần. */
+  private enRound(): MiniRound {
+    const top = this.round % 2 === 0 ? this.enMake('en_numbers', (E, o, L) => E.toppingRound(o, L, DONE)) : null;
+    if (top) {
+      this.countMode = true;
+      this.renderPizza(top.pieces);
+      const round = this.ask(top.q, { prompt: top.q.prompt });
+      this.makeSubmit();
+      return round;
+    }
+    const q = this.enMake('en_vocab', (E, o, L) => E.itemRound(o, L, 'pizza')) ?? this.enQ({ short: true });
+    this.renderPizza(6);
+    const round = this.ask(q, { visual: true });
+    this.makeChoicePlates(round);
+    return round;
+  }
+
   private shake(obj: THREE.Object3D): void {
     const x = obj.position.x;
     this.tween(0.35, (k) => (obj.position.x = x + Math.sin(k * Math.PI * 8) * 0.16 * (1 - k)), { ease: 'linear' });
@@ -221,8 +243,11 @@ class PizzaGame extends MiniGame {
       this.selected.clear();
       this.clearChoices();
       this.clearSubmit();
+      this.countMode = false;
       let round: MiniRound;
-      if (this.grade <= 2) {
+      if (this.isEn) {
+        round = this.enRound();
+      } else if (this.grade <= 2) {
         const q = this.shareQuestion();
         const total = Number(q.prompt.match(/Chia (\d+)/)?.[1] ?? 8);
         this.renderPizza(Math.min(12, total));
@@ -258,6 +283,13 @@ defineMini(
     rounds: 6,
     color: '#ff9f68',
     unlock: 3,
+    en: {
+      name: 'Làm bánh pizza',
+      skill: 'Số đếm, đồ ăn',
+      desc: 'Tô đúng số miếng bánh đọc bằng tiếng Anh, hoặc chạm đĩa có món đầu bếp cần.',
+    },
+    both: 'Bánh pizza',
+    enTopics: ['en_vocab', 'en_numbers'],
   },
   (info, host) => new PizzaGame(info, host),
 );

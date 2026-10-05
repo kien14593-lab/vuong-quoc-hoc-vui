@@ -3,7 +3,7 @@ import '../../styles/games/clock.css';
 import { sfx } from '../../core/audio';
 import { ball, box, cone, cyl, rbox, torus } from '../../engine/kit';
 import { PAL } from '../../engine/materials';
-import { textPlate } from '../../engine/text';
+import { fitPlate, textPlate } from '../../engine/text';
 import { fmtTime } from '../../math/gen/measure';
 import type { MiniHost, MiniInfo, MiniRound } from '../base';
 import { MiniGame } from '../base';
@@ -71,7 +71,7 @@ class ClockGame extends MiniGame {
         if (ok) this.fx.burst('star', hit.getWorldPosition(new THREE.Vector3()), { count: 16, spread: 1 });
         else this.shake(hit);
       } else if (this.submitButton && this.pick(e.clientX, e.clientY, [this.submitButton])) {
-        const value = fmtTime(this.currentH, this.currentM);
+        const value = this.isEn ? this.E.clockValue(this.currentH, this.currentM) : fmtTime(this.currentH, this.currentM);
         const ok = this.activeRound.submit(value).correct;
         if (!ok) this.shake(this.submitButton);
       }
@@ -141,7 +141,8 @@ class ClockGame extends MiniGame {
       g.position.set(x, 0.95, 3.1);
       g.userData.value = c.value;
       g.add(rbox(1.7, 0.85, 0.18, 0.16, CARD_COLORS[i % CARD_COLORS.length], { shiny: 45 }));
-      const t = textPlate(c.label, 0.32, { color: '#2b2233', bg: '#ffffff', border: CARD_COLORS[i % CARD_COLORS.length], radius: 24, pad: 8 });
+      const o = { color: '#2b2233', bg: '#ffffff', border: CARD_COLORS[i % CARD_COLORS.length], radius: 24, pad: 8 };
+      const t = this.isEn ? fitPlate(c.label, 1.55, 0.5, o) : textPlate(c.label, 0.32, o);
       t.position.set(0, 0, 0.12);
       g.add(t);
       this.scene.add(g);
@@ -212,9 +213,38 @@ class ClockGame extends MiniGame {
     this.fx.burst('dust', obj.getWorldPosition(new THREE.Vector3()), { count: 8, spread: 0.6 });
   }
 
+  /** Lượt Tiếng Anh: vòng chẵn nhìn đồng hồ chọn câu «half past seven», vòng lẻ đọc câu rồi kéo kim. */
+  private async playEn(): Promise<void> {
+    const set = this.round % 2 === 1;
+    const r = this.enMake('en_time', (E, o, L) => E.clockRound(o, L, set ? 'set' : 'read'));
+    if (r && set) {
+      this.mode = 'set';
+      this.setHandsVisible(true);
+      this.setClock(r.h === 12 && r.m === 0 ? 3 : 12, 0);
+      this.setClockLabel(null);
+      const round = this.ask(r.q, { prompt: r.q.prompt });
+      this.activeRound = round;
+      this.makeSubmit();
+      await round.done;
+      return;
+    }
+    this.mode = 'choice';
+    const q = r?.q ?? this.enQ({ short: true }, ['en_time']);
+    const shown = this.visualTimeFrom(q);
+    this.setHandsVisible(!!shown);
+    if (shown) this.setClock(shown[0], shown[1]);
+    this.setClockLabel(null);
+    const round = this.ask(q, { prompt: q.prompt, visual: !shown });
+    this.activeRound = round;
+    this.makeChoiceCards(round);
+    await round.done;
+  }
+
   protected async play(): Promise<void> {
     while (this.more) {
-      if (this.round % 2 === 0) {
+      if (this.isEn) {
+        await this.playEn();
+      } else if (this.round % 2 === 0) {
         this.mode = 'choice';
         const q = this.question('time');
         const shown = this.visualTimeFrom(q);
@@ -259,6 +289,13 @@ defineMini(
     rounds: 8,
     color: '#ffc94d',
     unlock: 3,
+    en: {
+      name: 'Đồng hồ tiếng Anh',
+      skill: 'Giờ bằng tiếng Anh',
+      desc: 'Nhìn đồng hồ chọn câu đọc giờ đúng, rồi nghe câu tiếng Anh và kéo kim cho đúng giờ.',
+    },
+    both: 'Đồng hồ',
+    enTopics: ['en_time'],
   },
   (info, host) => new ClockGame(info, host),
 );

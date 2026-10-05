@@ -83,7 +83,7 @@ function clockQ(c: Ctx, level: number, t: T, wrong: T[], hint: string, shortHint
 }
 
 /** Giờ gần h (không vượt quá giờ lớn nhất của lớp). */
-function nearHours(c: Ctx, h: number, hours: number): number[] {
+export function nearHours(c: Ctx, h: number, hours: number): number[] {
   const out: number[] = [];
   for (const d of c.R.shuffle([1, -1, 2, -2]).concat([3, -3, 4, -4])) {
     const x = hours < 12 ? h + d : wrap(h + d);

@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { sfx } from '../../core/audio';
 import { ball, box, cone, cyl, extrude, group, rbox, starShape } from '../../engine/kit';
 import { PAL, tint } from '../../engine/materials';
-import { numberBadge, textPlate } from '../../engine/text';
+import { fitPlate, numberBadge, textPlate } from '../../engine/text';
+import type { Question } from '../../math/types';
 import { fmt } from '../../math/util';
 import { MiniGame, type MiniRound } from '../base';
 import { defineMini } from '../registry';
@@ -43,6 +44,16 @@ function makeCard(value: string, color = '#fff8ee'): THREE.Group {
   const badge = numberBadge(value, value.length > 3 ? 0.78 : 0.84, { bg: '#ffffff', color: '#2b2233', border: '#ffcf3f' });
   badge.position.set(0, 0.02, 0.091);
   g.add(badge);
+  return g;
+}
+
+/** Thẻ chữ (lượt Tiếng Anh): từ, cụm từ hoặc hình emoji. */
+function wordCard(label: string, color = '#fff8ee'): THREE.Group {
+  const g = new THREE.Group();
+  g.add(rbox(1.4, 0.95, 0.16, 0.12, color, { p: [0, 0, 0], shiny: 35 }));
+  const t = fitPlate(label, 1.22, 0.46, { bg: '#ffffff', color: '#2b2233', border: '#ffcf3f', size: 96, pad: 18, radius: 20 });
+  t.position.set(0, 0.02, 0.091);
+  g.add(t);
   return g;
 }
 
@@ -128,22 +139,71 @@ class NumberMatchGame extends MiniGame {
   protected async play(): Promise<void> {
     while (this.more) {
       this.clearRound();
-      const data = this.makeData();
-      this.render(data);
-      const q = this.makeQuestion({
-        topic: data.mode,
-        prompt: data.prompt,
-        answer: fmt(data.answer),
-        choices: data.choices,
-        hint: data.hint,
-        steps: data.steps,
-      });
-      const round = this.ask(q, { prompt: data.prompt });
+      let round: MiniRound;
+      let count: boolean;
+      if (this.isEn) {
+        const { q, shown } = this.renderEn();
+        round = this.ask(q, { visual: !shown });
+        count = this.countObjs.length > 0;
+      } else {
+        const data = this.makeData();
+        this.render(data);
+        const q = this.makeQuestion({
+          topic: data.mode,
+          prompt: data.prompt,
+          answer: fmt(data.answer),
+          choices: data.choices,
+          hint: data.hint,
+          steps: data.steps,
+        });
+        round = this.ask(q, { prompt: data.prompt });
+        count = data.mode === 'count';
+      }
       this.roundNow = round;
       await round.done;
       this.roundNow = null;
-      await this.celebrate(data);
+      await this.celebrate(count);
       if (!(await this.nextRound())) break;
+    }
+  }
+
+  /**
+   * Vòng Tiếng Anh: ghép thẻ chữ. Cứ 5 vòng có 1 vòng số đếm; đồ vật cần đếm hoặc tranh của câu hỏi
+   * được dựng ở giữa sân (khi đó thẻ đề bài không cần hiện lại hình).
+   */
+  private renderEn(): { q: Question; shown: boolean } {
+    const q = this.round % 5 === 2 ? this.enAt('en_numbers', this.level('en_numbers'), { short: true }) : this.enQ({ short: true });
+    const v = q.visual;
+    const title = labelMesh(q.topic === 'en_numbers' ? 'Đếm và ghép!' : v?.kind === 'listen' ? 'Nghe và ghép!' : 'Ghép từ!', 0.35);
+    title.position.set(0, 2.9, -3.0);
+    this.scene.add(title);
+    this.roundObjs.push(title);
+    let shown = false;
+    if (v?.kind === 'objects' && v.groups.length === 1 && !v.op && v.groups[0] <= 12) {
+      this.renderEmoji(v.emoji, v.groups[0]);
+      shown = true;
+    } else if (v?.kind === 'picture' && v.emoji && !v.hex && !v.caption) {
+      const p = textPlate(v.emoji, 1.45, { size: 150, pad: 10 });
+      p.position.set(0, 1.25, -0.5);
+      this.scene.add(p);
+      this.roundObjs.push(p);
+      shown = true;
+    }
+    this.renderChoices(q.choices, true);
+    return { q, shown };
+  }
+
+  /** n hình emoji đứng thành hàng (để đếm bằng tiếng Anh). */
+  private renderEmoji(emoji: string, n: number): void {
+    const cols = Math.min(6, n);
+    const rows = Math.ceil(n / cols);
+    for (let i = 0; i < n; i++) {
+      const row = Math.floor(i / cols);
+      const inRow = Math.min(cols, n - row * cols);
+      const x = ((i % cols) - (inRow - 1) / 2) * 0.82;
+      const p = textPlate(emoji, 0.66, { size: 120, pad: 8 });
+      p.position.set(x, 0.62 + (rows - 1 - row) * 0.72, -0.5);
+      this.addCountObj(p);
     }
   }
 
@@ -204,7 +264,7 @@ class NumberMatchGame extends MiniGame {
     if (data.mode === 'count') this.renderCount(data.count ?? data.answer);
     if (data.mode === 'compare') this.renderCompare(data.values ?? []);
     if (data.mode === 'sequence') this.renderSequence(data.values ?? [], data.missing ?? 2);
-    this.renderChoices(data.choices);
+    this.renderChoices(data.choices.map((c) => ({ label: c, value: c })));
   }
 
   private renderCount(n: number): void {
@@ -286,14 +346,15 @@ class NumberMatchGame extends MiniGame {
     });
   }
 
-  private renderChoices(choices: string[]): void {
+  private renderChoices(choices: { label: string; value: string }[], words = false): void {
     choices.forEach((c, i) => {
-      const target = makeCard(c, ['#fff8ee', '#e7f7ff', '#fff0d2', '#ffe9f2'][i % 4]);
+      const color = ['#fff8ee', '#e7f7ff', '#fff0d2', '#ffe9f2'][i % 4];
+      const target = words ? wordCard(c.label, color) : makeCard(c.label, color);
       target.position.set((i - (choices.length - 1) / 2) * 1.55, 0.9, 2.35);
       target.rotation.x = -0.12;
       this.scene.add(target);
       this.targets.push(target);
-      this.targetValue.set(target, c);
+      this.targetValue.set(target, c.value);
       this.roundObjs.push(target);
     });
   }
@@ -315,10 +376,10 @@ class NumberMatchGame extends MiniGame {
     this.fx.burst('dust', [o.position.x, 0.7, o.position.z], { count: 8, spread: 0.5 });
   }
 
-  private async celebrate(data: RoundData): Promise<void> {
+  private async celebrate(count: boolean): Promise<void> {
     const st = this.mascot && this.anim(this.mascot);
     if (st) st.happy = 1;
-    if (data.mode === 'count' && this.countObjs.length && this.countObjs.length <= 30) {
+    if (count && this.countObjs.length && this.countObjs.length <= 30) {
       for (let i = 0; i < this.countObjs.length; i++) {
         const o = this.countObjs[i];
         const p = new THREE.Vector3();
@@ -357,6 +418,13 @@ defineMini(
     rounds: 5,
     color: '#ff8fab',
     unlock: 1,
+    en: {
+      name: 'Ghép từ',
+      skill: 'Từ vựng, số đếm',
+      desc: 'Chạm thẻ có từ đúng với hình hoặc câu hỏi. Có cả vòng đếm đồ vật bằng tiếng Anh!',
+    },
+    both: 'Ghép thẻ',
+    enTopics: ['en_vocab', 'en_phonics', 'en_spell', 'en_listen'],
   },
   (info, host) => new NumberMatchGame(info, host),
 );

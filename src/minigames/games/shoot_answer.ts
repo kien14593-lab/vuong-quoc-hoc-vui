@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { sfx } from '../../core/audio';
 import { ball, box, capsule, cone, cyl, rbox, torus } from '../../engine/kit';
 import { PAL, tint } from '../../engine/materials';
-import { textPlate } from '../../engine/text';
+import { fitPlate, textPlate } from '../../engine/text';
 import { fmt, MINUS, numChoices } from '../../math/util';
 import type { Question } from '../../math/types';
 import { MiniGame, type MiniHost, type MiniInfo } from '../base';
@@ -11,8 +11,9 @@ import { defineMini } from '../registry';
 type Target = THREE.Group & { userData: { value: string; ok?: boolean; hit?: boolean } };
 const ss = { flat: false } as const;
 
-function answerPlate(value: string, color: string): THREE.Mesh {
-  return textPlate(value, 0.72, { bg: '#fff8ee', border: color, color: '#4b3d68', size: 132, pad: 54, radius: 96, weight: 900, doubleSided: true });
+function answerPlate(value: string, color: string, fit = false): THREE.Mesh {
+  const o = { bg: '#fff8ee', border: color, color: '#4b3d68', size: 132, pad: 54, radius: 96, weight: 900, doubleSided: true };
+  return fit ? fitPlate(value, 1.3, 0.72, o) : textPlate(value, 0.72, o);
 }
 
 class ShootAnswerGame extends MiniGame {
@@ -58,7 +59,7 @@ class ShootAnswerGame extends MiniGame {
   protected async play(): Promise<void> {
     while (this.more) {
       this.clearTargets();
-      const q = this.makeAddSubQuestion();
+      const q = this.isEn ? this.enQ({ short: true }) : this.makeAddSubQuestion();
       this.spawnTargets(q);
       const round = this.ask(q, { buttons: false, visual: true });
       await round.done;
@@ -109,7 +110,7 @@ class ShootAnswerGame extends MiniGame {
       const g = new THREE.Group() as Target;
       const col = ['#ff8fab', '#74c0fc', '#ffd166', '#b197fc'][i % 4];
       const balloon = ball(0.66, col, { p: [0, 0.3, 0], s: [0.95, 1.12, 0.95], seg: 18 });
-      const badge = answerPlate(c.label, col);
+      const badge = answerPlate(c.label, col, this.isEn);
       badge.position.set(0, 0.36, 0.98);
       g.add(balloon, cone(0.13, 0.22, col, { p: [0, -0.58, 0], r: [180, 0, 0], seg: 8 }), badge, capsule(0.014, 0.7, '#ffffff', { p: [0, -1.03, 0], seg: 5 }), ball(0.92, '#ffffff', { p: [0, 0.26, 0], opacity: 0.001, cast: false }));
       g.position.set(xs[i], 1.25, -2.6);
@@ -194,6 +195,13 @@ defineMini(
     rounds: 4,
     color: '#ff6b6b',
     unlock: 1,
+    en: {
+      name: 'Bắn từ',
+      skill: 'Nghe từ',
+      desc: 'Nghe (hoặc đọc) từ tiếng Anh rồi chạm bóng bay có từ đúng. Bé sẽ ném bóng để làm nổ thật vui!',
+    },
+    both: 'Bắn bóng',
+    enTopics: ['en_listen'],
   },
   (info, host) => new ShootAnswerGame(info, host),
 );

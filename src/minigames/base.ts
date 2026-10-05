@@ -1,18 +1,22 @@
 import * as THREE from 'three';
 import { audio, sfx } from '../core/audio';
-import { speak, stopSpeech } from '../core/speech';
+import { speak, speakParts, stopSpeech } from '../core/speech';
 import { addCoins, addXp, playerLook, profile, recordMini, skill } from '../core/state';
 import { engine, warmUp, type Quality, type Stage } from '../engine/core';
 import { Fx } from '../engine/fx';
 import { setupLights, setupSky, type LightRig } from '../engine/lighting';
 import { disposeTree } from '../engine/merge';
 import { cancelOwner, tween, type Handle, type TweenOpts } from '../engine/tween';
-import { AttemptTracker, adaptiveQuestion, finishQuestion, mixedQuestion, type SubmitResult } from '../game/challenge';
+import type { EnOptions } from '../english/gen';
+import { english, type EnglishModule } from '../english/load';
+import { AttemptTracker, finishQuestion, type SubmitResult } from '../game/challenge';
+import { apart, englishQ, enOpts, mathQ, mixedQ, pickEnTopic, playSubject } from '../game/subject';
 import { pickTopic } from '../math/engine';
 import { makeQ } from '../math/util';
-import type { Grade, MathTopic, Question, Topic, WordTheme } from '../math/types';
+import type { EnTopic, Grade, MathTopic, Question, Subject, Topic, WordTheme } from '../math/types';
 import { buildModel, collectTicks } from '../models/registry';
 import { animateRig, rigOf, type AnimState, type Rig } from '../models/rig';
+import { miniCard, type MiniCard, type MiniText } from './registry';
 import { MiniUI } from './ui';
 
 /**
@@ -37,6 +41,12 @@ export interface MiniInfo {
   color: string;
   /** Cấp nhân vật cần đạt để mở khóa (1 = mở sẵn). */
   unlock: number;
+  /** Tên, kĩ năng và cách chơi khi học Tiếng Anh. */
+  en: MiniText;
+  /** Tên chung khi hồ sơ học cả hai môn (sảnh, biển trong thế giới). */
+  both: string;
+  /** Kĩ năng Tiếng Anh của câu hỏi chung (mặc định: các kĩ năng của lớp). */
+  enTopics?: EnTopic[];
 }
 
 export interface MiniResult {
@@ -47,6 +57,8 @@ export interface MiniResult {
   coins: number;
   xp: number;
   best: boolean;
+  /** Môn của lượt chơi. */
+  subject: Subject;
 }
 
 export interface MiniHost {
@@ -74,6 +86,10 @@ export abstract class MiniGame implements Stage {
   readonly fx: Fx;
   readonly ui: MiniUI;
   readonly grade: Grade;
+  /** Môn của lượt chơi ('both': chọn một môn cho cả lượt, nghiêng về môn bé cần luyện hơn). */
+  readonly subj: Subject;
+  /** Tên, biểu tượng, kĩ năng, cách chơi của lượt này (theo môn). */
+  readonly card: MiniCard;
   /** Điểm hiện tại (mỗi vòng: đúng ngay lần đầu 3 điểm, lần 2: 2 điểm, sau đó 1 điểm). */
   score = 0;
   /** Vòng hiện tại (bắt đầu từ 0). */
@@ -95,11 +111,13 @@ export abstract class MiniGame implements Stage {
     protected host: MiniHost,
   ) {
     this.grade = profile().grade;
+    this.subj = playSubject();
+    this.card = miniCard(info, this.subj);
     setupSky(this.scene, '#9fd8f7', '#eaf6e4', 60, 160);
     this.lights = setupLights(this.scene, engine.quality, 22);
     this.lights.follow(new THREE.Vector3(0, 0, 0));
     this.fx = new Fx(this.scene);
-    this.ui = new MiniUI(info, { onQuit: () => this.quit() });
+    this.ui = new MiniUI(info, this.card, { onQuit: () => this.quit() });
     this.camera.position.set(0, 9, 14);
     this.camera.lookAt(0, 0, 0);
   }
@@ -351,11 +369,54 @@ export abstract class MiniGame implements Stage {
     return skill(topic).level;
   }
 
-  /** Câu hỏi thích ứng theo năng lực, trong các chủ đề của trò chơi (hoặc chủ đề chỉ định). */
+  /** Câu hỏi thích ứng theo năng lực, trong các chủ đề của trò chơi (hoặc chủ đề chỉ định). Lượt Tiếng Anh: câu Tiếng Anh. */
   question(topics: MathTopic | MathTopic[] = this.info.topics, theme?: WordTheme): Question {
+    if (this.isEn) return this.enQ();
     const list = Array.isArray(topics) ? topics : [topics];
-    if (list.length === 1) return adaptiveQuestion(list[0], { theme });
-    return mixedQuestion(list, theme);
+    return apart(() => (list.length === 1 ? mathQ(list[0], { theme }) : mixedQ({ math: list, theme, s: 'math' })));
+  }
+
+  /** Lượt chơi này học Tiếng Anh. */
+  get isEn(): boolean {
+    return this.subj === 'english';
+  }
+
+  /** Bộ câu hỏi Tiếng Anh (đã tải khi vào khu vực – chỉ dùng trong lượt Tiếng Anh). */
+  get E(): EnglishModule {
+    const m = english();
+    if (!m) throw new Error('Chưa tải bộ câu hỏi Tiếng Anh');
+    return m;
+  }
+
+  /** Tùy chọn Tiếng Anh theo hồ sơ (lớp, Unit N, giọng đọc, chế độ hỗ trợ của kĩ năng `topic`). */
+  enOpts(topic?: EnTopic, extra: Partial<EnOptions> = {}): EnOptions {
+    return enOpts(topic, extra);
+  }
+
+  /**
+   * Câu hỏi Tiếng Anh theo năng lực, trong các kĩ năng của trò chơi (hoặc `topics`).
+   * `en`: nhãn ngắn cho vật thể 3D, số phương án, chủ đề từ…
+   */
+  enQ(en: Partial<EnOptions> = {}, topics: readonly EnTopic[] | undefined = this.info.enTopics): Question {
+    return apart(() => englishQ(pickEnTopic(topics, en), { en }));
+  }
+
+  /**
+   * Câu hỏi Tiếng Anh riêng của trò chơi (bộ dựng trong english/mini.ts) ở mức kĩ năng `topic` của bé.
+   * Trả về null nếu bộ dựng không tìm được từ phù hợp – trò chơi dùng câu dự phòng (enQ).
+   */
+  enMake<T>(topic: EnTopic, make: (E: EnglishModule, o: EnOptions, level: number) => T | null, extra: Partial<EnOptions> = {}): T | null {
+    return make(this.E, enOpts(topic, extra), this.level(topic));
+  }
+
+  /** Câu hỏi Tiếng Anh ở kĩ năng `topic`, mức cố định `level` (vòng đơn giản xen giữa các vòng khó). */
+  enAt(topic: EnTopic, level: number, extra: Partial<EnOptions> = {}): Question {
+    return apart(() => englishQ(topic, { level, en: extra }));
+  }
+
+  /** Chọn một kĩ năng Tiếng Anh trong `list` theo lớp/Unit của bé (cho trò chơi có nhiều kiểu vòng). */
+  enTopic(list: readonly EnTopic[], extra: Partial<EnOptions> = {}): EnTopic {
+    return pickEnTopic(list, extra);
   }
 
   /** Chọn một chủ đề trong danh sách (ngẫu nhiên, ưu tiên đều). */
@@ -387,7 +448,8 @@ export abstract class MiniGame implements Stage {
    */
   ask(q: Question, o: { buttons?: boolean; visual?: boolean; prompt?: string } = {}): MiniRound {
     const tracker = new AttemptTracker(q);
-    this.ui.prompt(o.prompt ?? q.prompt, q.context, q.speech, o.visual ? q.visual : undefined);
+    const visual = o.visual || q.visual?.kind === 'listen' ? q.visual : undefined;
+    this.ui.prompt(o.prompt ?? q.prompt, q.context, q.speech, visual, q.en);
     let resolveDone!: () => void;
     const done = new Promise<void>((r) => (resolveDone = r));
     let recorded = false;
@@ -432,7 +494,8 @@ export abstract class MiniGame implements Stage {
   private feedbackFor(q: Question, r: SubmitResult): void {
     if (r.correct) {
       sfx('correct');
-      speak('Chính xác! Tuyệt vời!');
+      if (q.en) speakParts([{ text: 'Chính xác!', lang: 'vi' }, { text: q.en, lang: 'en' }]);
+      else speak('Chính xác! Tuyệt vời!');
       this.ui.feedback(r.message, 'good');
       return;
     }
@@ -493,7 +556,7 @@ export abstract class MiniGame implements Stage {
     addXp(xp);
     sfx('levelup');
     this.fx.burst('confetti', [this.camera.position.x * 0.2, 2, 0], { count: 60, spread: 2 });
-    const result: MiniResult = { id: this.info.id, score: this.score, max, stars, coins, xp, best };
+    const result: MiniResult = { id: this.info.id, score: this.score, max, stars, coins, xp, best, subject: this.subj };
     const again = await this.ui.results(result);
     if (!this.disposed) this.host.exit(result, again);
   }

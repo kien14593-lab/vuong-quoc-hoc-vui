@@ -2,6 +2,7 @@ import { sfx } from '../core/audio';
 import { bus } from '../core/events';
 import { badgeDef, levelDef, levelProgress } from '../core/progression';
 import { hasProfile, profile } from '../core/state';
+import { unlockLines } from '../minigames/registry';
 import { onInputReset, setVirtualMove } from '../world/input';
 import { button, h, type Child } from './dom';
 import { coinIcon } from './icons';
@@ -416,6 +417,7 @@ export const hud = new Hud();
 /* ---------------- Màn chúc mừng ---------------- */
 function levelUpModal(level: number): Promise<void> {
   const def = levelDef(level);
+  const unlocks = unlockLines(def);
   sfx('levelup');
   confetti(110);
   const m = openModal({
@@ -427,8 +429,8 @@ function levelUpModal(level: number): Promise<void> {
       'div.celebrate',
       h('div.cel-level', h('span', 'Cấp'), h('b', String(level))),
       h('div.cel-title', def.title),
-      def.unlocks.length ? h('div.cel-sub', 'Bạn vừa mở khóa:') : null,
-      def.unlocks.length ? h('ul.cel-list', def.unlocks.map((u) => h('li', u))) : null,
+      unlocks.length ? h('div.cel-sub', 'Bạn vừa mở khóa:') : null,
+      unlocks.length ? h('ul.cel-list', unlocks.map((u) => h('li', u))) : null,
     ),
     footer: button('Tuyệt vời! 🎉', () => m.close(), 'btn-primary btn-big'),
   });

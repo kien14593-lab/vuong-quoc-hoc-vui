@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { sfx } from '../../core/audio';
 import { ball, box, cyl, group, rbox, torus } from '../../engine/kit';
 import { PAL, tint } from '../../engine/materials';
-import { numberBadge, textPlate } from '../../engine/text';
+import { fitPlate, numberBadge, textPlate } from '../../engine/text';
 import { MAZE_TOPICS } from '../../math/curriculum';
 import type { Question } from '../../math/types';
 import { MiniGame } from '../base';
@@ -87,6 +87,7 @@ class MazeRunGame extends MiniGame {
   }
 
   private mazeQuestion(): Question {
+    if (this.isEn) return this.enQ({ short: true, count: 3 });
     const q = this.question(MAZE_TOPICS[this.grade]);
     const choices = q.choices.length >= 3 ? q.choices.map((c) => c.value) : shuffle([q.answer, String(Number(q.answer) + 1), String(Number(q.answer) - 1)]);
     return { ...q, choices: shuffle(choices.slice(0, 3).includes(q.answer) ? choices.slice(0, 3) : [q.answer, ...choices.slice(0, 2)]).map((v) => ({ label: v, value: v })) };
@@ -114,10 +115,16 @@ class MazeRunGame extends MiniGame {
     }
     g.add(torus(0.63, 0.08, '#d8d0c2', { p: [0, 1.52, 0.02], arc: 180, seg: 8, ts: 16 }));
     g.add(rbox(1.1, 1.0, 0.12, 0.06, tint(color, 0.02), { p: [0, 0.73, 0.08], seg: 2 }));
-    const displayLabel = label.startsWith('Hình ') ? label.replace('Hình ', 'Hình\n') : label;
-    const plate = textPlate(displayLabel, displayLabel.includes('\n') ? 0.72 : 0.48, { bg: '#fff8ee', color: PAL.ink, border: color, pad: 16, radius: 18, weight: 900 });
-    const aspect = (plate.geometry as THREE.PlaneGeometry).parameters.width / (plate.geometry as THREE.PlaneGeometry).parameters.height;
-    if (aspect > 2.75) plate.scale.setScalar(2.75 / aspect);
+    const o = { bg: '#fff8ee', color: PAL.ink, border: color, pad: 16, radius: 18, weight: 900 };
+    let plate: THREE.Mesh;
+    // Cửa cách nhau 1.2: nhãn chữ không rộng quá 1.1 để không chồng lên nhau.
+    if (this.isEn) plate = fitPlate(label, 1.1, 0.48, o);
+    else {
+      const displayLabel = label.startsWith('Hình ') ? label.replace('Hình ', 'Hình\n') : label;
+      plate = textPlate(displayLabel, displayLabel.includes('\n') ? 0.72 : 0.48, o);
+      const aspect = (plate.geometry as THREE.PlaneGeometry).parameters.width / (plate.geometry as THREE.PlaneGeometry).parameters.height;
+      if (aspect > 2.75) plate.scale.setScalar(2.75 / aspect);
+    }
     plate.position.set(0, 1.15, 0.9);
     g.add(plate);
     return g;
@@ -179,6 +186,13 @@ defineMini(
     rounds: 6,
     color: '#b79cff',
     unlock: 1,
+    en: {
+      name: 'Mê cung chữ',
+      skill: 'Từ vựng, chữ cái',
+      desc: 'Chạm cánh cửa có từ hoặc chữ cái đúng để mở đường tới rương báu.',
+    },
+    both: 'Mê cung',
+    enTopics: ['en_vocab', 'en_phonics', 'en_spell'],
   },
   (info, host) => new MazeRunGame(info, host),
 );

@@ -975,6 +975,69 @@ html.ui-compact.ui-short .mg-prompt {
   padding: 10px 30px;
 }
 
+/* Thẻ đề có hình, ô chữ hoặc nút nghe (Tiếng Anh): màn thấp thì hình nhỏ lại, nằm bên trái chữ,
+   để thẻ không che toa tàu, bóng bay… phía dưới. */
+html.ui-compact.ui-short .mg-prompt:has(> .vis-picture, > .vis-letters, > .vis-listen) {
+  display: grid;
+  grid-template-columns: auto minmax(0, auto);
+  grid-template-rows: 1fr auto auto 1fr;
+  grid-template-areas:
+    'vis .'
+    'vis ctx'
+    'vis q'
+    'vis .';
+  justify-content: center;
+  align-items: center;
+  column-gap: 26px;
+}
+
+html.ui-compact.ui-short .mg-prompt > .mg-context {
+  grid-area: ctx;
+}
+
+html.ui-compact.ui-short .mg-prompt > .mg-q {
+  grid-area: q;
+}
+
+html.ui-compact.ui-short .mg-prompt > :is(.vis-picture, .vis-letters, .vis-listen) {
+  grid-area: vis;
+  margin-top: 0;
+  gap: 14px;
+  flex-wrap: nowrap;
+}
+
+html.ui-compact.ui-short .mg-prompt .vis-emoji {
+  font-size: 80px;
+}
+
+html.ui-compact.ui-short .mg-prompt .vis-swatch {
+  width: 96px;
+  height: 70px;
+}
+
+html.ui-compact.ui-short .mg-prompt .vis-caption {
+  font-size: 28px;
+}
+
+html.ui-compact.ui-short .mg-prompt .vis-tiles .tile {
+  min-width: 54px;
+  height: 68px;
+  font-size: 44px;
+}
+
+html.ui-compact.ui-short .mg-prompt .vis-tiles .tile.gap {
+  min-width: 20px;
+}
+
+html.ui-compact.ui-short .mg-prompt .vis-listen-btn {
+  padding: 8px 26px;
+  font-size: 32px;
+}
+
+html.ui-compact.ui-short .mg-prompt .vis-listen-ic {
+  font-size: 46px;
+}
+
 html.ui-compact.ui-short .mg-choices {
   bottom: 22px;
   gap: 20px;

@@ -122,6 +122,56 @@ export function textPlate(text: string, h: number, o: TextTexOpts & { lit?: bool
   return mesh;
 }
 
+/** Chia chuỗi thành 2 dòng tại dấu cách gần giữa nhất ("ice cream" → "ice\ncream"); không có dấu cách thì giữ nguyên. */
+export function wrap2(s: string): string {
+  if (s.includes('\n')) return s;
+  const mid = (s.length - 1) / 2;
+  let best = -1;
+  for (let i = 0; i < s.length; i++) if (s[i] === ' ' && (best < 0 || Math.abs(i - mid) < Math.abs(best - mid))) best = i;
+  return best < 0 ? s : `${s.slice(0, best)}\n${s.slice(best + 1)}`;
+}
+
+type PlateOpts = TextTexOpts & { lit?: boolean; doubleSided?: boolean };
+
+/** Cỡ chữ hiện ra (đơn vị thế giới) và bề rộng của một tấm chữ. */
+function plateMetrics(mesh: THREE.Mesh, size: number): { w: number; glyph: number } {
+  const geo = mesh.geometry as THREE.PlaneGeometry;
+  const tex = (mesh.material as THREE.MeshBasicMaterial).map;
+  const H = (tex?.image as { height?: number } | undefined)?.height ?? 1;
+  return { w: geo.parameters.width, glyph: (size * geo.parameters.height) / H };
+}
+
+function dropMesh(mesh: THREE.Mesh): void {
+  mesh.geometry.dispose();
+  (mesh.material as THREE.Material).dispose();
+}
+
+/**
+ * Tấm chữ cao `h`, rộng tối đa `maxW` (đơn vị thế giới) – cho nhãn chữ trên vật thể (từ tiếng Anh, cụm từ).
+ * Chữ dài thì xuống 2 dòng hoặc thu nhỏ (chọn cách cho chữ to hơn). Chữ vừa khung hiện đúng như `textPlate`.
+ */
+export function fitPlate(text: string, maxW: number, h: number, o: PlateOpts = {}): THREE.Mesh {
+  const size = o.size ?? 96;
+  const one = textPlate(text, h, o);
+  const a = plateMetrics(one, size);
+  if (a.w <= maxW) return one;
+  let best = one;
+  let scale = maxW / a.w;
+  const wrapped = wrap2(text);
+  if (wrapped !== text) {
+    const two = textPlate(wrapped, h, o);
+    const b = plateMetrics(two, size);
+    const s2 = Math.min(1, maxW / b.w);
+    if (b.glyph * s2 > a.glyph * scale) {
+      dropMesh(one);
+      best = two;
+      scale = s2;
+    } else dropMesh(two);
+  }
+  if (scale < 1) best.scale.setScalar(scale);
+  return best;
+}
+
 /** Bảng số tròn (cho cửa mê cung, quả bóng, hòn đá số...). */
 export function numberBadge(value: string | number, diameter: number, o: { bg?: string; color?: string; border?: string } = {}): THREE.Mesh {
   const s = String(value);

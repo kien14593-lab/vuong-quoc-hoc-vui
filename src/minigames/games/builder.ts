@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { sfx } from '../../core/audio';
-import { ball, box, group, prism, rbox } from '../../engine/kit';
+import { ball, box, extrude, group, heartShape, prism, rbox, roundRectShape, starShape } from '../../engine/kit';
 import { mat, PAL, tint } from '../../engine/materials';
-import { numberBadge, textPlate } from '../../engine/text';
+import { fitPlate, numberBadge } from '../../engine/text';
+import type { Block, BlockShape } from '../../english/mini';
 import type { Question, Topic } from '../../math/types';
 import { MiniGame } from '../base';
 import { defineMini } from '../registry';
@@ -21,6 +22,31 @@ function uniqChoices(answer: string, pool: string[], n = 3): string[] {
   for (const p of pool) if (!out.includes(p) && out.length < n) out.push(p);
   return out.sort(() => Math.random() - 0.5);
 }
+
+/** Hình 2D (cỡ ~1,4) của khối Tiếng Anh – khối không ghi chữ, bé chọn theo hình và màu. */
+const BLOCK_2D: Record<BlockShape, () => THREE.Shape> = {
+  circle: () => new THREE.Shape().absarc(0, 0, 0.62, 0, Math.PI * 2, false),
+  square: () => roundRectShape(1.12, 1.12, 0.1),
+  triangle: () => {
+    const s = new THREE.Shape();
+    s.moveTo(0, 0.7);
+    s.lineTo(-0.74, -0.56);
+    s.lineTo(0.74, -0.56);
+    s.closePath();
+    return s;
+  },
+  star: () => starShape(0.74, 0.32),
+  heart: () => heartShape(1.32),
+  diamond: () => {
+    const s = new THREE.Shape();
+    s.moveTo(0, 0.74);
+    s.lineTo(0.52, 0);
+    s.lineTo(0, -0.74);
+    s.lineTo(-0.52, 0);
+    s.closePath();
+    return s;
+  },
+};
 
 function vi(n: number): string {
   return Number.isInteger(n) ? String(n) : String(n).replace('.', ',');
@@ -60,8 +86,8 @@ class BuilderGame extends MiniGame {
     this.anim(this.worker)!.wave = true;
     while (this.more) {
       this.clearChoices();
-      const q = this.builderQuestion();
-      this.makeBlocks(q.choices.map((c) => c.value));
+      const q = this.isEn ? this.enBlocks() : this.builderQuestion();
+      if (!this.isEn) this.makeBlocks(q.choices.map((c) => c.value));
       const round = this.ask(q, { visual: false, prompt: q.prompt });
       await round.done;
       const correct = this.targets.find((t) => t.userData.value === q.answer);
@@ -120,6 +146,47 @@ class BuilderGame extends MiniGame {
       hint: 'Chu vi hình chữ nhật = (dài + rộng) × 2.',
       steps: [`${w} + ${d} = ${w + d}.`, `${w + d} × 2 = ${ans}.`],
     });
+  }
+
+  /** Lượt Tiếng Anh: khối theo hình/màu đã học; chưa học đủ hình thì dùng thẻ chữ của câu Tiếng Anh thường. */
+  private enBlocks(): Question {
+    const r = this.enMake('en_vocab', (E, o, L) => E.blockRound(o, L));
+    if (r) {
+      r.blocks.forEach((b, i) => this.addBlock(b.value, this.shapeBlock(b), i, r.blocks.length, 0.95));
+      return r.q;
+    }
+    const q = this.enQ({ short: true, count: 3 });
+    const colors = ['#ffd166', '#74c0fc', '#ff9ec7', '#7bd389'];
+    q.choices.forEach((c, i) => {
+      const color = colors[i % colors.length];
+      const card = group([
+        rbox(1.95, 0.95, 0.22, 0.12, color, { p: [0, 0, -0.04], seg: 2 }),
+        fitPlate(c.label, 1.75, 0.5, { color: PAL.ink, bg: '#fff8ee', border: color, radius: 24, pad: 8 }),
+      ]);
+      card.children[1].position.z = 0.1;
+      this.addBlock(c.value, card, i, q.choices.length, 0.6);
+    });
+    return q;
+  }
+
+  /** Khối hình đùn nổi (viền trắng) – nghiêng về phía camera như khối hình của lượt Toán. */
+  private shapeBlock(b: Block): THREE.Object3D {
+    const back = extrude(`en-block-${b.shape}`, BLOCK_2D[b.shape], 0.1, '#ffffff');
+    back.scale.set(1.16, 1.16, 1);
+    back.position.z = -0.04;
+    const face = extrude(`en-block-${b.shape}`, BLOCK_2D[b.shape], 0.1, b.hex, { bevel: 0.03 });
+    face.position.z = 0.04;
+    return group([back, face], { r: [-38, 0, 0] });
+  }
+
+  private addBlock(value: string, mesh: THREE.Object3D, i: number, n: number, y: number): void {
+    const x = (i - (n - 1) / 2) * 2.25;
+    const g = group([mesh], { p: [x, y, 3.15] }) as ChoiceBlock;
+    g.userData.value = value;
+    g.userData.label = value;
+    g.userData.home = g.position.clone();
+    this.scene.add(g);
+    this.targets.push(g);
   }
 
   private makeBlocks(values: string[]): void {
@@ -232,6 +299,13 @@ defineMini(
     rounds: 6,
     color: '#e8956b',
     unlock: 3,
+    en: {
+      name: 'Xây nhà – hình và màu',
+      skill: 'Hình, màu sắc',
+      desc: 'Nghe tên hình hoặc màu bằng tiếng Anh rồi chọn khối đúng để ngôi nhà lớn lên.',
+    },
+    both: 'Xây nhà',
+    enTopics: ['en_vocab'],
   },
   (info, host) => new BuilderGame(info, host),
 );

@@ -580,9 +580,7 @@ describe('mọi nơi ra câu hỏi đều đi qua bộ chọn môn', () => {
   const ALLOWED = (file: string) =>
     file === '../src/game/challenge.ts' ||
     file === '../src/game/subject.ts' ||
-    file.startsWith('../src/math/') ||
-    // Mini-game: chuyển sang bộ chọn môn ở bước sau.
-    file === '../src/minigames/base.ts';
+    file.startsWith('../src/math/');
 
   function resolve(file: string, spec: string): string {
     if (!spec.startsWith('.')) return spec;

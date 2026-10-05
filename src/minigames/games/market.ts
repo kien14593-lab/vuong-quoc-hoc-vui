@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { sfx } from '../../core/audio';
 import { ball, box, cone, cyl, group, rbox, tube } from '../../engine/kit';
 import { PAL } from '../../engine/materials';
-import { numberBadge, textPlate } from '../../engine/text';
+import { fitPlate, numberBadge, textPlate } from '../../engine/text';
 import type { Question } from '../../math/types';
 import { parseVi } from '../../math/util';
 import { MiniGame, type MiniRound } from '../base';
@@ -13,6 +13,8 @@ type MoneyItem = { emoji: string; name: string; price: number; qty?: number };
 const INK = '#2b2233';
 const GOLD = '#ffcf3f';
 const DENOMS = [50, 20, 10, 5, 2, 1];
+/** Món hàng của vòng đếm (lượt Tiếng Anh). */
+const SHOP_TAGS = ['fruit', 'food', 'veg', 'toy', 'school'];
 
 function moneyValue(s: string): number {
   const m = s.match(/[0-9\s\u00a0,.]+/);
@@ -117,6 +119,28 @@ function moneyPile(value: number, label: string): THREE.Group {
   return g;
 }
 
+/** Thùng hàng (lượt Tiếng Anh): nhãn là hình hoặc tên món hàng. */
+function productBox(label: string, i: number): THREE.Group {
+  const colors = ['#ff9ec7', '#ffd166', '#7bd389', '#6cb8ff'];
+  const g = new THREE.Group();
+  g.add(rbox(1.0, 0.56, 0.7, 0.08, colors[i % colors.length], { p: [0, 0.28, 0], shiny: 25 }));
+  g.add(box(1.02, 0.07, 0.72, '#fff8ee', { p: [0, 0.46, 0] }));
+  const t = fitPlate(label, 1.25, 0.46, { bg: '#ffffff', color: INK, border: GOLD, size: 92, pad: 14 });
+  t.position.set(0, 0.92, 0.12);
+  g.add(t);
+  return g;
+}
+
+/** Biển trả lời trên cọc (vòng đếm bằng tiếng Anh). */
+function answerSign(label: string): THREE.Group {
+  const g = new THREE.Group();
+  g.add(cyl(0.05, 0.06, 0.72, '#7b4a2e', { p: [0, 0.36, 0], seg: 8 }));
+  const t = fitPlate(label, 1.25, 0.5, { bg: '#fff8ee', color: INK, border: '#7bd389', size: 92, pad: 14 });
+  t.position.set(0, 0.95, 0.05);
+  g.add(t);
+  return g;
+}
+
 class MarketGame extends MiniGame {
   private cashier: THREE.Group | null = null;
   private targets: THREE.Group[] = [];
@@ -149,16 +173,17 @@ class MarketGame extends MiniGame {
     if (hi) hi.wave = true;
     while (this.more) {
       this.clearRound();
-      const q = this.question('money');
-      this.renderRound(q);
+      const q = this.isEn ? this.enRound() : this.question('money');
+      const shown = this.isEn ? this.renderEn(q) : (this.renderRound(q), false);
       const st = this.cashier && this.anim(this.cashier);
       if (st) st.talk = true;
-      const round = this.ask(q, { prompt: q.prompt });
+      const round = this.isEn ? this.ask(q, { visual: !shown }) : this.ask(q, { prompt: q.prompt });
       this.roundNow = round;
       await round.done;
       this.roundNow = null;
       if (st) st.talk = false;
-      await this.pay(q.answer);
+      if (this.isEn) await this.buy(q.answer, q.topic === 'en_numbers');
+      else await this.pay(q.answer);
       if (!(await this.nextRound())) break;
     }
   }
@@ -191,6 +216,71 @@ class MarketGame extends MiniGame {
       this.targetValue.set(p, c.value);
       this.roundObjs.push(p);
     });
+  }
+
+  /** Lượt Tiếng Anh: mua đúng món hàng; Lớp 4–5 cứ 4 vòng có 1 vòng đếm món hàng. */
+  private enRound(): Question {
+    if (this.grade >= 4 && this.round % 4 === 3) {
+      const q = this.enAt('en_numbers', 1, { tags: SHOP_TAGS, strict: true, short: true });
+      if (q.visual?.kind === 'objects') return q;
+    }
+    return this.enMake('en_vocab', (E, o, L) => E.itemRound(o, L, 'shop')) ?? this.enQ({ short: true });
+  }
+
+  /** Dựng vòng Tiếng Anh. Trả về true nếu hình của câu hỏi (món hàng cần đếm) đã dựng trên quầy. */
+  private renderEn(q: Question): boolean {
+    const v = q.visual;
+    let shown = false;
+    if (v?.kind === 'objects' && v.groups.length === 1 && !v.op) {
+      const n = Math.min(12, v.groups[0]);
+      const cols = Math.min(6, n);
+      const rows = Math.ceil(n / cols);
+      for (let i = 0; i < n; i++) {
+        const row = Math.floor(i / cols);
+        const inRow = Math.min(cols, n - row * cols);
+        const p = textPlate(v.emoji, 0.56, { size: 110, pad: 8 });
+        p.position.set(((i % cols) - (inRow - 1) / 2) * 0.66, 0.42 + (rows - 1 - row) * 0.6, -0.7);
+        this.scene.add(p);
+        this.roundObjs.push(p);
+      }
+      shown = true;
+    }
+    const count = q.topic === 'en_numbers';
+    q.choices.forEach((c, i) => {
+      const compact = q.choices.length > 3;
+      const x = (i - (q.choices.length - 1) / 2) * (compact ? 1.3 : 1.55);
+      const p = count ? answerSign(c.label) : productBox(c.label, i);
+      if (compact) p.scale.setScalar(0.85);
+      p.position.set(x, 0.1, 1.6);
+      this.scene.add(p);
+      this.targets.push(p);
+      this.targetValue.set(p, c.value);
+      this.roundObjs.push(p);
+    });
+    return shown;
+  }
+
+  /** Món hàng bé chọn bay vào khay của Cô Mèo (vòng đếm: chỉ khen). */
+  private async buy(answer: string, count: boolean): Promise<void> {
+    const t = this.targets.find((x) => this.targetValue.get(x) === answer);
+    const st = this.cashier && this.anim(this.cashier);
+    if (st) st.happy = 1;
+    this.ui.flash(count ? 'Đếm đúng rồi!' : 'Mua đúng rồi!', 'good');
+    await this.wait(0.25);
+    if (t && !count) {
+      const start = t.position.clone();
+      const s0 = t.scale.x;
+      const end = this.tray.clone().add(new THREE.Vector3(0, 0.15, 0));
+      this.tween(0.7, (k) => {
+        t.position.lerpVectors(start, end, k);
+        t.position.y += Math.sin(k * Math.PI) * 1.0;
+        t.scale.setScalar(s0 * (1 - k * 0.5));
+      }, { ease: 'inOutCubic' });
+      sfx('whoosh');
+    }
+    this.fx.burst('star', [this.tray.x, 1.2, this.tray.z], { count: 28, spread: 1.0 });
+    await this.wait(0.85);
+    if (st) st.happy = 0;
   }
 
   private tap(e: PointerEvent): void {
@@ -260,6 +350,13 @@ defineMini(
     rounds: 6,
     color: '#7bd389',
     unlock: 2,
+    en: {
+      name: 'Siêu thị tiếng Anh',
+      skill: 'Từ vựng: đồ ăn, đồ dùng',
+      desc: 'Nghe hoặc đọc tên món hàng, chạm thùng có món đúng để mua. Lớp 4–5 có thêm vòng đếm món hàng.',
+    },
+    both: 'Siêu thị',
+    enTopics: ['en_vocab'],
   },
   (info, host) => new MarketGame(info, host),
 );

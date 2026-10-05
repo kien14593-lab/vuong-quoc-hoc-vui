@@ -167,7 +167,10 @@ async function playMini(id: string): Promise<MiniResult | null> {
           engine.setStage(z);
           z.enter();
         }
-        if (res && id === 'shoot_answer' && res.stars >= 3 && !hasBadge('cong-sieu-toc')) awardBadge('cong-sieu-toc');
+        if (res && id === 'shoot_answer' && res.stars >= 3) {
+          const badge = res.subject === 'english' ? 'tu-vung-sieu-toc' : 'cong-sieu-toc';
+          if (!hasBadge(badge)) awardBadge(badge);
+        }
         checkBadges();
         resolve(res);
       },

@@ -1,13 +1,14 @@
 import '../styles/mini.css';
 import { sfx } from '../core/audio';
-import { speak } from '../core/speech';
+import { speak, speakEnglish } from '../core/speech';
 import type { Visual } from '../math/types';
 import { h } from '../ui/dom';
 import { coinIcon } from '../ui/icons';
+import { rich } from '../ui/rich';
 import { layer, onUIResize, uiSize } from '../ui/root';
 import { renderVisual } from '../ui/visuals';
 import type { MiniInfo, MiniResult } from './base';
-import { miniName } from './registry';
+import type { MiniCard } from './registry';
 
 export type FeedbackTone = 'good' | 'retry' | 'hint' | 'steps' | 'info';
 
@@ -36,6 +37,8 @@ export class MiniUI {
 
   constructor(
     readonly info: MiniInfo,
+    /** Tên, biểu tượng, kĩ năng, cách chơi của lượt này (theo môn). */
+    readonly card: MiniCard,
     private o: { onQuit: () => void },
   ) {
     this.root = h('div.mg-root', { style: { '--mg': info.color } as unknown as Partial<CSSStyleDeclaration> });
@@ -49,7 +52,7 @@ export class MiniUI {
     });
     this.top = h(
       'div.mg-top',
-      h('div.mg-title', h('span.mg-icon', info.icon), h('span', miniName(info))),
+      h('div.mg-title', h('span.mg-icon', card.icon), h('span', card.name)),
       this.dots,
       h('div.mg-right', h('div.mg-score', h('span', '⭐'), this.scoreEl), quit),
     );
@@ -97,14 +100,17 @@ export class MiniUI {
   }
 
   /* ---------------- Đề bài ---------------- */
-  /** Hiện đề bài (và đọc to). `visual` = hình minh họa của câu hỏi (tùy chọn). */
-  prompt(text: string, context?: string, speech?: string, visual?: Visual): void {
+  /**
+   * Hiện đề bài (và đọc to). `visual` = hình minh họa của câu hỏi (tùy chọn).
+   * `en` = phần tiếng Anh của câu hỏi (nút "Nghe lại" của câu hỏi nghe chỉ đọc phần này).
+   */
+  prompt(text: string, context?: string, speech?: string, visual?: Visual, en?: string): void {
     const say = h('button.mg-speak', { title: 'Nghe lại', 'aria-label': 'Nghe lại' }, '🔊');
     say.addEventListener('click', () => speak(speech ?? text, { force: true }));
     this.promptEl.replaceChildren(
-      ...(context ? [h('div.mg-context', context)] : []),
-      h('div.mg-q', h('span.mg-qtext', text), say),
-      ...(visual ? [renderVisual(visual)] : []),
+      ...(context ? [h('div.mg-context', rich(context))] : []),
+      h('div.mg-q', h('span.mg-qtext', rich(text)), say),
+      ...(visual ? [renderVisual(visual, { onListen: () => en && speakEnglish(en, { force: true }) })] : []),
     );
     this.promptEl.classList.remove('hidden');
     this.promptEl.classList.remove('pop');
@@ -125,8 +131,8 @@ export class MiniUI {
     window.clearTimeout(this.feedbackTimer);
     this.feedbackEl.className = `mg-feedback tone-${tone}`;
     this.feedbackEl.replaceChildren(
-      h('div.mg-fb-msg', msg),
-      ...(steps?.length ? [h('ol.mg-steps', ...steps.map((s) => h('li', s)))] : []),
+      h('div.mg-fb-msg', rich(msg)),
+      ...(steps?.length ? [h('ol.mg-steps', ...steps.map((s) => h('li', rich(s))))] : []),
     );
     void this.feedbackEl.offsetWidth;
     this.feedbackEl.classList.add('show');
@@ -149,7 +155,7 @@ export class MiniUI {
     this.clearChoices();
     this.isAnswer = isAnswer ?? null;
     const btns = labels.map((label, i) => {
-      const b = h<HTMLButtonElement>('button.mg-choice', { style: { '--i': String(i) } as unknown as Partial<CSSStyleDeclaration> }, h('span.mg-key', String(i + 1)), h('span.mg-label', label));
+      const b = h<HTMLButtonElement>('button.mg-choice', { style: { '--i': String(i) } as unknown as Partial<CSSStyleDeclaration> }, h('span.mg-key', String(i + 1)), h('span.mg-label', rich(label)));
       b.addEventListener('click', () => pick(i));
       return b;
     });
@@ -226,10 +232,10 @@ export class MiniUI {
         'div.mg-overlay.mg-intro',
         h(
           'div.mg-card',
-          h('div.mg-big-icon', this.info.icon),
-          h('h1', miniName(this.info)),
-          h('div.mg-skill', `Luyện: ${this.info.skill}`),
-          h('p.mg-desc', this.info.desc),
+          h('div.mg-big-icon', this.card.icon),
+          h('h1', this.card.name),
+          h('div.mg-skill', `Luyện: ${this.card.skill}`),
+          h('p.mg-desc', this.card.desc),
           h('div.mg-meta', `${this.info.rounds} vòng · Mỗi câu đúng ngay được ⭐⭐⭐`),
           start,
         ),
@@ -254,7 +260,7 @@ export class MiniUI {
       window.addEventListener('keydown', onKey);
       this.cleanups.add(off);
       this.root.appendChild(card);
-      speak(`${miniName(this.info)}. ${this.info.desc}`);
+      speak(`${this.card.name}. ${this.card.desc}`);
     });
   }
 
@@ -271,7 +277,7 @@ export class MiniUI {
         'div.mg-overlay.mg-results',
         h(
           'div.mg-card',
-          h('div.mg-big-icon', this.info.icon),
+          h('div.mg-big-icon', this.card.icon),
           h('h1', msg),
           stars,
           h('div.mg-score-line', `Điểm: ${r.score} / ${r.max}`),

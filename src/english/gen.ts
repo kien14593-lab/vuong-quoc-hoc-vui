@@ -8,7 +8,9 @@ import type { EnTopic, Question } from '../math/types';
 import { qid } from '../math/util';
 import { type Word, conflicts } from './bank';
 import { BEATS } from './beats';
-import { type Ctx, type EnOptions, forgetRecent, hasAny, makeCtx, remember, valid, wordLabel } from './gen-core';
+import {
+  type Ctx, type EnOptions, forgetRecent, hasAny, isStrict, makeCtx, remember, setStrictFlag, valid, wordLabel,
+} from './gen-core';
 import { phonics, spell } from './gen-letters';
 import { numbers } from './gen-numbers';
 import { listenText, sentence } from './gen-sentence';
@@ -18,6 +20,7 @@ import { clampUnit } from './units';
 
 export type { EnOptions, Word };
 export { forgetRecent, wordLabel };
+export * from './mini';
 
 /**
  * Chủ đề thực sự dùng: Lớp 1–2 chưa có mẫu câu; Lớp 3–5 luyện chữ qua chính tả; Lớp 1 luyện chữ qua âm đầu;
@@ -53,9 +56,8 @@ function build(c: Ctx, level: number): Question | null {
 }
 
 /** Kiểm thử bật chế độ nghiêm: lỗi trong bộ sinh được ném ra thay vì bỏ qua. */
-let strict = false;
 export function setStrict(v: boolean): void {
-  strict = v;
+  setStrictFlag(v);
 }
 
 function attempt(o: EnOptions, topic: EnTopic, level: number): Question | null {
@@ -64,7 +66,7 @@ function attempt(o: EnOptions, topic: EnTopic, level: number): Question | null {
   try {
     q = build(c, level);
   } catch (e) {
-    if (strict) throw e;
+    if (isStrict()) throw e;
     return null;
   }
   if (!q || !valid(q, c)) return null;
@@ -143,7 +145,7 @@ export function beatQuestion(beat: BeatId, topic: EnTopic, level: number, o: EnO
       try {
         q = s.build(c, top);
       } catch (e) {
-        if (strict) throw e;
+        if (isStrict()) throw e;
       }
       if (q && valid(q, c)) {
         remember(c.target);

@@ -2,12 +2,14 @@ import * as THREE from 'three';
 import { sfx } from '../../core/audio';
 import { ball, box, cone, cyl, group, prism, rbox, torus } from '../../engine/kit';
 import { PAL, tint } from '../../engine/materials';
-import { numberBadge, textPlate } from '../../engine/text';
-import type { Question } from '../../math/types';
+import { fitPlate, numberBadge, textPlate } from '../../engine/text';
+import type { EnTopic, Question } from '../../math/types';
 import { MiniGame } from '../base';
 import { defineMini } from '../registry';
 
 type Crate = THREE.Group & { userData: { value: string; home: THREE.Vector3 } };
+/** Một vòng: câu hỏi, chữ trên các toa (null = toa trơn), toa trống và chữ hiện lên toa khi đúng. */
+type Puzzle = { q: Question; seq: string[] | null; missing: number; fill?: string };
 
 function fmt(n: number): string {
   return Number.isInteger(n) ? String(n) : n.toFixed(1).replace('.', ',');
@@ -50,13 +52,18 @@ class TrainGame extends MiniGame {
   protected async play(): Promise<void> {
     while (this.more) {
       this.clearCrates();
-      const puzzle = this.sequenceQuestion();
-      this.decorateCars(puzzle.seq, puzzle.missing);
-      this.spawnCrates(puzzle.q.choices.map((c) => c.value));
-      const round = this.ask(puzzle.q, { prompt: puzzle.q.prompt });
+      const puzzle: Puzzle = this.isEn ? this.enPuzzle() : this.sequenceQuestion();
+      if (this.isEn) {
+        this.decorateCarsEn(puzzle.seq, puzzle.missing);
+        this.spawnCratesEn(puzzle.q.choices);
+      } else {
+        this.decorateCars(puzzle.seq ?? [], puzzle.missing);
+        this.spawnCrates(puzzle.q.choices.map((c) => c.value));
+      }
+      const round = this.ask(puzzle.q, { prompt: puzzle.q.prompt, visual: this.isEn });
       await round.done;
       const crate = this.crates.find((c) => c.userData.value === puzzle.q.answer);
-      if (crate) await this.loadCrate(crate, puzzle.q.answer);
+      if (crate) await this.loadCrate(crate, puzzle.fill ?? puzzle.q.answer);
       await this.chug();
       if (!(await this.nextRound(0.65))) break;
     }
@@ -134,6 +141,56 @@ class TrainGame extends MiniGame {
     };
   }
 
+  /** Các kĩ năng Tiếng Anh hợp với đoàn tàu ở lớp của bé. */
+  private enTrainTopics(): EnTopic[] {
+    const g = this.grade;
+    return [...(g <= 2 ? ['en_phonics' as const] : []), ...(g >= 2 ? ['en_spell' as const] : []), 'en_numbers', ...(g >= 4 ? ['en_time' as const] : [])];
+  }
+
+  /** Lượt Tiếng Anh: chữ cái / điền chữ / thứ – tháng / số trên các toa; thiếu toa nào thì dùng câu số đếm hoặc câu thường. */
+  private enPuzzle(): Puzzle {
+    const topics = this.enTrainTopics();
+    const topic = this.enTopic(topics);
+    const r =
+      this.enMake(topic, (E, o, L) => E.trainRound(o, topic, L)) ??
+      this.enMake('en_numbers', (E, o, L) => E.trainRound(o, 'en_numbers', L));
+    if (r) return { q: r.q, seq: r.cars, missing: r.missing, fill: r.fill };
+    const q = this.enQ({ short: true }, topics);
+    return { q, seq: null, missing: 2, fill: q.choices.find((c) => c.value === q.answer)?.label };
+  }
+
+  private decorateCarsEn(cars: string[] | null, missing: number): void {
+    this.clearBadges();
+    for (let i = 0; i < 5; i++) {
+      const x = -0.85 + i * 1.55;
+      if (i === missing) this.missingCar = group([], { p: [x, 0.6, 0] });
+      if (!cars) continue;
+      const gap = i === missing;
+      const plate = fitPlate(cars[i], 1.4, 0.5, { bg: gap ? '#fff8ee' : '#ffffff', color: PAL.ink, border: gap ? '#ff6b6b' : '#5fb3e8', radius: 20, pad: 8 });
+      plate.position.set(x, 1.05, 0.51);
+      plate.userData.badge = true;
+      this.train.add(plate);
+    }
+  }
+
+  private spawnCratesEn(choices: Question['choices']): void {
+    const n = Math.min(4, choices.length);
+    choices.slice(0, 4).forEach((c, i) => {
+      const x = (i - (n - 1) / 2) * 1.6;
+      const label = fitPlate(c.label, 1.32, 0.4, { bg: '#fff8ee', color: PAL.ink, border: '#ffd166', radius: 18, pad: 6 });
+      label.position.set(0, 0.53, 0.36);
+      const crate = group([rbox(1.45, 0.52, 0.7, 0.06, '#c8915a', { p: [0, 0.26, 0], seg: 2 }), label], { p: [x, 0, 3.15] }) as Crate;
+      crate.userData.value = c.value;
+      crate.userData.home = crate.position.clone();
+      this.scene.add(crate);
+      this.crates.push(crate);
+    });
+  }
+
+  private clearBadges(): void {
+    for (let i = this.train.children.length - 1; i >= 0; i--) if (this.train.children[i].userData.badge) this.remove(this.train.children[i]);
+  }
+
   private decorateCars(seq: string[], missing: number): void {
     for (let i = this.train.children.length - 1; i >= 0; i--) if (this.train.children[i].userData.badge) this.remove(this.train.children[i]);
     for (let i = 0; i < 5; i++) {
@@ -182,7 +239,8 @@ class TrainGame extends MiniGame {
       c.position.y += Math.sin(k * Math.PI) * 2.2;
       c.scale.setScalar(1 + Math.sin(k * Math.PI) * 0.2);
     }, { ease: 'inOutCubic' });
-    const badge = numberBadge(value, 0.68, { bg: '#ffffff', color: PAL.ink, border: '#7bd389' });
+    const done = { bg: '#ffffff', color: PAL.ink, border: '#7bd389' };
+    const badge = this.isEn ? fitPlate(value, 1.4, 0.5, { ...done, radius: 20, pad: 8 }) : numberBadge(value, 0.68, done);
     badge.position.set(this.missingCar.position.x, 1.05, 0.54);
     badge.userData.badge = true;
     this.train.add(badge);
@@ -213,6 +271,13 @@ defineMini(
     rounds: 8,
     color: '#5fb3e8',
     unlock: 2,
+    en: {
+      name: 'Tàu chữ cái',
+      skill: 'Chữ cái, đánh vần, số, thứ – tháng',
+      desc: 'Tìm chữ cái, số hoặc ngày còn thiếu bằng tiếng Anh rồi chất thùng hàng lên toa trống.',
+    },
+    both: 'Tàu hỏa',
+    enTopics: ['en_phonics', 'en_spell', 'en_numbers', 'en_time'],
   },
   (info, host) => new TrainGame(info, host),
 );

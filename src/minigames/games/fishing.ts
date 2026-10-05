@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { sfx } from '../../core/audio';
 import { ball, box, capsule, cone, cyl, disc, rbox, torus, tube } from '../../engine/kit';
 import { PAL, tint } from '../../engine/materials';
-import { textPlate } from '../../engine/text';
+import { fitPlate, textPlate } from '../../engine/text';
 import { fmt, fracStr } from '../../math/util';
 import type { Question } from '../../math/types';
 import { MiniGame, type MiniHost, type MiniInfo, type MiniRound } from '../base';
@@ -11,9 +11,11 @@ import { defineMini } from '../registry';
 type FishTarget = THREE.Group & { userData: { value: string; rank: number; ok?: boolean; baseX: number; baseZ: number } };
 const ss = { flat: false } as const;
 
-function answerPlate(value: string, color = '#6cc4f0'): THREE.Mesh {
-  const plate = textPlate(value, 0.9, { bg: '#fff8ee', border: color, color: '#4b3d68', size: 132, pad: 48, radius: 92, weight: 900, doubleSided: true });
-  return plate;
+type FishValue = { label: string; rank: number; value?: string };
+
+function answerPlate(value: string, color = '#6cc4f0', fit = false): THREE.Mesh {
+  const o = { bg: '#fff8ee', border: color, color: '#4b3d68', size: 132, pad: 48, radius: 92, weight: 900, doubleSided: true };
+  return fit ? fitPlate(value, 1.55, 0.9, o) : textPlate(value, 0.9, o);
 }
 
 class FishingGame extends MiniGame {
@@ -31,7 +33,9 @@ class FishingGame extends MiniGame {
   protected build(): void {
     this.sky('#8fd8ff', '#e9f8ff', 35, 95);
     this.ground('#9bd66e', 80, 80);
-    this.view([0, 5.25, 7.1], [0, 0.72, -0.2], 35);
+    // Tiếng Anh: thẻ đề bài (hình + nghĩa) cao hơn → nhìn cao hơn, hồ thấp xuống để nhãn con cá xa không bị che.
+    if (this.isEn) this.view([0, 6.0, 7.1], [0, 1.6, -0.2], 35);
+    else this.view([0, 5.25, 7.1], [0, 0.72, -0.2], 35);
     this.scene.add(disc(4.4, '#7ed8e8', { p: [0, 0.012, 0], seg: 48 }));
     this.scene.add(torus(4.1, 0.16, '#cdeca0', { p: [0, 0.03, 0], r: [90, 0, 0], ts: 64, seg: 8 }));
     this.scene.add(rbox(2.7, 0.22, 1.25, 0.08, PAL.wood, { p: [-3.6, 0.14, 1.0], base: true }));
@@ -85,7 +89,12 @@ class FishingGame extends MiniGame {
     }
   }
 
-  private makeFishingQuestion(): { q: Question; values: { label: string; rank: number }[]; accept: string[] } {
+  private makeFishingQuestion(): { q: Question; values: FishValue[]; accept: string[] } {
+    if (this.isEn) {
+      const q = this.enQ({ short: true });
+      const values = q.choices.slice(0, 4).map((c, i) => ({ label: c.label, value: c.value, rank: i }));
+      return { q, values, accept: q.accept?.length ? q.accept : [q.answer] };
+    }
     const grade = this.grade;
     let values: { label: string; rank: number }[] = [];
     if (grade <= 2) {
@@ -136,24 +145,31 @@ class FishingGame extends MiniGame {
     return { q, values, accept };
   }
 
-  private spawnFish(values: { label: string; rank: number }[], accept: string[]): void {
-    const spots: [number, number][] = [
-      [-2.05, 0.15],
-      [-0.45, -0.65],
-      [1.9, -0.15],
-      [0.9, 1.25],
-    ];
+  private spawnFish(values: FishValue[], accept: string[]): void {
+    const spots: [number, number][] = this.isEn
+      ? [
+          [-2.15, 0.35],
+          [-0.75, -0.25],
+          [1.95, 0.05],
+          [0.55, 1.1],
+        ]
+      : [
+          [-2.05, 0.15],
+          [-0.45, -0.65],
+          [1.9, -0.15],
+          [0.9, 1.25],
+        ];
     values.forEach((v, i) => {
       const g = new THREE.Group() as FishTarget;
       this.model('critter_fish', { color: ['#ffa94d', '#4dabf7', '#ffd166', '#ff8fab'][i] }, [0, 0, 0], Math.PI * (i % 2 ? 0.9 : 0.1), 2.0, g);
-      const badge = answerPlate(v.label);
+      const badge = answerPlate(v.label, undefined, this.isEn);
       badge.position.set(0, 1.5, 0.22);
       badge.rotation.x = -0.15;
       g.add(badge, ball(1.05, '#ffffff', { ...ss, p: [0, 0.85, 0], opacity: 0.001, cast: false }));
       g.position.set(spots[i][0], 0.08, spots[i][1]);
-      g.userData.value = v.label;
+      g.userData.value = v.value ?? v.label;
       g.userData.rank = v.rank;
-      g.userData.ok = accept.includes(v.label);
+      g.userData.ok = accept.includes(g.userData.value);
       g.userData.baseX = spots[i][0];
       g.userData.baseZ = spots[i][1];
       this.scene.add(g);
@@ -240,6 +256,13 @@ defineMini(
     rounds: 8,
     color: '#6cc4f0',
     unlock: 2,
+    en: {
+      name: 'Câu cá chữ',
+      skill: 'Từ vựng, chữ cái',
+      desc: 'Chạm con cá mang từ hoặc chữ cái đúng. Câu lên thật khéo và thả vào xô nhé!',
+    },
+    both: 'Câu cá',
+    enTopics: ['en_vocab', 'en_phonics', 'en_spell'],
   },
   (info, host) => new FishingGame(info, host),
 );

@@ -93,10 +93,25 @@ bus.on('subject', () => {
   streak = { s: null, n: 0 };
 });
 
+let apartDepth = 0;
+
 function note(s: Subject): void {
-  if (subject() !== 'both') return;
+  if (apartDepth > 0 || subject() !== 'both') return;
   if (streak.s === s) streak.n++;
   else streak = { s, n: 1 };
+}
+
+/**
+ * Ra câu hỏi không tính vào chuỗi câu liền môn của thế giới: mỗi lượt mini-game học một môn
+ * cho mọi vòng, nên các câu trong lượt chơi không làm lệch câu đố tiếp theo của nhân vật.
+ */
+export function apart<T>(fn: () => T): T {
+  apartDepth++;
+  try {
+    return fn();
+  } finally {
+    apartDepth--;
+  }
 }
 
 /** Rút một môn theo tỉ lệ (không tính chuỗi). */
@@ -110,6 +125,15 @@ export function pickSubject(): Subject {
   if (mode !== 'both') return mode;
   const s = drawSubject();
   return streak.s === s && streak.n >= MAX_STREAK ? other(s) : s;
+}
+
+/**
+ * Môn cho một lượt mini-game. "Cả hai": rút theo tỉ lệ cần luyện (không theo chuỗi câu liền môn –
+ * mỗi lượt chơi là một khối riêng). 'math'/'english': đúng môn đó (không rút số ngẫu nhiên).
+ */
+export function playSubject(): Subject {
+  const mode = subject();
+  return mode === 'both' ? drawSubject() : mode;
 }
 
 /** Môn của một thử thách cố định: chọn một lần, lưu theo hồ sơ (chỉ ở chế độ "Cả hai"). */

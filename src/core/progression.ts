@@ -10,13 +10,15 @@ export interface LevelDef {
   xp: number;
   title: string;
   unlocks: string[];
+  /** Mini-game mở khóa ở cấp này – tên hiện theo môn (minigames/registry.ts `unlockLines`). */
+  minis?: readonly string[];
 }
 
 /** Danh hiệu dùng chung cho mọi môn (bé học Toán, Tiếng Anh hay cả hai đều thấy cùng tên). */
 export const LEVELS: LevelDef[] = [
   { level: 1, xp: 0, title: 'Bạn nhỏ ham học', unlocks: ['Ngôi Làng Khởi Đầu', 'Rừng Thông Thái', 'Mê Cung Kỳ Bí'] },
-  { level: 2, xp: 100, title: 'Nhà thám hiểm', unlocks: ['Ván trượt, mèo mướp, thỏ trắng', 'Áo hoodie, tai thỏ, ủng vàng', 'Mini-game: Câu cá số, Tàu hỏa, Siêu thị'] },
-  { level: 3, xp: 250, title: 'Thợ săn kiến thức', unlocks: ['Lâu Đài Trí Tuệ', 'Gấu trúc, cáo nhỏ', 'Mũ thám hiểm, áo choàng siêu nhân', 'Mini-game: Đồng hồ bí ẩn, Xây nhà, Chia bánh'] },
+  { level: 2, xp: 100, title: 'Nhà thám hiểm', unlocks: ['Ván trượt, mèo mướp, thỏ trắng', 'Áo hoodie, tai thỏ, ủng vàng'], minis: ['fishing', 'train', 'market'] },
+  { level: 3, xp: 250, title: 'Thợ săn kiến thức', unlocks: ['Lâu Đài Trí Tuệ', 'Gấu trúc, cáo nhỏ', 'Mũ thám hiểm, áo choàng siêu nhân'], minis: ['clock', 'builder', 'pizza'] },
   { level: 4, xp: 450, title: 'Phù thủy thông thái', unlocks: ['Chim cánh cụt', 'Mũ và áo phù thủy, áo cầu vồng', 'Hạt cây phép thuật, đàn piano'] },
   { level: 5, xp: 750, title: 'Bậc thầy Trí Tuệ', unlocks: ['Khủng long tí hon', 'Giày tên lửa', 'Danh hiệu Bậc thầy Trí Tuệ'] },
 ];

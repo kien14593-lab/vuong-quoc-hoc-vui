@@ -12,6 +12,15 @@ import './games/train';
 import './games/monkey';
 import './games/wheel';
 
-export { MINI_ORDER, miniDef, miniList, miniName, miniTitle, type MiniDef, type MiniId } from './registry';
+import { setMiniMode } from './registry';
+import { subject } from '../game/subject';
+
+/** Tên trò chơi hiện theo môn của hồ sơ đang chơi. */
+setMiniMode(subject);
+
+export {
+  MINI_ORDER, miniCard, miniDef, miniList, miniName, miniShort, miniTitle, unlockLines,
+  type MiniCard, type MiniDef, type MiniId, type MiniText,
+} from './registry';
 export type { MiniHost, MiniInfo, MiniResult } from './base';
 export { currentMini, runMini } from './launch';

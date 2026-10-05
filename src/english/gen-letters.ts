@@ -69,6 +69,14 @@ function fills(c: Ctx, word: string, at: number, ans: string, pool: string[], sk
   return out.length >= c.k - 1 ? out : null;
 }
 
+/** Chữ đúng và các chữ sai cho chỗ trống một chữ ở vị trí `at` (nguyên âm ↔ nguyên âm, phụ âm ↔ phụ âm). */
+export function gapFills(c: Ctx, word: string, at: number): { ans: string; wrong: string[] } | null {
+  const ans = word[at];
+  const pool = shuffled(c, isVowel(ans) ? VOWELS : CONSONANTS).filter((x) => !soundsAlike(word, at, ans, x));
+  const wrong = fills(c, word, at, ans, pool);
+  return wrong ? { ans, wrong } : null;
+}
+
 function example(c: Ctx, ok: (x: Word) => boolean, not: Word[]): Word | undefined {
   const fit = (x: Word) => x.pic && !not.includes(x) && !not.some((n) => n.e === x.e) && ok(x);
   return shuffled(c, c.pool.filter(fit))[0] ?? shuffled(c, c.prev.filter(fit))[0];
@@ -232,10 +240,8 @@ function middleLetterQ(c: Ctx, level: number): Question | null {
   const w = pickWord(c, spellOk(c, 4));
   if (!w) return null;
   for (const at of shuffled(c, [...Array(w.w.length - 1).keys()].map((i) => i + 1))) {
-    const ans = w.w[at];
-    const pool = shuffled(c, isVowel(ans) ? VOWELS : CONSONANTS).filter((x) => !soundsAlike(w.w, at, ans, x));
-    const ds = fills(c, w.w, at, ans, pool);
-    if (ds) return gapQ(c, level, w, at, ans, ds);
+    const f = gapFills(c, w.w, at);
+    if (f) return gapQ(c, level, w, at, f.ans, f.wrong);
   }
   return null;
 }

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { sfx } from '../../core/audio';
 import { box, cone, cyl, rbox, torus } from '../../engine/kit';
 import { PAL, tint } from '../../engine/materials';
-import { textPlate } from '../../engine/text';
+import { fitPlate, textPlate } from '../../engine/text';
 import { fmt, MINUS, TIMES, DIVIDE, numChoices } from '../../math/util';
 import type { Question, Topic } from '../../math/types';
 import { MiniGame, type MiniHost, type MiniInfo, type MiniRound } from '../base';
@@ -10,8 +10,9 @@ import { defineMini } from '../registry';
 
 type Gate = THREE.Group & { userData: { value: string; ok?: boolean; lane: number } };
 
-function answerBoard(value: string, color: string): THREE.Mesh {
-  return textPlate(value, 2.05, { bg: '#fff8ee', border: color, color: '#4b3d68', size: 150, pad: 70, radius: 118, weight: 900, doubleSided: true });
+function answerBoard(value: string, color: string, fit = false): THREE.Mesh {
+  const o = { bg: '#fff8ee', border: color, color: '#4b3d68', size: 150, pad: 70, radius: 118, weight: 900, doubleSided: true };
+  return fit ? fitPlate(value, 2.3, 2.05, o) : textPlate(value, 2.05, o);
 }
 
 class RunnerGame extends MiniGame {
@@ -88,7 +89,7 @@ class RunnerGame extends MiniGame {
   protected async play(): Promise<void> {
     while (this.more) {
       this.clearGates();
-      const q = this.makeRunnerQuestion();
+      const q = this.isEn ? this.enQ({ short: true, listen: false, count: 3 }) : this.makeRunnerQuestion();
       this.spawnGates(q);
       const round = this.ask(q, { buttons: false, visual: true, prompt: `${q.prompt}  Chọn làn đúng!` });
       this.activeRound = round;
@@ -150,7 +151,7 @@ class RunnerGame extends MiniGame {
         cyl(0.12, 0.14, 2.85, tint(col, -0.05), { p: [-1.08, 1.42, 0], seg: 8 }),
         cyl(0.12, 0.14, 2.85, tint(col, -0.05), { p: [1.08, 1.42, 0], seg: 8 }),
         torus(1.08, 0.12, col, { p: [0, 2.75, 0], r: [0, 90, 0], arc: 180, ts: 22, seg: 7 }),
-        answerBoard(c.label, col),
+        answerBoard(c.label, col, this.isEn),
       );
       const badge = g.children[g.children.length - 1];
       badge.position.set(0, 2.05, 0.14);
@@ -224,6 +225,13 @@ defineMini(
     rounds: 8,
     color: '#ffa96b',
     unlock: 1,
+    en: {
+      name: 'Chạy vượt chướng ngại',
+      skill: 'Từ vựng',
+      desc: 'Đổi làn để chạy qua cổng có từ đúng. Nhấn trái/phải hoặc chạm hai bên màn hình.',
+    },
+    both: 'Chạy vượt chướng ngại',
+    enTopics: ['en_vocab'],
   },
   (info, host) => new RunnerGame(info, host),
 );
