@@ -153,8 +153,11 @@ interface AutoData {
   armAngle: [number, number];
   /** true = đi bằng chân (xương tự dựng); false = nhún nhảy như các nhân vật AI khác, chỉ dùng điểm neo để gắn đồ. */
   walk: boolean;
-  /** Theo thứ tự duyệt cây mẫu: hình học có trọng số da (dùng chung), lưới bóng của nó (nếu tệp có) & ma trận gắn (lưới → hệ gốc mô hình). */
-  meshes: { geo: THREE.BufferGeometry; proxy?: THREE.BufferGeometry; bind: THREE.Matrix4 }[];
+  /**
+   * Theo thứ tự duyệt cây mẫu: hình học có trọng số da (dùng chung), lưới bóng của nó (nếu tệp có), ma trận gắn
+   * (lưới → hệ gốc mô hình) & khối cầu bao (hệ của lưới, tư thế gốc đã nới rộng – mỗi bản sao một bản chép).
+   */
+  meshes: { geo: THREE.BufferGeometry; proxy?: THREE.BufferGeometry; bind: THREE.Matrix4; sphere: THREE.Sphere }[];
   /** Nghịch đảo tư thế gốc của từng xương (thứ tự AUTO_BONES). */
   inverses: THREE.Matrix4[];
   /** Lấy từ config.json (công cụ đã dò sẵn) thay vì dò lúc chạy. */
@@ -1060,6 +1063,9 @@ function shadowMat(src: THREE.Material): THREE.MeshBasicMaterial {
   return m;
 }
 
+/** Khối cầu bao nới rộng cho tay chân cử động (lưới có xương: tính theo tư thế gốc, dùng cho mọi tư thế). */
+const SKIN_SPHERE_PAD = 1.15;
+
 /** Gắn lưới bóng (hình học `geo`, cùng bộ xương nếu có) vào lưới thật `vis`; lưới thật thôi đổ bóng. */
 function addShadowProxy(vis: THREE.Mesh, geo: THREE.BufferGeometry): void {
   const mat = shadowMat(Array.isArray(vis.material) ? vis.material[0] : vis.material);
@@ -1069,6 +1075,9 @@ function addShadowProxy(vis: THREE.Mesh, geo: THREE.BufferGeometry): void {
     const ps = new THREE.SkinnedMesh(geo, mat);
     ps.bind(sv.skeleton, sv.bindMatrix);
     ps.frustumCulled = false;
+    // Cùng đỉnh, xương & ma trận gắn với lưới thật: chép khung bao để three.js khỏi tính lại bằng xương (từng đỉnh).
+    ps.boundingBox = sv.boundingBox?.clone() ?? null;
+    ps.boundingSphere = sv.boundingSphere?.clone() ?? null;
     px = ps;
   } else px = new THREE.Mesh(geo, mat);
   px.name = 'bong';
@@ -1194,7 +1203,7 @@ function prepare(entry: Entry, vi: number, o: Record<string, unknown>): Prepared
     const size = pm.boundingBox!.getSize(new THREE.Vector3()).length();
     tm.boundingBox = pm.boundingBox!.clone().expandByScalar(size * 0.08);
     tm.boundingSphere = pm.boundingSphere!.clone();
-    tm.boundingSphere.radius *= 1.15;
+    tm.boundingSphere.radius *= SKIN_SPHERE_PAD;
   });
 
   const prep: Prepared = {
@@ -1364,8 +1373,12 @@ function autoData(entry: Entry, prep: Prepared, look: GlbLook, off: number[]): A
         geo.setAttribute('skinIndex', skin[i][0]);
         geo.setAttribute('skinWeight', skin[i][1]);
         geo.userData.shared = true;
+        // Xương đứng yên thì đỉnh nằm đúng chỗ trong tệp: khối cầu bao tính một lần từ hình học (không qua xương).
+        geo.computeBoundingSphere();
+        const sphere = geo.boundingSphere!.clone();
+        sphere.radius *= SKIN_SPHERE_PAD;
         const idx = proxyIdx.get(src);
-        return { geo, proxy: idx ? proxyGeometry(geo, idx) : undefined, bind };
+        return { geo, proxy: idx ? proxyGeometry(geo, idx) : undefined, bind, sphere };
       })
     : [];
   const J = placed.joints;
@@ -1417,6 +1430,8 @@ function buildRigged(entry: Entry, prep: Prepared, rg: AutoData, inner: THREE.Gr
     sm.castShadow = true;
     sm.frustumCulled = false;
     sm.bind(skel, rg.meshes[i].bind);
+    // Có sẵn khối cầu bao: three.js khỏi tính lại bằng xương (từng đỉnh) ở khung hình đầu – mỗi lần vào khu vực.
+    sm.boundingSphere = rg.meshes[i].sphere.clone();
     const proxy = rg.meshes[i].proxy;
     if (proxy) addShadowProxy(sm, proxy);
     const parent = mesh.parent!;

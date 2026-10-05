@@ -66,10 +66,12 @@ function addXray(root: THREE.Object3D): void {
     const sm = m as THREE.SkinnedMesh;
     let x: THREE.Mesh;
     if (sm.isSkinnedMesh) {
-      // Bé AI có xương: hình bóng cũng uốn theo xương (cùng bộ xương, cùng ma trận gắn).
+      // Bé AI có xương: hình bóng cũng uốn theo xương (cùng bộ xương, ma trận gắn & khung bao – khỏi tính lại từng đỉnh).
       const xs = new THREE.SkinnedMesh(geo, xrayMat);
       xs.bind(sm.skeleton, sm.bindMatrix);
       xs.frustumCulled = false;
+      xs.boundingBox = sm.boundingBox?.clone() ?? null;
+      xs.boundingSphere = sm.boundingSphere?.clone() ?? null;
       x = xs;
     } else x = new THREE.Mesh(geo, xrayMat);
     x.userData.xray = true;
