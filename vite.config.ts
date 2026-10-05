@@ -19,7 +19,8 @@ function appManifest(): Plugin {
 /**
  * Phông chữ phải có trước khi mở màn hình tiêu đề: chữ vẽ lên mô hình 3D (engine/text.ts loadFonts: Baloo 2 800,
  * Nunito 700/800/900) và chữ màn hình khởi động (styles/main.css .boot-title 800, .boot-text 600) – cả bộ latin lẫn
- * bộ tiếng Việt. Đổi phông ở đó thì sửa cả ở đây.
+ * bộ tiếng Việt. Đổi phông ở đó thì sửa cả ở đây. Chữ màn hình tiêu đề (Baloo 2 700) không có ở đây: main.ts bắt đầu
+ * tải nhưng không chờ (engine/text.ts preloadTitleFonts) – thêm vào đây thì mã game tải chậm hơn, màn hình tiêu đề mở trễ.
  */
 const BOOT_FONTS = /^(baloo-2-(latin|vietnamese)-(600|800)|nunito-(latin|vietnamese)-(700|800|900))-normal-[\w-]+\.woff2$/;
 

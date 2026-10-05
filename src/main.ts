@@ -7,7 +7,7 @@ import './styles/compact.css';
 import { isTouchDevice } from './core/device';
 import { flushSave, getSettings } from './core/state';
 import { engine } from './engine/core';
-import { loadFonts } from './engine/text';
+import { loadFonts, preloadTitleFonts } from './engine/text';
 import { showTitle } from './game/app';
 import { installDebug } from './game/debug';
 import { modelsInStoryOrder, TITLE_MODELS } from './game/needs';
@@ -52,6 +52,8 @@ async function main(): Promise<void> {
   installRotateHint();
   bootProgress(0.3, 'Đang tải phông chữ...');
   await loadFonts();
+  // Gọi sau loadFonts (kiểu chữ của trang đã sẵn): gọi trước engine.init làm chậm khởi động thêm ~30 ms.
+  preloadTitleFonts();
   bootProgress(0.55, 'Đang chuẩn bị các bạn thú...');
   // Chỉ chờ (ngắn) mô hình AI của màn hình tiêu đề; mỗi khu vực tự tải mô hình của mình khi chuyển cảnh (game/needs.ts).
   // Mạng chậm (3G) thì tải lần lượt từng mô hình: bạn thú đầu tiên hiện sớm, bé bấm vào chơi ngay thì chỉ bỏ dở một tệp (mạng 4G / Wi-Fi tốt, mở lại trang: tải cùng lúc như cũ).

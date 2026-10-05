@@ -22,6 +22,15 @@ export function loadFonts(): Promise<void> {
   return fontsReady;
 }
 
+/**
+ * Phông chữ của màn hình tiêu đề (Baloo 2 700: dòng giới thiệu, các nút, dòng cuối): bắt đầu tải sớm (main.ts, ngay
+ * sau loadFonts), không chờ – tải cùng lúc với mô hình AI trong lúc chờ. Để trình duyệt tự tải thì chỉ bắt đầu khi màn
+ * hình tiêu đề đã hiện: mạng chậm (3G), chữ hiện bằng phông dự phòng gần 1 giây rồi mới đổi (khung chữ co lại).
+ */
+export function preloadTitleFonts(): void {
+  document.fonts.load('700 34px "Baloo 2"', FONT_SAMPLE).catch(() => undefined);
+}
+
 export interface TextTexOpts {
   font?: string;
   weight?: number;
