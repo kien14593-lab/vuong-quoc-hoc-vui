@@ -596,7 +596,8 @@
    ========================================================= */
 .layer > .wlabels {
   position: absolute;
-  inset: 0;
+  /* Nhãn 3D đặt theo tọa độ cửa sổ (world/labels.ts) → lớp chứa phủ cả lề an toàn. */
+  inset: calc(-1 * var(--sa-t, 0px)) calc(-1 * var(--sa-r, 0px)) calc(-1 * var(--sa-b, 0px)) calc(-1 * var(--sa-l, 0px));
   overflow: hidden;
   pointer-events: none;
 }
@@ -795,7 +796,8 @@
 /* ---------- Màn chuyển cảnh ---------- */
 .layer > .fade-veil {
   position: absolute;
-  inset: 0;
+  inset: calc(-1 * var(--sa-t, 0px)) calc(-1 * var(--sa-r, 0px)) calc(-1 * var(--sa-b, 0px)) calc(-1 * var(--sa-l, 0px));
+  padding: var(--sa-t, 0px) var(--sa-r, 0px) var(--sa-b, 0px) var(--sa-l, 0px);
   background: #fff7fb;
   opacity: 0;
   pointer-events: none;

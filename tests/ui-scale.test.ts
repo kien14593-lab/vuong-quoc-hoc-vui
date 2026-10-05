@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { scaleFor } from '../src/ui/root';
+import { layoutFor, scaleFor } from '../src/ui/root';
 import { needsRotate } from '../src/ui/rotate';
 
 /** Tỉ lệ giao diện (ui/root.ts): máy tính giữ nguyên, điện thoại / iPad dựng đứng được phóng to cho chữ dễ đọc. */
@@ -52,6 +52,58 @@ describe('scaleFor', () => {
         expect(scaleFor(w, h).s).toBeGreaterThanOrEqual(Math.min(w / 1920, h / 1080) - 1e-9);
       }
     }
+  });
+});
+
+describe('layoutFor (lề an toàn: tai thỏ, vạch Home)', () => {
+  it('không có lề (máy tính, iPhone SE, iPad): giống hệt scaleFor, giao diện phủ toàn cửa sổ', () => {
+    for (const [w, h] of [
+      [1920, 1080],
+      [1366, 768],
+      [1280, 720],
+      [750, 342],
+      [667, 375],
+      [810, 1080],
+    ]) {
+      const L = layoutFor(w, h);
+      const r = scaleFor(w, h);
+      expect(L.s).toBe(r.s);
+      expect(L.compact).toBe(r.compact);
+      expect(L.w).toBeCloseTo(w / r.s, 9);
+      expect(L.h).toBeCloseTo(h / r.s, 9);
+      expect(L.rootW).toBeCloseTo(L.w, 9);
+      expect(L.rootH).toBeCloseTo(L.h, 9);
+      expect(L.sa).toEqual({ t: 0, r: 0, b: 0, l: 0 });
+    }
+  });
+
+  it('iPhone 13 trong Safari nằm ngang (844×342, tai thỏ 47, vạch Home 21): tỉ lệ theo vùng an toàn 750×321', () => {
+    const ins = { t: 0, r: 47, b: 21, l: 47 };
+    const L = layoutFor(844, 342, ins);
+    expect(L.s).toBe(scaleFor(750, 321).s);
+    expect(L.compact).toBe(true);
+    expect(30 * L.s).toBeGreaterThanOrEqual(15);
+    expect(88 * L.s).toBeGreaterThanOrEqual(44);
+    expect(L.w * L.s).toBeCloseTo(750, 9);
+    expect(L.h * L.s).toBeCloseTo(321, 9);
+    expect(L.rootW * L.s).toBeCloseTo(844, 9);
+    expect(L.rootH * L.s).toBeCloseTo(342, 9);
+    expect(L.sa.l * L.s).toBeCloseTo(47, 9);
+    expect(L.sa.b * L.s).toBeCloseTo(21, 9);
+    expect(L.sa.l + L.w + L.sa.r).toBeCloseTo(L.rootW, 9);
+    expect(L.sa.t + L.h + L.sa.b).toBeCloseTo(L.rootH, 9);
+  });
+
+  it('mở từ màn hình chính (844×390): chữ 30px logic = 16px thật', () => {
+    const L = layoutFor(844, 390, { t: 0, r: 47, b: 21, l: 47 });
+    expect(L.s).toBeCloseTo(16 / 30, 9);
+    expect(L.h).toBeCloseTo(369 / L.s, 9);
+  });
+
+  it('lề lớn hơn cửa sổ: không chia cho 0', () => {
+    const L = layoutFor(100, 100, { t: 80, r: 80, b: 80, l: 80 });
+    expect(Number.isFinite(L.s)).toBe(true);
+    expect(L.s).toBeGreaterThan(0);
   });
 });
 

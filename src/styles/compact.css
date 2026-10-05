@@ -2,7 +2,7 @@
    Màn hình nhỏ: điện thoại nằm ngang, iPad dựng đứng (ui/root.ts gắn lớp lên <html>).
    - html.ui-compact: giao diện được phóng to thêm (vùng logic nhỏ hơn 1920×1080, có thể chỉ ~1280×640)
      → chữ chính ≥ 30px logic (≈ 16px thật trên điện thoại), chữ phụ ≥ 24px (≈ 12.5px),
-       nút bấm ≥ 86px logic (≈ 45px thật).
+       nút bấm ≥ 88px logic (≈ 44–47px thật, kể cả khi trừ lề an toàn iPhone).
    - html.ui-compact.ui-short: vùng logic thấp (< 900px, điện thoại nằm ngang) → xếp gọn theo chiều cao.
    Máy tính và iPad nằm ngang không có các lớp này nên không đổi gì.
    Mọi bộ chọn đều bắt đầu bằng html.ui-compact để thắng các tệp CSS nạp sau (mini.css, dashboard.css).
@@ -10,7 +10,7 @@
 
 /* ---------------- Chung: nút, hộp thoại, ô nhập ---------------- */
 html.ui-compact .btn {
-  min-height: 86px;
+  min-height: 88px;
 }
 
 html.ui-compact .btn-small {
@@ -20,8 +20,8 @@ html.ui-compact .btn-small {
 
 html.ui-compact .btn-round,
 html.ui-compact .btn-close {
-  width: 86px;
-  height: 86px;
+  width: 88px;
+  height: 88px;
   flex: none;
 }
 
@@ -60,6 +60,10 @@ html.ui-compact.ui-short .btn-big {
 html.ui-compact.ui-short .confirm-text {
   font-size: 32px;
   margin: 4px 0 10px;
+}
+
+html.ui-compact .fs-note {
+  font-size: 28px;
 }
 
 html.ui-compact .toast {
@@ -129,8 +133,8 @@ html.ui-compact .pc-info {
 }
 
 html.ui-compact .pc-del {
-  width: 86px;
-  height: 86px;
+  width: 88px;
+  height: 88px;
   top: -20px;
   right: -20px;
   font-size: 36px;
@@ -146,7 +150,7 @@ html.ui-compact .cr-hint {
 }
 
 html.ui-compact .cr-opt {
-  min-height: 86px;
+  min-height: 88px;
   font-size: 28px;
 }
 
@@ -155,7 +159,7 @@ html.ui-compact .cr-options.grades .cr-opt {
 }
 
 html.ui-compact .cr-name {
-  min-height: 86px;
+  min-height: 88px;
 }
 
 html.ui-compact.ui-short .creator {
@@ -219,14 +223,14 @@ html.ui-compact .set-sub {
 }
 
 html.ui-compact .set-select {
-  min-height: 86px;
+  min-height: 88px;
   font-size: 30px;
 }
 
 html.ui-compact .set-tip summary {
   display: flex;
   align-items: center;
-  min-height: 86px;
+  min-height: 88px;
 }
 
 html.ui-compact.ui-short .set-label {
@@ -246,7 +250,7 @@ html.ui-compact.ui-short .set-tip .set-sub {
 html.ui-compact .set-range {
   -webkit-appearance: none;
   appearance: none;
-  height: 86px;
+  height: 88px;
   margin: 0;
   background: transparent;
   cursor: pointer;
@@ -327,8 +331,8 @@ html.ui-compact .hud-act-key {
 }
 
 html.ui-compact .hud-cam {
-  width: 86px;
-  height: 86px;
+  width: 88px;
+  height: 88px;
 }
 
 html.ui-compact .hud-jump small {
@@ -451,8 +455,8 @@ html.ui-compact .qpanel {
 }
 
 html.ui-compact .q-speak {
-  width: 86px;
-  height: 86px;
+  width: 88px;
+  height: 88px;
 }
 
 html.ui-compact .q-steps {
@@ -482,7 +486,7 @@ html.ui-compact .vis-clock text {
 
 /* Điện thoại nằm ngang: người nói + tiêu đề + đề bài xếp chung một hàng, hộp gợi ý nằm trong bảng (cuộn được). */
 html.ui-compact.ui-short .q-backdrop {
-  padding-bottom: 12px;
+  padding-bottom: calc(12px + var(--sa-b, 0px));
 }
 
 html.ui-compact.ui-short .qpanel {
@@ -648,7 +652,7 @@ html.ui-compact .pt-name {
 
 /* ---------------- Thẻ chọn, cửa hàng, túi đồ ---------------- */
 html.ui-compact .menu-tab {
-  min-height: 86px;
+  min-height: 88px;
   font-size: 30px;
 }
 
@@ -682,12 +686,12 @@ html.ui-compact .shop-count {
 }
 
 html.ui-compact .bag-kid {
-  min-height: 86px;
+  min-height: 88px;
   font-size: 28px;
 }
 
 html.ui-compact .bag-subtab {
-  min-height: 86px;
+  min-height: 88px;
   min-width: 96px;
   font-size: 28px;
 }
@@ -903,8 +907,8 @@ html.ui-compact.ui-short .cel-level span {
 /* ---------------- Trò chơi nhỏ (khi chơi) ---------------- */
 html.ui-compact .mg-quit,
 html.ui-compact .mg-speak {
-  width: 86px;
-  height: 86px;
+  width: 88px;
+  height: 88px;
 }
 
 html.ui-compact .mg-context {
@@ -920,7 +924,7 @@ html.ui-compact .mg-meta {
 }
 
 html.ui-compact .mg-btn {
-  min-height: 86px;
+  min-height: 88px;
 }
 
 html.ui-compact .mg-card {
@@ -1145,7 +1149,7 @@ html.ui-compact .dash-field {
 
 html.ui-compact .dash-input,
 html.ui-compact .dash-select {
-  min-height: 86px;
+  min-height: 88px;
   font-size: 30px;
 }
 

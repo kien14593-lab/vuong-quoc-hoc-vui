@@ -1,8 +1,8 @@
 # 👩‍🏫 Hướng dẫn cho giáo viên – Vương Quốc Học Vui
 
 Tài liệu ngắn cho thầy cô và phụ huynh: chọn môn học (Toán / Tiếng Anh) và Unit đang học cho từng học sinh; cách để
-trò chơi đọc to bằng giọng hay nhất trên máy ở trường, trên điện thoại và máy tính bảng; cách chơi mượt trên
-iPhone / iPad; cách chuyển hồ sơ của bé sang máy khác.
+trò chơi đọc to bằng giọng hay nhất trên máy ở trường, trên điện thoại và máy tính bảng; cách chơi mượt, toàn màn hình
+trên iPhone / iPad; cách chuyển hồ sơ của bé sang máy khác.
 
 ## 📚 Môn học: Toán, Tiếng Anh hoặc Cả hai
 
@@ -147,6 +147,22 @@ nếu cần.
   hai lần hay chụm ngón.
 - Máy thiếu bộ nhớ thì hình 3D có thể tạm dừng, game hiện **"Hình 3D đang nghỉ một chút"** – bấm **🔄 Tải lại** để chơi
   tiếp (tiến độ đã được lưu).
+
+### Chơi toàn màn hình (thêm vào màn hình chính)
+
+iPhone không cho trang web tự phóng to toàn màn hình. Hãy **thêm game vào màn hình chính** (chỉ làm một lần):
+
+1. Mở game bằng **Safari**. Đang mở trong Zalo, Facebook… thì bấm nút ba chấm → chọn mở bằng Safari (trình duyệt).
+2. Bấm nút **Chia sẻ** (ô vuông có mũi tên đi lên; không thấy thì bấm nút ba chấm trước) → **Thêm vào MH chính** →
+   **Thêm**.
+3. Từ nay mở game bằng biểu tượng **Học Vui** trên màn hình chính: game chiếm trọn màn hình, không còn thanh địa chỉ.
+
+- Trong game, ⚙️ Cài đặt → **📱 Toàn màn hình → 📲 Cách làm** cũng có các bước này. Trên **iPad** còn có nút
+  **Phóng to** dùng ngay trong Safari. Khi đã mở game từ biểu tượng thì mục này tự ẩn.
+- Game mở từ biểu tượng **lưu tiến độ riêng**, không chung với Safari. Muốn chơi tiếp hồ sơ cũ: làm như mục
+  *💾 Chuyển hồ sơ sang máy khác* ở dưới – "máy cũ" là game trong Safari, "máy mới" là game mở từ biểu tượng.
+- Game mở từ biểu tượng vẫn cần có mạng Internet, giống như khi mở bằng Safari.
+- Chữ, nút và bảng tự tránh tai thỏ và vạch Home của iPhone; hình 3D vẫn phủ kín màn hình.
 
 ### Xem số đo độ mượt (khi cần báo lỗi)
 

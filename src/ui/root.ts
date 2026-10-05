@@ -9,6 +9,10 @@ import { h } from './dom';
  * khi đó vùng logic nhỏ hơn 1920×1080 (nhỏ nhất ~1280×640) và <html> có lớp `ui-compact`
  * (+ `ui-short` khi vùng logic thấp) để compact.css xếp lại bố cục cho vừa.
  * Kích thước logic = W/s × H/s; các thành phần neo theo góc/cạnh bằng CSS.
+ *
+ * iPhone/iPad (viewport-fit=cover): hình 3D phủ kín màn hình, còn W×H ở trên là "vùng an toàn" – trừ tai thỏ
+ * và vạch Home (env(safe-area-inset-*)). Mỗi lớp giao diện lùi vào bằng --sa-t/r/b/l (px logic); nền phủ toàn
+ * màn hình (hộp thoại, màn chuyển cảnh...) tự lấn ra lại. Máy tính: phần lề này bằng 0.
  */
 export type LayerName = 'world' | 'hud' | 'panel' | 'dialog' | 'modal' | 'fx' | 'toast' | 'top';
 const ORDER: LayerName[] = ['world', 'hud', 'panel', 'dialog', 'modal', 'fx', 'toast', 'top'];
@@ -30,11 +34,52 @@ export function scaleFor(W: number, H: number): { s: number; compact: boolean } 
   return { s, compact: s > s0 * 1.001 };
 }
 
+/** Lề an toàn (tai thỏ, vạch Home) – trên/phải/dưới/trái. */
+export interface Insets {
+  t: number;
+  r: number;
+  b: number;
+  l: number;
+}
+const NO_INSETS: Insets = { t: 0, r: 0, b: 0, l: 0 };
+
+export interface UILayout {
+  s: number;
+  compact: boolean;
+  /** Toàn cửa sổ (px logic) – kích thước #ui-root. */
+  rootW: number;
+  rootH: number;
+  /** Vùng an toàn (px logic) – nơi đặt giao diện (uiSize, --ui-w/--ui-h). */
+  w: number;
+  h: number;
+  /** Lề an toàn (px logic). */
+  sa: Insets;
+}
+
+/** Bố cục giao diện cho cửa sổ W×H (CSS px) có lề an toàn `ins` (CSS px): tỉ lệ tính theo vùng an toàn. */
+export function layoutFor(W: number, H: number, ins: Insets = NO_INSETS): UILayout {
+  const sw = Math.max(1, W - ins.l - ins.r);
+  const sh = Math.max(1, H - ins.t - ins.b);
+  const { s, compact } = scaleFor(sw, sh);
+  return {
+    s,
+    compact,
+    rootW: W / s,
+    rootH: H / s,
+    w: sw / s,
+    h: sh / s,
+    sa: { t: ins.t / s, r: ins.r / s, b: ins.b / s, l: ins.l / s },
+  };
+}
+
 const layers = new Map<LayerName, HTMLElement>();
 let root: HTMLElement;
+let probe: HTMLElement | null = null;
 let scale = 1;
 let lw = BASE_W;
 let lh = BASE_H;
+let sa: Insets = NO_INSETS;
+let resyncTimer = 0;
 const resizeFns = new Set<() => void>();
 
 export function uiRoot(): HTMLElement {
@@ -49,9 +94,14 @@ export function uiScale(): number {
   return scale;
 }
 
-/** Kích thước logic hiện tại của giao diện. */
+/** Kích thước logic hiện tại của vùng giao diện (vùng an toàn – không gồm tai thỏ/vạch Home). */
 export function uiSize(): { w: number; h: number; s: number } {
   return { w: lw, h: lh, s: scale };
+}
+
+/** Lề an toàn hiện tại (px logic): mép trên-trái vùng giao diện cách mép cửa sổ (sa.l, sa.t). */
+export function uiInsets(): Insets {
+  return sa;
 }
 
 /** Đăng ký hàm chạy khi cửa sổ đổi kích thước. Trả về hàm hủy. */
@@ -67,8 +117,25 @@ export function initUI(): void {
     root.appendChild(el);
     layers.set(name, el);
   }
-  window.addEventListener('resize', sync);
-  sync();
+  // Phần tử ẩn đọc env(safe-area-inset-*) (xem #safe-area-probe trong main.css).
+  probe = h('div#safe-area-probe', { 'aria-hidden': 'true' });
+  document.body.appendChild(probe);
+  const later = () => {
+    sync();
+    // iOS đôi khi cập nhật lề an toàn sau sự kiện resize/xoay máy → đồng bộ lại một lần nữa.
+    window.clearTimeout(resyncTimer);
+    resyncTimer = window.setTimeout(sync, 350);
+  };
+  window.addEventListener('resize', later);
+  window.addEventListener('orientationchange', later);
+  later();
+}
+
+function readInsets(): Insets {
+  if (!probe) return NO_INSETS;
+  const cs = getComputedStyle(probe);
+  const px = (v: string) => Math.max(0, parseFloat(v) || 0);
+  return { t: px(cs.paddingTop), r: px(cs.paddingRight), b: px(cs.paddingBottom), l: px(cs.paddingLeft) };
 }
 
 /** Đồng bộ tỉ lệ của lớp giao diện với cửa sổ. */
@@ -76,18 +143,23 @@ export function sync(): void {
   if (!root) return;
   const W = Math.max(1, window.innerWidth);
   const H = Math.max(1, window.innerHeight);
-  const fit = scaleFor(W, H);
+  const fit = layoutFor(W, H, readInsets());
   scale = fit.s;
-  lw = W / scale;
-  lh = H / scale;
-  root.style.width = `${lw}px`;
-  root.style.height = `${lh}px`;
+  lw = fit.w;
+  lh = fit.h;
+  sa = fit.sa;
+  root.style.width = `${fit.rootW}px`;
+  root.style.height = `${fit.rootH}px`;
   root.style.transform = `scale(${scale})`;
   const de = document.documentElement;
   const ds = de.style;
   ds.setProperty('--ui-scale', String(scale));
   ds.setProperty('--ui-w', `${lw}px`);
   ds.setProperty('--ui-h', `${lh}px`);
+  ds.setProperty('--sa-t', `${sa.t}px`);
+  ds.setProperty('--sa-r', `${sa.r}px`);
+  ds.setProperty('--sa-b', `${sa.b}px`);
+  ds.setProperty('--sa-l', `${sa.l}px`);
   de.classList.toggle('ui-compact', fit.compact);
   de.classList.toggle('ui-short', fit.compact && lh < SHORT_H);
   for (const fn of resizeFns) fn();

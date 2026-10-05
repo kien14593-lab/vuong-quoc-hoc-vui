@@ -91,10 +91,23 @@ img {
 
 .layer {
   position: absolute;
-  inset: 0;
+  /* Vùng an toàn: tránh tai thỏ / vạch Home trên iPhone, iPad (máy tính: 0). Xem ui/root.ts. */
+  inset: var(--sa-t, 0px) var(--sa-r, 0px) var(--sa-b, 0px) var(--sa-l, 0px);
   pointer-events: none;
   /* Mỗi lớp là một ngữ cảnh xếp chồng riêng: z-index bên trong (nhãn 3D) không vượt lên lớp trên. */
   isolation: isolate;
+}
+
+/* Đọc lề an toàn của màn hình (ui/root.ts đọc padding đã tính ra px). */
+#safe-area-probe {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .layer > * {
@@ -269,7 +282,9 @@ textarea {
 /* ---------------- Hộp thoại (modal) ---------------- */
 .modal-backdrop {
   position: absolute;
-  inset: 0;
+  /* Nền tối phủ cả tai thỏ / vạch Home; hộp thoại vẫn nằm trong vùng an toàn (padding). */
+  inset: calc(-1 * var(--sa-t, 0px)) calc(-1 * var(--sa-r, 0px)) calc(-1 * var(--sa-b, 0px)) calc(-1 * var(--sa-l, 0px));
+  padding: var(--sa-t, 0px) var(--sa-r, 0px) var(--sa-b, 0px) var(--sa-l, 0px);
   background: rgba(74, 63, 107, 0.38);
   display: flex;
   align-items: center;
@@ -351,6 +366,32 @@ textarea {
   font-weight: 600;
   margin: 10px 0 20px;
   line-height: 1.35;
+}
+
+/* Hướng dẫn "Thêm vào MH chính" (iPhone không có nút toàn màn hình). */
+.fs-guide {
+  text-align: left;
+  font-size: 30px;
+  line-height: 1.4;
+}
+
+.fs-steps {
+  margin: 0 0 14px;
+  padding-left: 46px;
+  font-weight: 600;
+}
+
+.fs-steps li + li {
+  margin-top: 8px;
+}
+
+.fs-note {
+  margin: 0 0 6px;
+  font-size: 26px;
+  background: var(--yellow-l);
+  border: 3px dashed rgba(91, 74, 110, 0.35);
+  border-radius: 20px;
+  padding: 10px 20px;
 }
 
 /* ---------------- Thông báo ---------------- */
@@ -581,11 +622,11 @@ textarea {
 /* ---------------- Bảng câu hỏi ---------------- */
 .q-backdrop {
   position: absolute;
-  inset: 0;
+  inset: calc(-1 * var(--sa-t, 0px)) calc(-1 * var(--sa-r, 0px)) calc(-1 * var(--sa-b, 0px)) calc(-1 * var(--sa-l, 0px));
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding-bottom: 26px;
+  padding: var(--sa-t, 0px) var(--sa-r, 0px) calc(26px + var(--sa-b, 0px)) var(--sa-l, 0px);
   background: linear-gradient(180deg, rgba(74, 63, 107, 0) 30%, rgba(74, 63, 107, 0.28) 100%);
   animation: fade-in 0.2s;
 }
@@ -1233,7 +1274,7 @@ b.en {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
   background: rgba(251, 231, 240, 0.95);
 }
 
@@ -1290,7 +1331,7 @@ b.en {
   align-items: center;
   justify-content: center;
   gap: 14px;
-  padding: 24px;
+  padding: max(24px, env(safe-area-inset-top, 0px)) max(24px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(24px, env(safe-area-inset-left, 0px));
   text-align: center;
   background: radial-gradient(circle at 50% 35%, #fff6fb 0%, #fbe7f0 70%);
   color: var(--ol);

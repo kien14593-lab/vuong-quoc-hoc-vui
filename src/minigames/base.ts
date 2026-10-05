@@ -16,6 +16,7 @@ import { makeQ } from '../math/util';
 import type { EnTopic, Grade, MathTopic, Question, Subject, Topic, WordTheme } from '../math/types';
 import { buildModel, collectTicks } from '../models/registry';
 import { animateRig, rigOf, type AnimState, type Rig } from '../models/rig';
+import { uiInsets } from '../ui/root';
 import { miniCard, type MiniCard, type MiniText } from './registry';
 import { MiniUI } from './ui';
 
@@ -302,11 +303,15 @@ export abstract class MiniGame implements Stage {
     return this.ray(clientX, clientY).ray.intersectPlane(plane, p);
   }
 
-  /** Tọa độ giao diện (logic) của một điểm 3D – để đặt nhãn HTML trên vật thể. */
+  /** Tọa độ giao diện (logic, gốc ở góc vùng an toàn như .mg-root) của một điểm 3D – để đặt nhãn HTML trên vật thể. */
   toScreen(p: THREE.Vector3): { x: number; y: number; visible: boolean } {
     const v = p.clone().project(this.camera);
     const { w, h } = this.ui.size();
-    return { x: ((v.x + 1) / 2) * w, y: ((1 - v.y) / 2) * h, visible: v.z < 1 };
+    // Hình 3D phủ cả lề an toàn (tai thỏ, vạch Home) còn giao diện thì không.
+    const sa = uiInsets();
+    const fw = w + sa.l + sa.r;
+    const fh = h + sa.t + sa.b;
+    return { x: ((v.x + 1) / 2) * fw - sa.l, y: ((1 - v.y) / 2) * fh - sa.t, visible: v.z < 1 };
   }
 
   /**

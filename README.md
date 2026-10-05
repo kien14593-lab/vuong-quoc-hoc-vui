@@ -81,6 +81,9 @@ Câu hỏi tự điều chỉnh độ khó theo lớp và theo kết quả làm 
   **Đẹp**, **Nhẹ (mượt hơn)**. Máy tính vẫn vẽ như cũ.
 - Tắt **Chế độ nguồn điện thấp** (Safari bị giới hạn 30 hình/giây). Mở trang với **`?fps=1`** ở cuối địa chỉ để xem
   số đo độ mượt. Chi tiết: **[HUONG-DAN-GIAO-VIEN.md](HUONG-DAN-GIAO-VIEN.md)** (mục *Chơi trên iPhone / iPad*).
+- **Toàn màn hình:** Safari → nút Chia sẻ → **Thêm vào MH chính**, rồi mở game từ biểu tượng **Học Vui** (⚙️ Cài đặt →
+  📱 Toàn màn hình → 📲 Cách làm có các bước; iPad còn có nút **Phóng to**). Game mở từ biểu tượng lưu tiến độ riêng
+  (chuyển bằng xuất / nhập JSON) và vẫn cần mạng. Chữ, nút tự tránh tai thỏ và vạch Home.
 
 ## 🗺️ Nội dung
 
@@ -180,6 +183,7 @@ src/
   game/       ứng dụng, cốt truyện, nhân vật, thử thách, chọn môn cho từng câu hỏi (subject.ts)
   ui/         HUD, hội thoại, bảng, màn hình (tiêu đề, bản đồ, túi đồ, Góc phụ huynh…)
   styles/     CSS giao diện
+public/       tệp chép nguyên vào bản web: manifest.webmanifest + biểu tượng (thêm vào màn hình chính)
 dev/          trang thử nghiệm · tests/ kiểm thử · tools/ đóng gói & xử lý mô hình
 mo-hinh-ai/   nơi đặt mô hình AI (.glb) · ban-phat-hanh/ bản đóng gói 1 tệp HTML
 ```

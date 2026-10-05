@@ -444,7 +444,9 @@
 /* ---------------- Màn hướng dẫn / kết quả ---------------- */
 .mg-overlay {
   position: absolute;
-  inset: 0;
+  /* .mg-root = vùng an toàn → nền lấn ra phủ cả tai thỏ / vạch Home, thẻ vẫn ở giữa vùng an toàn. */
+  inset: calc(-1 * var(--sa-t, 0px)) calc(-1 * var(--sa-r, 0px)) calc(-1 * var(--sa-b, 0px)) calc(-1 * var(--sa-l, 0px));
+  padding: var(--sa-t, 0px) var(--sa-r, 0px) var(--sa-b, 0px) var(--sa-l, 0px);
   display: grid;
   place-items: center;
   pointer-events: auto;

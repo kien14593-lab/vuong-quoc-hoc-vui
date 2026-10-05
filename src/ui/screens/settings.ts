@@ -8,6 +8,7 @@ import { backToTitle } from '../../game/app';
 import { SUBJECT_MODES, subjectLabel } from '../../game/subject-text';
 import { glbReport } from '../../models/glb';
 import { button, clear, h } from '../dom';
+import { fullscreenRow } from '../fullscreen';
 import { confirmBox, openModal } from '../modal';
 import { openDashboard } from './dashboard';
 
@@ -21,19 +22,6 @@ function slider(label: string, icon: string, value: number, min: number, max: nu
   });
   input.addEventListener('change', () => sfx('pop'));
   return h('div.set-row', h('span.set-label', `${icon} ${label}`), input, out);
-}
-
-export function isFullscreen(): boolean {
-  return !!document.fullscreenElement;
-}
-
-export async function toggleFullscreen(): Promise<void> {
-  try {
-    if (document.fullscreenElement) await document.exitFullscreen();
-    else await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
-  } catch {
-    /* trình duyệt không cho phép */
-  }
 }
 
 const VOICE_SAMPLE = 'Xin chào! Mình sẽ đọc câu hỏi cho bạn nghe nhé.';
@@ -231,6 +219,7 @@ export function openSettings(o: { inGame: boolean }): void {
     renderVoicePanel(voices);
     renderEnVoicePanel(enVoice);
   });
+  const fs = fullscreenRow();
   const body = h(
     'div.settings',
     subjectBox,
@@ -242,7 +231,7 @@ export function openSettings(o: { inGame: boolean }): void {
     voices,
     enVoice,
     phoneVoiceTip(),
-    h('div.set-row', h('span.set-label', '🖥️ Toàn màn hình'), button(isFullscreen() ? 'Thu nhỏ' : 'Phóng to', () => void toggleFullscreen(), 'btn-small btn-blue')),
+    fs.row,
     qualityRow(),
     h('div.set-sub', 'Tự động: máy tự chỉnh độ nét cho mượt. Hình vẫn bị giật thì chọn “Nhẹ”.'),
     h(
@@ -282,5 +271,15 @@ export function openSettings(o: { inGame: boolean }): void {
         ),
       ]
     : undefined;
-  openModal({ title: 'Cài đặt', icon: '⚙️', width: 1180, body, footer, onClose: offVoices });
+  openModal({
+    title: 'Cài đặt',
+    icon: '⚙️',
+    width: 1180,
+    body,
+    footer,
+    onClose: () => {
+      offVoices();
+      fs.dispose();
+    },
+  });
 }

@@ -1,0 +1,20 @@
+{
+  "name": "Vương Quốc Học Vui",
+  "short_name": "Học Vui",
+  "description": "Game phiêu lưu 3D giúp học sinh tiểu học vừa chơi vừa học.",
+  "lang": "vi",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "landscape",
+  "background_color": "#fbe7f0",
+  "theme_color": "#ffd6e8",
+  "categories": ["education", "games", "kids"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
