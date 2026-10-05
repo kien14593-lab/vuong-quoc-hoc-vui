@@ -63,7 +63,7 @@ export class MiniUI {
     this.layout();
   }
 
-  /** Kích thước vùng giao diện (đơn vị logic, chiều cao luôn 1080). */
+  /** Kích thước vùng giao diện (đơn vị logic; máy tính ≥ 1920×1080, điện thoại có thể chỉ ~1280×640). */
   size(): { w: number; h: number } {
     const { w, h: hh } = uiSize();
     return { w, h: hh };

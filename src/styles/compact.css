@@ -1,0 +1,1131 @@
+/* =========================================================
+   Màn hình nhỏ: điện thoại nằm ngang, iPad dựng đứng (ui/root.ts gắn lớp lên <html>).
+   - html.ui-compact: giao diện được phóng to thêm (vùng logic nhỏ hơn 1920×1080, có thể chỉ ~1280×640)
+     → chữ chính ≥ 30px logic (≈ 16px thật trên điện thoại), chữ phụ ≥ 24px (≈ 12.5px),
+       nút bấm ≥ 86px logic (≈ 45px thật).
+   - html.ui-compact.ui-short: vùng logic thấp (< 900px, điện thoại nằm ngang) → xếp gọn theo chiều cao.
+   Máy tính và iPad nằm ngang không có các lớp này nên không đổi gì.
+   Mọi bộ chọn đều bắt đầu bằng html.ui-compact để thắng các tệp CSS nạp sau (mini.css, dashboard.css).
+   ========================================================= */
+
+/* ---------------- Chung: nút, hộp thoại, ô nhập ---------------- */
+html.ui-compact .btn {
+  min-height: 86px;
+}
+
+html.ui-compact .btn-small {
+  font-size: 30px;
+  padding: 8px 24px;
+}
+
+html.ui-compact .btn-round,
+html.ui-compact .btn-close {
+  width: 86px;
+  height: 86px;
+  flex: none;
+}
+
+html.ui-compact .modal-card {
+  max-width: calc(var(--ui-w) - 32px);
+  max-height: calc(var(--ui-h) - 24px);
+}
+
+html.ui-compact .modal-body {
+  overscroll-behavior: contain;
+}
+
+html.ui-compact.ui-short .modal-title {
+  padding: 2px 8px 2px 26px;
+  font-size: 38px;
+}
+
+html.ui-compact.ui-short .modal-icon {
+  font-size: 42px;
+}
+
+html.ui-compact.ui-short .modal-body {
+  padding: 14px 24px;
+}
+
+html.ui-compact.ui-short .modal-footer {
+  gap: 18px;
+  padding: 0 20px 12px;
+}
+
+html.ui-compact.ui-short .btn-big {
+  font-size: 36px;
+  padding: 12px 40px;
+}
+
+html.ui-compact.ui-short .confirm-text {
+  font-size: 32px;
+  margin: 4px 0 10px;
+}
+
+html.ui-compact .toast {
+  max-width: calc(var(--ui-w) - 60px);
+  white-space: normal;
+}
+
+html.ui-compact.ui-short .toast-stack {
+  top: 100px;
+}
+
+html.ui-compact .fade-veil-load .boot-text {
+  font-size: 30px;
+}
+
+/* ---------------- Màn tiêu đề ---------------- */
+html.ui-compact:not(.ui-short) .title-screen {
+  justify-content: center;
+  padding-bottom: 60px;
+}
+
+html.ui-compact:not(.ui-short) .title-logo {
+  margin-top: 0;
+}
+
+html.ui-compact.ui-short .title-logo {
+  margin-top: 22px;
+}
+
+html.ui-compact.ui-short .tl-small {
+  font-size: 52px;
+  -webkit-text-stroke-width: 9px;
+}
+
+html.ui-compact.ui-short .tl-big {
+  font-size: 124px;
+  -webkit-text-stroke-width: 13px;
+}
+
+html.ui-compact.ui-short .tl-big .sp {
+  width: 30px;
+}
+
+html.ui-compact.ui-short .tl-sub {
+  font-size: 30px;
+  margin-top: 10px;
+}
+
+html.ui-compact.ui-short .title-buttons {
+  margin-top: 26px;
+  gap: 16px;
+}
+
+html.ui-compact.ui-short .title-play {
+  font-size: 48px;
+  padding: 14px 84px;
+}
+
+html.ui-compact .title-foot {
+  font-size: 24px;
+  bottom: 12px;
+}
+
+/* ---------------- Chọn hồ sơ ---------------- */
+html.ui-compact .pc-info {
+  font-size: 26px;
+}
+
+html.ui-compact .pc-del {
+  width: 86px;
+  height: 86px;
+  top: -20px;
+  right: -20px;
+  font-size: 36px;
+}
+
+html.ui-compact .profile-grid {
+  padding: 18px 0 20px;
+}
+
+/* ---------------- Tạo nhân vật ---------------- */
+html.ui-compact .cr-hint {
+  font-size: 24px;
+}
+
+html.ui-compact .cr-opt {
+  min-height: 86px;
+  font-size: 28px;
+}
+
+html.ui-compact .cr-options.grades .cr-opt {
+  padding: 6px 20px;
+}
+
+html.ui-compact .cr-name {
+  min-height: 86px;
+}
+
+html.ui-compact.ui-short .creator {
+  gap: 30px;
+}
+
+html.ui-compact.ui-short .cr-left {
+  gap: 10px;
+}
+
+html.ui-compact.ui-short .cr-kids {
+  gap: 20px;
+}
+
+html.ui-compact.ui-short .cr-kid {
+  width: 260px;
+  padding-bottom: 8px;
+}
+
+html.ui-compact.ui-short .cr-kid-stage {
+  height: 236px;
+}
+
+html.ui-compact.ui-short .cr-kid-img {
+  width: 196px;
+  margin-bottom: 8px;
+}
+
+html.ui-compact.ui-short .cr-kid-name {
+  font-size: 38px;
+}
+
+html.ui-compact.ui-short .cr-right {
+  gap: 8px;
+}
+
+html.ui-compact.ui-short .cr-later {
+  margin-top: 2px;
+}
+
+html.ui-compact.ui-short .cr-options.grades {
+  gap: 10px;
+}
+
+html.ui-compact.ui-short .cr-options.grades .cr-opt {
+  padding: 6px 14px;
+}
+
+/* ---------------- Cài đặt ---------------- */
+html.ui-compact .set-help ul {
+  font-size: 30px;
+}
+
+html.ui-compact .set-note,
+html.ui-compact .set-tip {
+  font-size: 28px;
+}
+
+html.ui-compact .set-sub {
+  font-size: 26px;
+}
+
+html.ui-compact .set-select {
+  min-height: 86px;
+  font-size: 30px;
+}
+
+html.ui-compact .set-tip summary {
+  display: flex;
+  align-items: center;
+  min-height: 86px;
+}
+
+html.ui-compact.ui-short .set-label {
+  width: 280px;
+  font-size: 30px;
+}
+
+html.ui-compact.ui-short .set-sub {
+  margin-left: 302px;
+}
+
+html.ui-compact.ui-short .set-tip .set-sub {
+  margin-left: 0;
+}
+
+/* Thanh trượt: núm tròn to dễ kéo bằng ngón tay. */
+html.ui-compact .set-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 86px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+html.ui-compact .set-range::-webkit-slider-runnable-track {
+  height: 22px;
+  border-radius: 11px;
+  border: 4px solid var(--ol);
+  background: linear-gradient(90deg, var(--pink-l), #fff);
+}
+
+html.ui-compact .set-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 64px;
+  height: 64px;
+  margin-top: -25px;
+  border-radius: 50%;
+  border: 5px solid var(--ol);
+  background: var(--pink);
+  box-shadow: var(--shadow-s);
+}
+
+html.ui-compact .set-range::-moz-range-track {
+  height: 14px;
+  border-radius: 11px;
+  border: 4px solid var(--ol);
+  background: linear-gradient(90deg, var(--pink-l), #fff);
+}
+
+html.ui-compact .set-range::-moz-range-thumb {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 5px solid var(--ol);
+  background: var(--pink);
+}
+
+/* ---------------- HUD ---------------- */
+html.ui-compact .hud-level {
+  font-size: 30px;
+}
+
+html.ui-compact .hud-name {
+  font-size: 32px;
+}
+
+html.ui-compact .hud-title {
+  font-size: 28px;
+}
+
+html.ui-compact .hud-xp {
+  height: 38px;
+  border-radius: 19px;
+}
+
+html.ui-compact .hud-xp-text {
+  font-size: 26px;
+  line-height: 30px;
+}
+
+html.ui-compact .hud-quest {
+  font-size: 30px;
+}
+
+/* Cột nút menu: rộng hơn cho nhãn chữ 30px ("Trò chơi", "Cài đặt"). */
+html.ui-compact .hud-mbtn {
+  width: 140px;
+}
+
+html.ui-compact .hud-mbtn-label {
+  font-size: 30px;
+}
+
+html.ui-compact .hud-act-key {
+  font-size: 30px;
+}
+
+html.ui-compact .hud-cam {
+  width: 86px;
+  height: 86px;
+}
+
+html.ui-compact .hud-jump small {
+  font-size: 30px;
+}
+
+html.ui-compact .wlabel.small .wl-text {
+  font-size: 22px;
+}
+
+/* Thẻ đề bài đang hiện: nhường chỗ (ẩn ô nhiệm vụ). */
+html.ui-compact #ui-root:has(.layer-panel > .prompt-card:not(.off-zone):not(.away)) .hud-quest {
+  opacity: 0;
+}
+
+/* Điện thoại nằm ngang: cột nút menu lên sát dưới ví, nút xoay camera sang trái nút nhảy, ô nhiệm vụ sang trái. */
+html.ui-compact.ui-short .hud-quest {
+  left: 22px;
+  right: auto;
+  top: 164px;
+  max-width: 520px;
+}
+
+html.ui-compact.ui-short .hud-menu {
+  top: 92px;
+  transform: none;
+  gap: 8px;
+}
+
+html.ui-compact.ui-short .hud-mbtn {
+  height: 92px;
+}
+
+html.ui-compact.ui-short .hud-mbtn-icon {
+  font-size: 42px;
+}
+
+html.ui-compact.ui-short .hud-jump {
+  right: 20px;
+  bottom: 20px;
+  width: 130px;
+  height: 130px;
+}
+
+html.ui-compact.ui-short .hud-jump span {
+  font-size: 56px;
+}
+
+html.ui-compact.ui-short .hud-cams,
+html.ui-compact.ui-short .hud:not(.touch) .hud-cams {
+  right: 170px;
+  bottom: 30px;
+}
+
+html.ui-compact.ui-short .hud:not(.touch) .hud-jump {
+  bottom: 28px;
+}
+
+html.ui-compact.ui-short .hud-banner-title {
+  font-size: 40px;
+}
+
+html.ui-compact.ui-short .hud-banner {
+  padding: 8px 44px 12px;
+}
+
+html.ui-compact.ui-short .hud-banner.show {
+  padding-top: 20px;
+}
+
+/* Đang hội thoại: ẩn thêm cột menu + nút camera (bị hộp thoại che, lại không bấm được). */
+html.ui-compact.ui-short #ui-root:has(.layer-dialog > *) .hud-menu,
+html.ui-compact.ui-short #ui-root:has(.layer-dialog > *) .hud-cams {
+  opacity: 0;
+  pointer-events: none;
+}
+
+html.ui-compact.ui-short #ui-root:has(.layer-dialog > *) .hud-mbtn,
+html.ui-compact.ui-short #ui-root:has(.layer-dialog > *) .hud-cam {
+  pointer-events: none;
+}
+
+/* ---------------- Hội thoại NPC ---------------- */
+html.ui-compact .dialog {
+  width: min(1460px, calc(var(--ui-w) - 40px));
+}
+
+html.ui-compact .dlg-choice-num {
+  font-size: 26px;
+}
+
+html.ui-compact.ui-short .dialog {
+  bottom: 20px;
+}
+
+html.ui-compact.ui-short .dlg-portrait {
+  width: 170px;
+  height: 170px;
+  margin-right: -30px;
+}
+
+html.ui-compact.ui-short .dlg-box {
+  min-height: 170px;
+  padding: 36px 44px 24px 56px;
+}
+
+html.ui-compact.ui-short .dlg-text {
+  font-size: 36px;
+  min-height: 96px;
+}
+
+html.ui-compact.ui-short .dlg-choices {
+  gap: 14px;
+  margin-top: 10px;
+}
+
+/* ---------------- Bảng câu hỏi ---------------- */
+html.ui-compact .qpanel {
+  width: min(1560px, calc(var(--ui-w) - 40px));
+}
+
+html.ui-compact .q-speak {
+  width: 86px;
+  height: 86px;
+}
+
+html.ui-compact .q-steps {
+  font-size: 30px;
+}
+
+html.ui-compact .q-speaker span {
+  font-size: 30px;
+}
+
+/* Màn cảm ứng: không có bàn phím nên bỏ số phím tắt trên đáp án. */
+html.touch-gfx .q-key,
+html.touch-gfx .mg-key {
+  display: none;
+}
+
+/* Đồng hồ: phóng to mặt đồng hồ và số trên mặt (khung 250 đơn vị → 280px, số 21 → 27 đơn vị). */
+html.ui-compact .vis-clock .vis-svg {
+  width: 280px;
+  height: 280px;
+  max-height: 280px;
+}
+
+html.ui-compact .vis-clock text {
+  font-size: 27px;
+}
+
+/* Điện thoại nằm ngang: người nói + tiêu đề + đề bài xếp chung một hàng, hộp gợi ý nằm trong bảng (cuộn được). */
+html.ui-compact.ui-short .q-backdrop {
+  padding-bottom: 12px;
+}
+
+html.ui-compact.ui-short .qpanel {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'sp tt spk'
+    'sp ctx spk'
+    'sp pr spk'
+    'vis vis vis'
+    'ch ch ch'
+    'fb fb fb'
+    'hl hl hl';
+  justify-items: center;
+  align-items: center;
+  column-gap: 18px;
+  row-gap: 6px;
+  max-height: calc(var(--ui-h) - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 10px 26px 12px;
+}
+
+html.ui-compact.ui-short .qpanel .q-head,
+html.ui-compact.ui-short .prompt-card .q-head {
+  display: contents;
+}
+
+html.ui-compact.ui-short .qpanel .q-speaker,
+html.ui-compact.ui-short .prompt-card .q-speaker {
+  grid-area: sp;
+  flex-direction: column;
+  gap: 2px;
+}
+
+html.ui-compact.ui-short .q-speaker img {
+  width: 72px;
+  height: 72px;
+}
+
+html.ui-compact.ui-short .qpanel .q-title,
+html.ui-compact.ui-short .prompt-card .q-title {
+  grid-area: tt;
+  flex: none;
+  text-align: center;
+  font-size: 30px;
+}
+
+html.ui-compact.ui-short .qpanel .q-speak,
+html.ui-compact.ui-short .prompt-card .q-speak {
+  grid-area: spk;
+}
+
+html.ui-compact.ui-short .qpanel .q-context,
+html.ui-compact.ui-short .prompt-card .q-context {
+  grid-area: ctx;
+  font-size: 30px;
+}
+
+html.ui-compact.ui-short .qpanel .q-prompt,
+html.ui-compact.ui-short .prompt-card .q-prompt {
+  grid-area: pr;
+  font-size: 46px;
+}
+
+html.ui-compact.ui-short .qpanel .q-visual {
+  grid-area: vis;
+}
+
+html.ui-compact.ui-short .qpanel .q-choices {
+  grid-area: ch;
+  gap: 18px;
+  margin-top: 4px;
+}
+
+html.ui-compact.ui-short .q-choice {
+  min-height: 92px;
+  font-size: 48px;
+}
+
+html.ui-compact.ui-short .q-choices.long .q-choice {
+  font-size: 30px;
+  min-width: 270px;
+  min-height: 92px;
+  padding: 8px 22px;
+}
+
+html.ui-compact.ui-short .qpanel .q-feedback,
+html.ui-compact.ui-short .prompt-card .q-feedback {
+  grid-area: fb;
+  min-height: 40px;
+  font-size: 32px;
+}
+
+html.ui-compact.ui-short .qpanel .q-helper {
+  grid-area: hl;
+  position: static;
+  width: auto;
+  max-width: 100%;
+  transform: none;
+  font-size: 30px;
+  padding: 10px 22px;
+  border-radius: 26px;
+  box-shadow: none;
+}
+
+html.ui-compact.ui-short .qpanel .q-helper:not(.show) {
+  display: none;
+}
+
+html.ui-compact.ui-short .qpanel .q-helper::after {
+  display: none;
+}
+
+/* Thẻ đề bài (bước lên đá, đi qua cửa…): một dải ngang ở trên cùng, chừa giữa màn hình để thấy nhân vật. */
+html.ui-compact .prompt-card {
+  top: 170px;
+  min-width: min(900px, calc(var(--ui-w) - 300px));
+  max-width: calc(var(--ui-w) - 300px);
+}
+
+html.ui-compact.ui-short .prompt-card {
+  top: 10px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    'sp tt vis spk'
+    'sp ctx vis spk'
+    'sp pr vis spk'
+    'sp fb vis spk';
+  justify-items: center;
+  align-items: center;
+  column-gap: 18px;
+  row-gap: 2px;
+  /* left: 50% → khung tự co chỉ được nửa màn hình; đặt rộng theo nội dung (vẫn chặn bởi max-width). */
+  width: max-content;
+  min-width: 0;
+  max-width: calc(var(--ui-w) - 280px);
+  padding: 8px 20px 10px;
+}
+
+html.ui-compact.ui-short .prompt-card .q-prompt {
+  font-size: 40px;
+}
+
+html.ui-compact.ui-short .prompt-card .q-visual {
+  grid-area: vis;
+}
+
+html.ui-compact.ui-short .prompt-card .q-feedback {
+  font-size: 30px;
+}
+
+/* Thẻ đề bài chiếm dải trên cùng: tạm ẩn thẻ nhân vật + ví (hiện lại ngay khi xong thử thách). */
+html.ui-compact.ui-short #ui-root:has(.layer-panel > .prompt-card:not(.off-zone):not(.away)) .hud-card,
+html.ui-compact.ui-short #ui-root:has(.layer-panel > .prompt-card:not(.off-zone):not(.away)) .hud-wallet {
+  opacity: 0;
+}
+
+html.ui-compact .pt-name {
+  font-size: 30px;
+}
+
+/* ---------------- Thẻ chọn, cửa hàng, túi đồ ---------------- */
+html.ui-compact .menu-tab {
+  min-height: 86px;
+  font-size: 30px;
+}
+
+html.ui-compact .shop-wallet small {
+  font-size: 28px;
+}
+
+html.ui-compact .shop-tip {
+  font-size: 26px;
+}
+
+html.ui-compact .shop-name {
+  font-size: 30px;
+}
+
+html.ui-compact .shop-desc {
+  font-size: 24px;
+}
+
+html.ui-compact .shop-lock,
+html.ui-compact .shop-owned {
+  font-size: 26px;
+}
+
+html.ui-compact .shop-buy {
+  font-size: 30px;
+}
+
+html.ui-compact .shop-count {
+  font-size: 24px;
+}
+
+html.ui-compact .bag-kid {
+  min-height: 86px;
+  font-size: 28px;
+}
+
+html.ui-compact .bag-subtab {
+  min-height: 86px;
+  min-width: 96px;
+  font-size: 28px;
+}
+
+html.ui-compact .bag-section {
+  font-size: 30px;
+}
+
+html.ui-compact .bag-on {
+  font-size: 24px;
+}
+
+html.ui-compact .bag-wallet-chip small {
+  font-size: 26px;
+}
+
+html.ui-compact .badge-name {
+  font-size: 30px;
+}
+
+html.ui-compact .badge-desc {
+  font-size: 26px;
+}
+
+/* Ngôi nhà: bảng chọn đồ trang trí / cây trồng. */
+html.ui-compact .btn.house-card,
+html.ui-compact .house-empty {
+  font-size: 30px;
+}
+
+html.ui-compact.ui-short .menu-tabs {
+  margin-bottom: 10px;
+}
+
+html.ui-compact.ui-short .shop-modal .modal-body {
+  padding: 12px 18px 14px;
+}
+
+html.ui-compact.ui-short .shop {
+  gap: 18px;
+}
+
+/* Cửa hàng trên điện thoại nằm ngang: thẻ chọn + lưới món đồ cuộn chung (lưới không bị kẹp còn một dải thấp
+   dưới hai hàng thẻ chọn); ô xem thử bên trái đứng yên. Túi đồ (lưới nằm trong .bag-content) giữ nguyên. */
+html.ui-compact.ui-short .shop-main:has(> .shop-grid) {
+  padding-top: 4px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
+}
+
+html.ui-compact.ui-short .shop-main:has(> .shop-grid) > .menu-tabs {
+  margin-bottom: 4px;
+}
+
+html.ui-compact.ui-short .shop-main > .shop-grid {
+  flex: none;
+  overflow: visible;
+}
+
+/* Hình món đồ thấp hơn một chút để hàng thẻ đầu tiên (cả nút giá) hiện trọn trên iPhone. */
+html.ui-compact.ui-short .shop-main > .shop-grid .shop-card {
+  padding: 8px 10px 10px;
+}
+
+html.ui-compact.ui-short .shop-main > .shop-grid .item-art {
+  width: 160px;
+  height: 116px;
+}
+
+html.ui-compact.ui-short .shop-main > .shop-grid .shop-name {
+  min-height: 0;
+}
+
+html.ui-compact.ui-short .shop-side {
+  width: 300px;
+  gap: 8px;
+}
+
+html.ui-compact.ui-short .shop-wallet {
+  font-size: 34px;
+  padding: 2px 22px;
+}
+
+html.ui-compact.ui-short .shop-stage {
+  width: 280px;
+  height: 300px;
+}
+
+html.ui-compact.ui-short .shop-preview {
+  width: 280px;
+  height: 280px;
+  margin-bottom: 14px;
+}
+
+html.ui-compact.ui-short .shop-preview-name {
+  font-size: 30px;
+}
+
+/* ---------------- Bản đồ thế giới ---------------- */
+/* Bản đồ giữ nguyên cỡ 1180×780 (vị trí các nơi tính theo px); khung nhiệm vụ xuống dưới bản đồ thay vì bị ép thành cột hẹp bên phải. */
+html.ui-compact .wm {
+  flex-direction: column;
+  align-items: center;
+}
+
+html.ui-compact .wm-side {
+  flex: none;
+  align-self: stretch;
+}
+
+html.ui-compact .wm-h {
+  font-size: 32px;
+}
+
+html.ui-compact .wm-name {
+  font-size: 30px;
+}
+
+html.ui-compact .wm-objective {
+  font-size: 30px;
+}
+
+html.ui-compact .wm-where {
+  font-size: 28px;
+}
+
+html.ui-compact .wm-steps li {
+  font-size: 30px;
+}
+
+html.ui-compact .wm-check {
+  width: 36px;
+}
+
+html.ui-compact .wm-legend {
+  margin-top: 6px;
+  font-size: 28px;
+}
+
+/* ---------------- Trò chơi nhỏ (danh sách) ---------------- */
+html.ui-compact .mh-tip {
+  font-size: 30px;
+}
+
+html.ui-compact .mh-name {
+  font-size: 30px;
+}
+
+html.ui-compact .mh-skill {
+  font-size: 28px;
+}
+
+html.ui-compact .mh-foot {
+  font-size: 30px;
+}
+
+html.ui-compact .mh-where {
+  font-size: 28px;
+}
+
+/* ---------------- Bảng nhiệm vụ ---------------- */
+html.ui-compact .qb-label {
+  font-size: 26px;
+}
+
+html.ui-compact .qb-where {
+  font-size: 28px;
+}
+
+html.ui-compact .qb-card-h {
+  font-size: 30px;
+}
+
+html.ui-compact .qb-count {
+  font-size: 28px;
+}
+
+html.ui-compact .qb-list li,
+html.ui-compact .qb-list.small li {
+  font-size: 30px;
+}
+
+html.ui-compact.ui-short .qb {
+  grid-template-columns: 1fr;
+}
+
+/* ---------------- Màn chúc mừng ---------------- */
+html.ui-compact .cel-sub {
+  font-size: 30px;
+}
+
+html.ui-compact.ui-short .cel-level,
+html.ui-compact.ui-short .cel-badge {
+  width: 150px;
+  height: 150px;
+}
+
+html.ui-compact.ui-short .cel-level b,
+html.ui-compact.ui-short .cel-badge {
+  font-size: 80px;
+}
+
+html.ui-compact.ui-short .cel-badge {
+  line-height: 134px;
+}
+
+html.ui-compact.ui-short .cel-level span {
+  font-size: 30px;
+}
+
+/* ---------------- Trò chơi nhỏ (khi chơi) ---------------- */
+html.ui-compact .mg-quit,
+html.ui-compact .mg-speak {
+  width: 86px;
+  height: 86px;
+}
+
+html.ui-compact .mg-context {
+  font-size: 30px;
+}
+
+html.ui-compact .mg-skill {
+  font-size: 30px;
+}
+
+html.ui-compact .mg-meta {
+  font-size: 26px;
+}
+
+html.ui-compact .mg-btn {
+  min-height: 86px;
+}
+
+html.ui-compact .mg-card {
+  min-width: min(760px, calc(var(--ui-w) - 40px));
+  max-width: min(1100px, calc(var(--ui-w) - 40px));
+}
+
+/* Thanh trên phải vừa 1280px logic với tên dài nhất ("Chạy vượt chướng ngại – phép tính", 8 vòng);
+   nếu vẫn chật thì tên co lại (…) chứ nút ✖ không bị đẩy ra ngoài. */
+html.ui-compact .mg-top {
+  left: 20px;
+  right: 20px;
+  gap: 14px;
+}
+
+html.ui-compact .mg-title {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+html.ui-compact .mg-title > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+html.ui-compact .mg-icon,
+html.ui-compact .mg-dots,
+html.ui-compact .mg-right {
+  flex: none;
+}
+
+html.ui-compact .mg-dots {
+  gap: 8px;
+  padding: 10px 14px;
+}
+
+html.ui-compact.ui-short .mg-top {
+  top: 12px;
+}
+
+html.ui-compact.ui-short .mg-head {
+  top: 104px;
+  max-width: calc(var(--ui-w) - 40px);
+}
+
+html.ui-compact.ui-short .mg-q {
+  font-size: 46px;
+}
+
+html.ui-compact.ui-short .mg-prompt {
+  padding: 10px 30px;
+}
+
+html.ui-compact.ui-short .mg-choices {
+  bottom: 22px;
+  gap: 20px;
+}
+
+html.ui-compact.ui-short .mg-choice {
+  height: 112px;
+  font-size: 54px;
+}
+
+html.ui-compact.ui-short .mg-card {
+  padding: 24px 50px 30px;
+  max-height: calc(var(--ui-h) - 30px);
+  overflow-y: auto;
+}
+
+html.ui-compact.ui-short .mg-big-icon {
+  width: 120px;
+  height: 120px;
+  margin-top: 0;
+  font-size: 70px;
+}
+
+html.ui-compact.ui-short .mg-card h1 {
+  font-size: 50px;
+}
+
+html.ui-compact.ui-short .mg-desc {
+  margin: 10px 0 6px;
+  font-size: 32px;
+}
+
+html.ui-compact.ui-short .mg-meta {
+  margin-bottom: 16px;
+}
+
+html.ui-compact.ui-short .mg-star {
+  font-size: 96px;
+}
+
+html.ui-compact.ui-short .mg-rewards {
+  margin: 10px 0 18px;
+}
+
+/* ---------------- Góc phụ huynh ---------------- */
+html.ui-compact .dash-kicker {
+  font-size: 24px;
+}
+
+html.ui-compact .dash-child-meta {
+  font-size: 26px;
+}
+
+html.ui-compact .btn.dash-tab {
+  font-size: 30px;
+}
+
+html.ui-compact .dash-title-block p {
+  font-size: 30px;
+}
+
+html.ui-compact .dash-metric span {
+  font-size: 26px;
+}
+
+html.ui-compact .dash-level span {
+  font-size: 28px;
+}
+
+html.ui-compact .dash-chip {
+  font-size: 30px;
+}
+
+html.ui-compact .dash-topic-row strong,
+html.ui-compact .dash-skill-row strong,
+html.ui-compact .dash-goal-top strong {
+  font-size: 30px;
+}
+
+html.ui-compact .dash-topic-row small,
+html.ui-compact .dash-skill-row small {
+  font-size: 24px;
+}
+
+html.ui-compact .dash-topic-row span,
+html.ui-compact .dash-goal-top span {
+  font-size: 30px;
+}
+
+html.ui-compact .dash-warn {
+  font-size: 24px;
+}
+
+html.ui-compact .dash-chart .label {
+  font-size: 24px;
+}
+
+html.ui-compact .dash-chart .legend {
+  font-size: 24px;
+}
+
+html.ui-compact .dash-field {
+  font-size: 28px;
+}
+
+html.ui-compact .dash-input,
+html.ui-compact .dash-select {
+  min-height: 86px;
+  font-size: 30px;
+}
+
+html.ui-compact .dash-file {
+  font-size: 26px;
+}
+
+html.ui-compact .dash-table {
+  font-size: 30px;
+}
+
+html.ui-compact .dash-gate p {
+  font-size: 28px;
+}
+
+/* Hộp hỏi lại khi nhập hồ sơ: bảng so sánh "Trên máy này / Trong tệp". */
+html.ui-compact .import-compare {
+  font-size: 30px;
+}
+
+html.ui-compact .import-warn {
+  font-size: 28px;
+}
+
+/* Chữ to hơn nên cột bên có thể dài hơn hộp: cho cuộn; màn cao (iPad dựng đứng) thì hộp cao thêm. */
+html.ui-compact .dash-sidebar {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
+}
+
+html.ui-compact:not(.ui-short) .dashboard-modal {
+  min-height: min(1240px, calc(var(--ui-h) - 24px));
+}
+
+html.ui-compact.ui-short .dash-sidebar {
+  padding: 16px 14px;
+}
+
+html.ui-compact.ui-short .dash-content {
+  padding: 18px 22px 28px;
+}
+
+html.ui-compact.ui-short .dashboard {
+  grid-template-columns: 300px 1fr;
+}

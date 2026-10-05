@@ -1,5 +1,5 @@
 import { h, wait, type Child } from './dom';
-import { layer } from './root';
+import { layer, uiSize } from './root';
 
 /** Thông báo nhỏ trượt xuống từ phía trên. */
 export function toast(text: string, opts: { icon?: Child; tone?: 'info' | 'good' | 'warn' | 'gold'; ms?: number } = {}): void {
@@ -45,10 +45,12 @@ export function confetti(n = 70, origin?: { x: number; y: number }): void {
   const host = layer('fx');
   const colors = ['#ff8fab', '#ffd166', '#7ec8e3', '#7bd389', '#b79cff', '#ffa96b'];
   const box = h('div.confetti');
+  // Mặc định bắn từ giữa màn hình (hơi lệch lên), theo kích thước logic hiện tại.
+  const { w, h: lh } = uiSize();
   for (let i = 0; i < n; i++) {
     const p = h('i');
-    const x0 = origin ? origin.x : 960 + (Math.random() - 0.5) * 300;
-    const y0 = origin ? origin.y : 420;
+    const x0 = origin ? origin.x : w / 2 + (Math.random() - 0.5) * 300;
+    const y0 = origin ? origin.y : lh / 2 - 120;
     const ang = Math.random() * Math.PI * 2;
     const sp = 250 + Math.random() * 520;
     p.style.left = `${x0}px`;

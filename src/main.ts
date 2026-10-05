@@ -3,6 +3,7 @@ import './styles/main.css';
 import './styles/screens.css';
 import './styles/hud.css';
 import './styles/menus.css';
+import './styles/compact.css';
 import { isTouchDevice } from './core/device';
 import { flushSave, getSettings } from './core/state';
 import { engine } from './engine/core';
@@ -15,6 +16,7 @@ import { glbKeys, prefetchGlb, preloadGlb } from './models';
 import { installFpsMeter } from './ui/fpsmeter';
 import { installContextLossGuard } from './ui/glLost';
 import { initUI } from './ui/root';
+import { installRotateHint } from './ui/rotate';
 import { installTouchGuards } from './ui/touch';
 
 /** Thanh tiến độ trên màn hình khởi động. */
@@ -40,6 +42,7 @@ async function main(): Promise<void> {
   });
   window.addEventListener('pagehide', () => flushSave());
   initUI();
+  installRotateHint();
   bootProgress(0.3, 'Đang tải phông chữ...');
   await loadFonts();
   bootProgress(0.55, 'Đang chuẩn bị các bạn thú...');

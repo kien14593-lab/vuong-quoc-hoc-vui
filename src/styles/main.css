@@ -365,6 +365,12 @@ textarea {
   gap: 12px;
 }
 
+/* Góc phụ huynh có thanh tiêu đề ở trên cùng: thông báo hiện phía dưới để không che tiêu đề và nút đóng. */
+#ui-root:has(.dashboard-modal) .toast-stack {
+  top: auto;
+  bottom: 110px;
+}
+
 .toast {
   display: flex;
   align-items: center;
@@ -413,8 +419,8 @@ textarea {
 
 .reward-burst {
   position: absolute;
-  left: 960px;
-  top: 470px;
+  left: 50%;
+  top: calc(50% - 70px);
   transform: translate(-50%, -50%);
   display: flex;
   gap: 18px;
@@ -1183,6 +1189,64 @@ textarea {
   border-radius: 999px;
   box-shadow: var(--shadow-s);
   cursor: pointer;
+}
+
+/* ---------------- Điện thoại cầm dựng đứng: nhắc xoay ngang – cỡ chữ thật ---------------- */
+.rotate-hint {
+  position: fixed;
+  inset: 0;
+  z-index: 2147481000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  text-align: center;
+  background: radial-gradient(circle at 50% 35%, #fff6fb 0%, #fbe7f0 70%);
+  color: var(--ol);
+}
+
+.rotate-hint-icon {
+  font-size: 84px;
+  line-height: 1;
+  animation: rotate-hint 2.6s ease-in-out infinite;
+}
+
+.rotate-hint-title {
+  max-width: 340px;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.rotate-hint-text {
+  max-width: 320px;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.4;
+  opacity: 0.85;
+}
+
+@keyframes rotate-hint {
+  0%,
+  20% {
+    transform: rotate(0deg);
+  }
+  50%,
+  80% {
+    transform: rotate(-90deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rotate-hint-icon {
+    animation: none;
+    transform: rotate(-90deg);
+  }
 }
 
 /* ---------------- Hoạt ảnh ---------------- */

@@ -1,6 +1,6 @@
 /* =========================================================
    HUD khi đi trong thế giới + nhãn 3D (tên NPC, biển, bong bóng)
-   Toạ độ logic 1920×1080 (xem ui/root.ts).
+   Toạ độ logic thiết kế cho 1920×1080 (xem ui/root.ts; màn hình nhỏ: compact.css).
    ========================================================= */
 
 .hud {

@@ -66,6 +66,9 @@ nếu cần.
 
 ## 📱 Chơi trên iPhone / iPad
 
+- **Cầm máy nằm ngang.** Trên điện thoại và máy tính bảng, chữ và nút tự to hơn để bé dễ đọc, dễ bấm. Điện thoại cầm
+  dựng đứng thì game hiện lời nhắc **"Xoay ngang điện thoại để chơi nhé"** – xoay ngang là chơi tiếp. iPad cầm dựng
+  hay nằm ngang đều chơi được.
 - **Tắt Chế độ nguồn điện thấp** (Cài đặt → Pin): khi bật, Safari chỉ vẽ 30 hình mỗi giây nên bé đi, xoay, phóng to
   trông giật hơn.
 - Trò chơi **tự chỉnh độ nét** cho mượt (⚙️ Cài đặt → 🎮 Đồ họa → **Tự động**, có sẵn). Vẫn thấy giật thì chọn

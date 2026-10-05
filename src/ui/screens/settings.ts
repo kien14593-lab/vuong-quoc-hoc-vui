@@ -1,5 +1,5 @@
 import { sfx } from '../../core/audio';
-import { mobileOs } from '../../core/device';
+import { isTouchDevice, mobileOs } from '../../core/device';
 import { chosenVoiceKey, hasVietnameseVoice, onVoicesChanged, speak, speakParts, viVoiceLabel, viVoiceOptions } from '../../core/speech';
 import { getSettings, updateSettings, type Settings } from '../../core/state';
 import { engine } from '../../engine/core';
@@ -176,14 +176,23 @@ export function openSettings(o: { inGame: boolean }): void {
     h(
       'div.set-help',
       h('div.set-help-title', '🎮 Cách điều khiển'),
-      h(
-        'ul',
-        h('li', h('b', 'Di chuyển: '), 'phím mũi tên hoặc W A S D — hoặc bấm/chạm vào nơi muốn đến.'),
-        h('li', h('b', 'Nói chuyện, mở, nhặt: '), 'phím E hoặc Enter — hoặc bấm vào nhân vật/đồ vật.'),
-        h('li', h('b', 'Nhảy: '), 'phím Cách (Space). ', h('b', 'Chạy nhanh: '), 'giữ Shift.'),
-        h('li', h('b', 'Trả lời: '), 'bấm vào đáp án hoặc phím số 1, 2, 3, 4.'),
-        h('li', h('b', 'Bản đồ: '), 'phím M. ', h('b', 'Túi đồ: '), 'phím B.'),
-      ),
+      isTouchDevice()
+        ? h(
+            'ul',
+            h('li', h('b', 'Di chuyển: '), 'kéo nút tròn ở góc dưới bên trái — hoặc chạm vào nơi muốn đến.'),
+            h('li', h('b', 'Nói chuyện, mở, nhặt: '), 'chạm vào nhân vật/đồ vật hoặc nút to ở giữa phía dưới.'),
+            h('li', h('b', 'Nhảy: '), 'nút ⤴ ở góc dưới bên phải.'),
+            h('li', h('b', 'Xoay nhìn: '), 'kéo một ngón trên màn hình. ', h('b', 'Phóng to / thu nhỏ: '), 'chụm hoặc mở hai ngón.'),
+            h('li', h('b', 'Trả lời: '), 'chạm vào đáp án.'),
+          )
+        : h(
+            'ul',
+            h('li', h('b', 'Di chuyển: '), 'phím mũi tên hoặc W A S D — hoặc bấm/chạm vào nơi muốn đến.'),
+            h('li', h('b', 'Nói chuyện, mở, nhặt: '), 'phím E hoặc Enter — hoặc bấm vào nhân vật/đồ vật.'),
+            h('li', h('b', 'Nhảy: '), 'phím Cách (Space). ', h('b', 'Chạy nhanh: '), 'giữ Shift.'),
+            h('li', h('b', 'Trả lời: '), 'bấm vào đáp án hoặc phím số 1, 2, 3, 4.'),
+            h('li', h('b', 'Bản đồ: '), 'phím M. ', h('b', 'Túi đồ: '), 'phím B.'),
+          ),
     ),
     aiCredits.length ? h('div.set-note', `🧸 Mô hình nhân vật 3D: ${aiCredits.join(' · ')}`) : null,
   );

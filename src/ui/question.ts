@@ -4,7 +4,7 @@ import { AttemptTracker, finishQuestion, type Stage, type SubmitResult } from '.
 import type { Question } from '../math/types';
 import { speakerArt, type Speaker } from './dialog';
 import { h, wait } from './dom';
-import { layer, popBlock, pushBlock } from './root';
+import { layer, popBlock, pushBlock, uiScale } from './root';
 import { confetti } from './toast';
 import { renderVisual } from './visuals';
 
@@ -55,12 +55,18 @@ function speakerChip(sp: Speaker | null | undefined): HTMLElement | null {
 
 function helperBubble(): { el: HTMLElement; show(msg: string, tone: string, steps?: string[]): Promise<void>; hide(): void } {
   const el = h('div.q-helper');
+  // Màn thấp (điện thoại nằm ngang): gợi ý nằm trong bảng câu hỏi cuộn được → cuộn xuống cho thấy.
+  const reveal = () => {
+    const box = el.parentElement;
+    if (box && box.scrollHeight > box.clientHeight + 1) box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
+  };
   return {
     el,
     async show(msg, tone, steps) {
       el.className = `q-helper show tone-${tone}`;
       el.innerHTML = '';
       el.appendChild(h('div.q-helper-msg', msg));
+      reveal();
       if (steps && steps.length) {
         const ol = h('ol.q-steps');
         el.appendChild(ol);
@@ -68,6 +74,7 @@ function helperBubble(): { el: HTMLElement; show(msg: string, tone: string, step
           await wait(650);
           ol.appendChild(h('li', s));
           sfx('pop');
+          reveal();
         }
       }
     },
@@ -117,7 +124,7 @@ export function ask(q: Question, o: AskOptions): Promise<AskResult> {
         speak('Chính xác! Tuyệt vời!');
         const rect = btn.getBoundingClientRect();
         const root = layer('fx').getBoundingClientRect();
-        const s = root.width / 1920;
+        const s = uiScale();
         confetti(40, { x: (rect.left + rect.width / 2 - root.left) / s, y: (rect.top - root.top) / s });
         helper.hide();
         await wait(1300);

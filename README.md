@@ -60,6 +60,8 @@ Câu hỏi tự điều chỉnh độ khó theo lớp và theo kết quả làm 
 
 ### 📱 iPhone / iPad
 
+- **Cầm máy nằm ngang:** trên điện thoại / máy tính bảng chữ và nút tự to hơn cho dễ đọc, dễ bấm. Điện thoại cầm dựng
+  đứng thì game nhắc **"Xoay ngang điện thoại để chơi nhé"**; iPad cầm dựng hay nằm ngang đều chơi được.
 - **⚙️ Cài đặt → 🎮 Đồ họa:** **Tự động** (mặc định – máy cảm ứng tự hạ / nâng độ nét theo tốc độ khung hình),
   **Đẹp**, **Nhẹ (mượt hơn)**. Máy tính vẫn vẽ như cũ.
 - Tắt **Chế độ nguồn điện thấp** (Safari bị giới hạn 30 hình/giây). Mở trang với **`?fps=1`** ở cuối địa chỉ để xem

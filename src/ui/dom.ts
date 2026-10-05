@@ -83,7 +83,8 @@ export function nextFrame(): Promise<void> {
 
 /** Nút bấm tiêu chuẩn. */
 export function button(label: Child, onClick: (e: MouseEvent) => void, cls = '', attrs: Attrs = {}): HTMLButtonElement {
-  return h<HTMLButtonElement>(`button.btn${cls ? '.' + cls.split(' ').join('.') : ''}`, { type: 'button', onclick: onClick, ...attrs }, label);
+  const extra = cls.split(/\s+/).filter(Boolean);
+  return h<HTMLButtonElement>(`button.btn${extra.map((c) => '.' + c).join('')}`, { type: 'button', onclick: onClick, ...attrs }, label);
 }
 
 export function escapeHtml(s: string): string {
