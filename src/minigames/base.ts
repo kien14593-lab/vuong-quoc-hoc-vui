@@ -21,6 +21,12 @@ import { miniCard, type MiniCard, type MiniText } from './registry';
 import { dropSky, keepSky } from './sky-cache';
 import { MiniUI } from './ui';
 
+/** Tỉ lệ màn các trò chơi nhỏ được dựng cho (16:9) – màn hẹp hơn: xem MiniGame.fit. */
+const FIT_ASPECT = 16 / 9;
+/** Góc nhìn dọc lớn nhất (độ) khi mở rộng cho màn hẹp; hẹp hơn nữa thì lùi camera. */
+const FIT_MAX_FOV = 100;
+const _look = new THREE.Vector3();
+
 /**
  * Nền tảng chung cho 12 trò chơi nhỏ (mini-game) 3D.
  * Mỗi trò kế thừa `MiniGame`, dựng cảnh trong `build()`, chạy các vòng chơi trong `play()`
@@ -108,6 +114,12 @@ export abstract class MiniGame implements Stage {
   private ndc = new THREE.Vector2();
   private disposed = false;
   private prepared = false;
+  /** Khung nhìn của trò chơi trên màn 16:9 (`view`; mặc định: camera ban đầu). */
+  private shot: { pos: [number, number, number]; look: [number, number, number]; fov: number } = {
+    pos: [0, 9, 14],
+    look: [0, 0, 0],
+    fov: 40,
+  };
 
   constructor(
     readonly info: MiniInfo,
@@ -222,13 +234,37 @@ export abstract class MiniGame implements Stage {
     this.scene.background = keepSky(`${top}|${horizon}`, this.scene.background as THREE.Texture);
   }
 
-  /** Đặt camera: vị trí và điểm nhìn. */
+  /** Đặt camera: vị trí và điểm nhìn. `fov`: góc nhìn dọc trên màn 16:9 (màn hẹp hơn: xem `fit`). */
   view(pos: [number, number, number], look: [number, number, number], fov = 40): void {
-    this.camera.fov = fov;
-    this.camera.position.set(...pos);
-    this.camera.lookAt(...look);
-    this.camera.updateProjectionMatrix();
+    this.shot = { pos, look, fov };
+    this.fit();
     this.lights.follow(new THREE.Vector3(look[0], 0, look[2]));
+  }
+
+  /**
+   * Đặt camera theo khung nhìn của trò chơi (`view`) và tỉ lệ màn hiện tại. Màn 16:9 trở lên: y như `view`. Màn hẹp hơn
+   * (iPad 4:3, máy tính bảng dựng đứng): mở rộng góc nhìn dọc để bề ngang vẫn thấy đủ như màn 16:9 (khung 16:9 nằm giữa,
+   * thêm trời / đất ở trên, dưới) – không mất lựa chọn, bé ở hai bên. Màn quá hẹp (góc dọc quá FIT_MAX_FOV): lùi camera thêm.
+   */
+  private fit(): void {
+    const c = this.camera;
+    const { pos, look, fov } = this.shot;
+    c.position.set(...pos);
+    c.fov = fov;
+    // Hẹp hơn 16:9 chưa tới 0,5% (vd. iPhone SE đời đầu 568×320): giữ y nguyên như cũ.
+    if (c.aspect < FIT_ASPECT * 0.995) {
+      const wide = (Math.tan((fov * Math.PI) / 360) * FIT_ASPECT) / c.aspect;
+      const cap = Math.tan((FIT_MAX_FOV * Math.PI) / 360);
+      c.fov = (Math.atan(Math.min(wide, cap)) * 360) / Math.PI;
+      if (wide > cap) c.position.sub(_look.set(...look)).multiplyScalar(wide / cap).add(_look);
+    }
+    c.lookAt(...look);
+    c.updateProjectionMatrix();
+  }
+
+  /** Đổi cỡ màn (xoay máy, đổi cỡ cửa sổ) – engine gọi sau khi đặt tỉ lệ camera. */
+  onResize(): void {
+    this.fit();
   }
 
   /** Mặt đất phẳng nhận bóng. */
