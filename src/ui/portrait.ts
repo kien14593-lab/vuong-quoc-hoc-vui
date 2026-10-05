@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { DEFAULT_OUTFIT, playerKey, type Kid } from '../core/outfits';
 import type { Equipped } from '../core/state';
+import { preciseBox } from '../engine/bounds';
 import { texturesOf, uploadTextures } from '../engine/core';
 import { disposeTree } from '../engine/merge';
 import type { PlayerOpts } from '../models/character';
@@ -97,8 +98,8 @@ export function renderPortrait(obj: THREE.Object3D, o: PortraitOpts = {}): strin
   holder.rotation.y = ((o.yaw ?? 0) * Math.PI) / 180;
   scene.add(holder);
   holder.updateMatrixWorld(true);
-  // Đo không cần lưới bóng (đỡ một lượt tính đỉnh theo xương).
-  withoutProxies(obj, () => box.setFromObject(obj, true));
+  // Đo không cần lưới bóng (đỡ một lượt tính đỉnh theo xương). Lưới có xương (bé): đo nhanh – engine/bounds.ts.
+  withoutProxies(obj, () => preciseBox(obj, box));
   if (box.isEmpty()) box.set(new THREE.Vector3(-0.5, 0, -0.5), new THREE.Vector3(0.5, 1, 0.5));
   box.getSize(size3);
   box.getCenter(center);
