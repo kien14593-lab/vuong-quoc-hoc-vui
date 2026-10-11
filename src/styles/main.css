@@ -181,6 +181,40 @@ textarea {
   opacity: 0.85;
 }
 
+/* Không khởi động được (index.html: vqBootFail) – lời nhắn, nút "Tải lại". Dùng margin: Safari cũ chưa có gap. */
+#boot-screen.boot-failed {
+  gap: 0;
+  padding: 12px 20px;
+  text-align: center;
+}
+
+.boot-failed .boot-title {
+  margin-bottom: 14px;
+}
+
+.boot-failed .boot-text {
+  font-size: clamp(18px, 2.6vw, 32px);
+  font-weight: 800;
+  opacity: 1;
+  max-width: 900px;
+}
+
+.boot-hint {
+  font-size: clamp(15px, 2vw, 24px);
+  font-weight: 600;
+  line-height: 1.35;
+  max-width: 760px;
+  margin: 10px 0 18px;
+}
+
+.boot-code {
+  font-size: 12px;
+  opacity: 0.55;
+  max-width: 90vw;
+  margin-top: 14px;
+  word-break: break-word;
+}
+
 /* ---------------- Nút ---------------- */
 .btn {
   appearance: none;

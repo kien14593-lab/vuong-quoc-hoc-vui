@@ -75,6 +75,8 @@ Câu hỏi tự điều chỉnh độ khó theo lớp và theo kết quả làm 
 
 ### 📱 iPhone / iPad
 
+- Cần **iOS 16.4** trở lên. Máy cũ hơn (hoặc không có WebGL 2) thì màn hình khởi động báo **"Trò chơi chưa mở được
+  trên máy này"** kèm nút **Tải lại**, không đứng mãi ở "Đang chuẩn bị vương quốc...".
 - **Cầm máy nằm ngang:** trên điện thoại / máy tính bảng chữ và nút tự to hơn cho dễ đọc, dễ bấm. Điện thoại cầm dựng
   đứng thì game nhắc **"Xoay ngang điện thoại để chơi nhé"**; iPad cầm dựng hay nằm ngang đều chơi được.
 - **⚙️ Cài đặt → 🎮 Đồ họa:** **Tự động** (mặc định – máy cảm ứng tự hạ / nâng độ nét theo tốc độ khung hình),

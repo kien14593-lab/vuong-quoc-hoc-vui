@@ -11,6 +11,53 @@
     <meta name="format-detection" content="telephone=no" />
     <meta name="description" content="Vương Quốc Học Vui – game phiêu lưu 3D giúp học sinh tiểu học vừa chơi vừa học Toán và Tiếng Anh." />
     <title>Vương Quốc Học Vui</title>
+    <script>
+      /* Khởi động hỏng – máy quá cũ không đọc được mã game, tải mã game hỏng, máy không vẽ được 3D (WebGL 2): báo cho
+         bé và cô, có nút "Tải lại", thay vì đứng mãi ở "Đang chuẩn bị vương quốc...". Viết kiểu cũ (ES5) để máy cũ
+         nào cũng chạy được. main.ts đặt vqStarted ngay khi mã game chạy; main.ts gọi vqBootFail khi thiếu WebGL 2. */
+      (function () {
+        var shown = false;
+        function fail(why, detail) {
+          var boot = document.getElementById('boot-screen');
+          if (shown || !boot || boot.className.indexOf('hide') >= 0) return;
+          shown = true;
+          var app = document.getElementById('app');
+          var edge = 'top:0;right:0;bottom:0;left:0;';
+          if (app) app.style.cssText += edge;
+          boot.style.cssText += edge;
+          boot.className += ' boot-failed';
+          var bar = boot.querySelector('.boot-bar');
+          if (bar) bar.style.display = 'none';
+          var text = boot.querySelector('.boot-text');
+          if (text) text.textContent = why === 'webgl' ? 'Ôi! Máy này chưa vẽ được hình 3D nên chưa chơi được.' : 'Ôi! Trò chơi chưa mở được trên máy này.';
+          var add = function (tag, cls, s) {
+            var el = document.createElement(tag);
+            el.className = cls;
+            el.textContent = s;
+            boot.appendChild(el);
+            return el;
+          };
+          add('div', 'boot-hint', 'Hãy bấm "Tải lại". Nếu vẫn chưa được, hãy cập nhật iPhone, iPad (hoặc trình duyệt) lên bản mới nhất rồi mở lại' + (why === 'webgl' ? ', hoặc chơi trên máy khác.' : '.'));
+          var btn = add('button', 'btn btn-primary boot-reload', 'Tải lại');
+          btn.type = 'button';
+          btn.onclick = function () {
+            location.reload();
+          };
+          add('div', 'boot-code', why === 'webgl' ? 'Chi tiết: cần WebGL 2. ' + (detail || '') : 'Chi tiết: ' + (detail || 'mã game không chạy được.'));
+        }
+        window.vqBootFail = fail;
+        // Pha "bắt" (true): lỗi tải <script> không nổi bọt lên window. Lỗi trước khi mã game chạy = mã game hỏng.
+        window.addEventListener('error', function (e) {
+          if (window.vqStarted) return;
+          var t = e.target;
+          if (t && t.tagName === 'SCRIPT') fail('load', 'không tải được ' + (t.src || 'mã game') + '.');
+          else if (!t || t === window) fail('error', e.message);
+        }, true);
+        window.addEventListener('load', function () {
+          if (!window.vqStarted) fail('error');
+        });
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='2' y='2' width='60' height='60' rx='16' fill='%23ffd6e8'/%3E%3Cpath d='M12 40 L14 20 L24 30 L32 14 L40 30 L50 20 L52 40 Z' fill='%23ffc94a' stroke='%23e59b2d' stroke-width='2.5' stroke-linejoin='round'/%3E%3Crect x='12' y='40' width='40' height='9' rx='3' fill='%23ffb02e' stroke='%23e59b2d' stroke-width='2.5'/%3E%3Ccircle cx='14' cy='20' r='3.2' fill='%238fd3ff'/%3E%3Ccircle cx='32' cy='14' r='3.6' fill='%23ff8fb8'/%3E%3Ccircle cx='50' cy='20' r='3.2' fill='%23a6e3a1'/%3E%3Ctext x='32' y='38' text-anchor='middle' font-family='Arial Rounded MT Bold, Arial, sans-serif' font-weight='900' font-size='15' fill='%23ffffff' stroke='%23c2185b' stroke-width='1.2'%3E1+2%3C/text%3E%3C/svg%3E" />
   </head>
   <body>

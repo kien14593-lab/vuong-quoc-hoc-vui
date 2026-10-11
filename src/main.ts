@@ -19,6 +19,23 @@ import { initUI } from './ui/root';
 import { installRotateHint } from './ui/rotate';
 import { installTouchGuards } from './ui/touch';
 
+declare global {
+  interface Window {
+    /** Mã game đã chạy – không có thì index.html báo khởi động hỏng (máy quá cũ, tải mã game hỏng). */
+    vqStarted?: boolean;
+    /** index.html: báo khởi động hỏng trên màn hình khởi động, kèm nút "Tải lại". */
+    vqBootFail?: (why: 'webgl' | 'error', detail?: string) => void;
+  }
+}
+
+window.vqStarted = true;
+
+/** Không khởi động được: báo trên màn hình khởi động, có nút "Tải lại" (index.html). */
+function bootFail(why: 'webgl' | 'error', e?: unknown): void {
+  if (e) console.error(e);
+  window.vqBootFail?.(why, e instanceof Error ? e.message : e ? String(e) : '');
+}
+
 /** Thanh tiến độ trên màn hình khởi động. */
 function bootProgress(pct: number, text?: string): void {
   const fill = document.querySelector<HTMLElement>('.boot-bar-fill');
@@ -40,7 +57,14 @@ async function main(): Promise<void> {
   const touch = isTouchDevice();
   document.documentElement.classList.toggle('touch-gfx', touch);
   installTouchGuards();
-  engine.init(document.getElementById('game')!, getSettings().quality, { touch });
+  // three.js chỉ vẽ bằng WebGL 2 (iPhone/iPad: iOS 15 trở lên). Không có thì báo ngay, không dựng gì thêm.
+  if (typeof WebGL2RenderingContext === 'undefined') return bootFail('webgl');
+  try {
+    engine.init(document.getElementById('game')!, getSettings().quality, { touch });
+  } catch (e) {
+    // Có WebGL 2 nhưng không tạo được khung vẽ (tắt WebGL, máy hết bộ nhớ đồ họa...).
+    return bootFail('webgl', e);
+  }
   installContextLossGuard();
   installFpsMeter();
   // Trang bị ẩn / đóng (iPhone, iPad có thể tắt trang đang chạy nền): ghi ngay phần đang chờ ghi.
@@ -73,8 +97,4 @@ async function main(): Promise<void> {
   window.setTimeout(() => prefetchGlb([...modelsInStoryOrder(), ...glbKeys().filter((k) => !k.includes('__'))]), 1500);
 }
 
-void main().catch((e) => {
-  console.error(e);
-  const t = document.querySelector<HTMLElement>('.boot-text');
-  if (t) t.textContent = 'Không khởi động được trò chơi. Hãy thử mở lại bằng trình duyệt Chrome hoặc Edge mới nhất.';
-});
+void main().catch((e) => bootFail('error', e));
