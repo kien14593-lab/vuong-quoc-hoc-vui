@@ -6,6 +6,7 @@ import { engine, warmUp, type Quality, type Stage } from '../engine/core';
 import { Fx } from '../engine/fx';
 import { setupLights, setupSky, type LightRig } from '../engine/lighting';
 import { disposeTree } from '../engine/merge';
+import { closeTextScope, openTextScope, type TextScope } from '../engine/text';
 import { cancelOwner, tween, type Handle, type TweenOpts } from '../engine/tween';
 import type { EnOptions } from '../english/gen';
 import { english, type EnglishModule } from '../english/load';
@@ -114,6 +115,8 @@ export abstract class MiniGame implements Stage {
   private ndc = new THREE.Vector2();
   private disposed = false;
   private prepared = false;
+  /** Chữ 3D vẽ riêng cho lượt này (bảng số, nhãn đáp án...): giải phóng khi hủy lượt (engine/text.ts openTextScope). */
+  private readonly labels: TextScope;
   /** Khung nhìn của trò chơi trên màn 16:9 (`view`; mặc định: camera ban đầu). */
   private shot: { pos: [number, number, number]; look: [number, number, number]; fov: number } = {
     pos: [0, 9, 14],
@@ -125,6 +128,7 @@ export abstract class MiniGame implements Stage {
     readonly info: MiniInfo,
     protected host: MiniHost,
   ) {
+    this.labels = openTextScope();
     this.grade = profile().grade;
     this.subj = playSubject();
     this.card = miniCard(info, this.subj);
@@ -214,6 +218,7 @@ export abstract class MiniGame implements Stage {
       if (l.isLight) l.dispose();
     });
     disposeTree(this.scene);
+    closeTextScope(this.labels);
     // Ảnh bầu trời không nằm trong cây cảnh; hủy nó mới giải phóng cả khối lập phương 256² three dựng từ nó
     // (trừ ảnh đang giữ lại cho lượt sau – keepSky).
     dropSky(this.scene.background);

@@ -49,11 +49,63 @@ export interface TextTexOpts {
 
 const texCache = new Map<string, THREE.CanvasTexture>();
 
+/**
+ * Phạm vi chữ (mỗi lượt trò chơi nhỏ một phạm vi): texture chữ vẽ mới trong lúc phạm vi đang mở thuộc về phạm vi đó và
+ * được giải phóng khi phạm vi đóng. Chữ đã có sẵn trong bộ nhớ đệm (biển tên, số cửa, bảng giá của khu vực – vẽ ngoài
+ * mọi phạm vi) không thuộc phạm vi nào: giữ mãi để dùng lại. Trước đây mỗi lượt chơi để lại vĩnh viễn mọi bảng số của
+ * lượt đó (mỗi bảng 192×192 chừng 0,2 MB bộ nhớ GPU): chơi lâu trên iPhone/iPad dễ mất đồ họa.
+ */
+export type TextScope = Set<THREE.CanvasTexture>;
+/** Các phạm vi đang mở; phạm vi mở sau cùng là phạm vi hiện hành. */
+const scopes: TextScope[] = [];
+const ownerOf = new WeakMap<THREE.CanvasTexture, TextScope>();
+
+/** Mở phạm vi chữ mới (thành phạm vi hiện hành). */
+export function openTextScope(): TextScope {
+  const s: TextScope = new Set();
+  scopes.push(s);
+  return s;
+}
+
+/**
+ * Đóng phạm vi: bỏ các texture chữ của nó khỏi bộ nhớ đệm và khỏi GPU. Ảnh canvas giữ nguyên (không xóa, không thu
+ * nhỏ): lỡ còn vật nào đang dùng thì three tự đưa ảnh lên lại – chữ không bao giờ bị trắng hay sai.
+ */
+export function closeTextScope(s: TextScope): void {
+  const i = scopes.indexOf(s);
+  if (i < 0) return;
+  scopes.splice(i, 1);
+  for (const tex of s) {
+    ownerOf.delete(tex);
+    const key = tex.userData.textKey as string;
+    if (texCache.get(key) === tex) texCache.delete(key);
+    tex.userData.shared = false;
+    tex.dispose();
+  }
+  s.clear();
+}
+
+/**
+ * Chữ của một phạm vi khác được dùng lại trong phạm vi hiện hành (bấm "Chơi lại": lượt mới dựng xong mới hủy lượt cũ):
+ * chuyển sang phạm vi hiện hành để lượt cũ đóng lại không giải phóng mất.
+ */
+function adopt(tex: THREE.CanvasTexture): void {
+  const was = ownerOf.get(tex);
+  const cur = scopes[scopes.length - 1];
+  if (!was || !cur || was === cur) return;
+  was.delete(tex);
+  cur.add(tex);
+  ownerOf.set(tex, cur);
+}
+
 /** Tạo texture chứa chữ (có thể kèm nền bo góc). */
 export function textTexture(text: string, o: TextTexOpts = {}): THREE.CanvasTexture {
   const key = text + '|' + JSON.stringify(o);
   const hit = texCache.get(key);
-  if (hit) return hit;
+  if (hit) {
+    adopt(hit);
+    return hit;
+  }
   const size = o.size ?? 96;
   const weight = o.weight ?? 800;
   const family = o.font ?? '"Baloo 2", "Nunito", system-ui, sans-serif';
@@ -101,7 +153,13 @@ export function textTexture(text: string, o: TextTexOpts = {}): THREE.CanvasText
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
   tex.userData.shared = true;
+  tex.userData.textKey = key;
   texCache.set(key, tex);
+  const cur = scopes[scopes.length - 1];
+  if (cur) {
+    cur.add(tex);
+    ownerOf.set(tex, cur);
+  }
   return tex;
 }
 
