@@ -1104,8 +1104,43 @@ html.ui-compact.ui-short .mg-meta {
   margin-bottom: 16px;
 }
 
+/* Bảng kết quả (~670px logic) phải vừa màn thấp nhất (640px, trừ lề còn 610px) để không phải cuộn mới thấy nút:
+   biểu tượng và sao nhỏ lại, điểm và "Kỷ lục mới" chung một dòng (còn ~560px). */
+html.ui-compact.ui-short .mg-results .mg-card {
+  padding: 20px 50px 26px;
+}
+
+html.ui-compact.ui-short .mg-results .mg-big-icon {
+  width: 100px;
+  height: 100px;
+  border-width: 5px;
+  font-size: 58px;
+}
+
+html.ui-compact.ui-short .mg-results .mg-card h1 {
+  margin: 6px 0 4px;
+}
+
+html.ui-compact.ui-short .mg-stars {
+  margin: 8px 0 2px;
+}
+
 html.ui-compact.ui-short .mg-star {
-  font-size: 96px;
+  font-size: 84px;
+}
+
+html.ui-compact.ui-short .mg-star:nth-child(2) {
+  transform: translateY(-18px);
+}
+
+html.ui-compact.ui-short .mg-score-line,
+html.ui-compact.ui-short .mg-best {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+html.ui-compact.ui-short .mg-best {
+  margin: 0 0 0 30px;
 }
 
 html.ui-compact.ui-short .mg-rewards {
