@@ -75,7 +75,8 @@ Câu hỏi tự điều chỉnh độ khó theo lớp và theo kết quả làm 
 
 ### 📱 iPhone / iPad
 
-- Cần **iOS 16.4** trở lên. Máy cũ hơn (hoặc không có WebGL 2) thì màn hình khởi động báo **"Trò chơi chưa mở được
+- Cần **iOS 15.4** trở lên. Máy đời cũ (iPhone 6s, iPhone 7, iPhone SE đời đầu, iPad Air 2, iPad mini 4) cập nhật lên
+  iOS 15.8 là chơi được. Máy cũ hơn (hoặc không có WebGL 2) thì màn hình khởi động báo **"Trò chơi chưa mở được
   trên máy này"** kèm nút **Tải lại**, không đứng mãi ở "Đang chuẩn bị vương quốc...".
 - **Cầm máy nằm ngang:** trên điện thoại / máy tính bảng chữ và nút tự to hơn cho dễ đọc, dễ bấm. Điện thoại cầm dựng
   đứng thì game nhắc **"Xoay ngang điện thoại để chơi nhé"**; iPad cầm dựng hay nằm ngang đều chơi được.

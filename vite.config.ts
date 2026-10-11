@@ -47,6 +47,14 @@ function fontPreload(): Plugin {
   };
 }
 
+/**
+ * Trình duyệt thấp nhất: iPhone/iPad từ iOS 15.4 (iPhone 6s/7/SE đời đầu, iPad Air 2, iPad mini 4 lên được iOS 15.8).
+ * Mặc định của Vite là Safari 16.4: mã three.js có cú pháp mới (khối static trong class) mà Safari cũ không đọc được –
+ * cả file mã game hỏng. Hạ xuống thì lúc dựng tự viết lại các cú pháp đó; CSS cũng dựng theo mức này.
+ * Lookbehind trong regex thì không viết lại được: đừng dùng (tests/old-safari.test.ts kiểm tra).
+ */
+const TARGET = ['chrome111', 'edge111', 'firefox114', 'safari15.4', 'ios15.4'];
+
 // "npm run build"        -> dist/        (bản web nhiều file, dùng cho máy chủ web)
 // "npm run build:single" -> dist-single/ (1 file HTML duy nhất, chơi offline bằng cách mở file)
 export default defineConfig(({ mode }) => {
@@ -57,6 +65,7 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: single ? 'dist-single' : 'dist',
       emptyOutDir: true,
+      target: TARGET,
       chunkSizeWarningLimit: 5000,
       assetsInlineLimit: single ? 100_000_000 : 4096,
       cssCodeSplit: !single,

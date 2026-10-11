@@ -699,6 +699,13 @@
   transition: transform 0.1s;
 }
 
+/* Safari < 16.2 (iOS 15) chưa có color-mix(): lớp trắng trong suốt phủ lên --mc, ra đúng màu như trên. */
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+  .mh-card {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, #fff 70%), var(--mc, #ffd6e8);
+  }
+}
+
 .mh-card:hover {
   transform: translateY(-4px) rotate(-0.6deg);
 }

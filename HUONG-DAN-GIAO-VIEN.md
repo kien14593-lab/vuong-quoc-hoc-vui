@@ -138,7 +138,8 @@ nếu cần.
 
 ## 📱 Chơi trên iPhone / iPad
 
-- Máy cần **iOS 16.4** trở lên (xem ở Cài đặt → Cài đặt chung → Giới thiệu). Máy cũ hơn thì game báo **"Ôi! Trò chơi
+- Máy cần **iOS 15.4** trở lên (xem ở Cài đặt → Cài đặt chung → Giới thiệu). Máy đời cũ (iPhone 6s, iPhone 7, iPhone SE
+  đời đầu, iPad Air 2, iPad mini 4) cập nhật lên iOS 15.8 là chơi được. Máy cũ hơn thì game báo **"Ôi! Trò chơi
   chưa mở được trên máy này."** (máy không vẽ được hình 3D: **"Ôi! Máy này chưa vẽ được hình 3D…"**) kèm nút
   **Tải lại** – hãy cập nhật máy (Cài đặt → Cài đặt chung → Cập nhật phần mềm) rồi mở lại, hoặc chơi trên máy khác.
 - **Cầm máy nằm ngang.** Trên điện thoại và máy tính bảng, chữ và nút tự to hơn để bé dễ đọc, dễ bấm. Điện thoại cầm

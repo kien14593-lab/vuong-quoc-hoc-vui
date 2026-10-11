@@ -10,6 +10,7 @@
   font-family: var(--font);
   color: var(--ink);
   --mg: #ff8fab;
+  /* Safari < 16.2 (iOS 15) chưa có color-mix(): minigames/ui.ts pha sẵn --mg-d / --mg-l bằng JS. */
   --mg-d: color-mix(in srgb, var(--mg) 72%, #3a2a5a);
   --mg-l: color-mix(in srgb, var(--mg) 22%, #ffffff);
   --glass: rgba(255, 255, 255, 0.8);
@@ -327,6 +328,14 @@
   animation-delay: calc(var(--i) * 70ms);
 }
 
+/* Safari < 16.2 (iOS 15) chưa có color-mix(): phủ lớp trắng / tím đậm trong suốt lên màu --c, ra đúng màu như trên. */
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+  .mg-choice {
+    background: linear-gradient(180deg, #ffffff 0%, rgba(255, 255, 255, 0.72) 100%), var(--c);
+    box-shadow: 0 10px 0 rgba(58, 42, 90, 0.3), 0 10px 0 var(--c), var(--lift);
+  }
+}
+
 .mg-choice:nth-child(6n + 1) {
   --c: #ff8fab;
 }
@@ -353,6 +362,12 @@
 .mg-choice:active:not(:disabled) {
   transform: translateY(6px);
   box-shadow: 0 3px 0 color-mix(in srgb, var(--c) 70%, #3a2a5a), var(--lift);
+}
+
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+  .mg-choice:active:not(:disabled) {
+    box-shadow: 0 3px 0 rgba(58, 42, 90, 0.3), 0 3px 0 var(--c), var(--lift);
+  }
 }
 
 .mg-key {
@@ -389,6 +404,24 @@
 
 .mg-choice.guide {
   animation: mg-guide 1s ease-in-out infinite;
+}
+
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+  .mg-choice.guide {
+    animation-name: mg-guide-old;
+  }
+
+  @keyframes mg-guide-old {
+    0%,
+    100% {
+      transform: translateY(0) scale(1);
+      box-shadow: 0 10px 0 rgba(58, 42, 90, 0.3), 0 10px 0 var(--c), 0 0 0 0 rgba(255, 201, 60, 0.9);
+    }
+    50% {
+      transform: translateY(-8px) scale(1.06);
+      box-shadow: 0 10px 0 rgba(58, 42, 90, 0.3), 0 10px 0 var(--c), 0 0 0 16px rgba(255, 201, 60, 0);
+    }
+  }
 }
 
 .mg-choices.locked .mg-choice:not(.ok) {
@@ -530,6 +563,12 @@
   background: linear-gradient(180deg, color-mix(in srgb, var(--mg) 60%, #ffffff), var(--mg));
   box-shadow: 0 9px 0 var(--mg-d), var(--lift);
   transition: transform 0.12s, box-shadow 0.12s;
+}
+
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+  .mg-btn {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0)), var(--mg);
+  }
 }
 
 .mg-btn:hover {

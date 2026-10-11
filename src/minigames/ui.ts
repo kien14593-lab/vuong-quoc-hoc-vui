@@ -12,6 +12,27 @@ import type { MiniCard } from './registry';
 
 export type FeedbackTone = 'good' | 'retry' | 'hint' | 'steps' | 'info';
 
+/** Safari < 16.2 (iPhone/iPad iOS 15) chưa có color-mix() của CSS: pha sẵn --mg-d / --mg-l bằng JS. */
+const NO_COLOR_MIX = typeof CSS !== 'undefined' && typeof CSS.supports === 'function' && !CSS.supports('color', 'color-mix(in srgb, red 50%, blue)');
+
+/** Như color-mix(in srgb, a p, b) với màu dạng #rrggbb. */
+function mixHex(a: string, b: string, p: number): string {
+  const ch = (s: string, i: number) => parseInt(s.slice(1 + 2 * i, 3 + 2 * i), 16);
+  let out = '#';
+  for (let i = 0; i < 3; i++) out += Math.round(ch(a, i) * p + ch(b, i) * (1 - p)).toString(16).padStart(2, '0');
+  return out;
+}
+
+/** Biến màu của trò: --mg; máy cũ thêm --mg-d (đậm) và --mg-l (nhạt) như mini.css pha. */
+function mgVars(color: string): Record<string, string> {
+  const v: Record<string, string> = { '--mg': color };
+  if (NO_COLOR_MIX && /^#[0-9a-f]{6}$/i.test(color)) {
+    v['--mg-d'] = mixHex(color, '#3a2a5a', 0.72);
+    v['--mg-l'] = mixHex(color, '#ffffff', 0.22);
+  }
+  return v;
+}
+
 /**
  * Giao diện chung của trò chơi nhỏ: thanh trên (tên, vòng, điểm, nút thoát), thẻ đề bài,
  * bong bóng phản hồi, hàng nút đáp án, màn hướng dẫn và bảng kết quả.
@@ -43,7 +64,7 @@ export class MiniUI {
     readonly card: MiniCard,
     private o: { onQuit: () => void },
   ) {
-    this.root = h('div.mg-root', { style: { '--mg': info.color } as unknown as Partial<CSSStyleDeclaration> });
+    this.root = h('div.mg-root', { style: mgVars(info.color) as unknown as Partial<CSSStyleDeclaration> });
     this.free = h('div.mg-free');
     this.dots = h('div.mg-dots');
     this.scoreEl = h('b', '0');

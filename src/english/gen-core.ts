@@ -265,12 +265,20 @@ export function balanced(s: string): boolean {
   return !open;
 }
 
-/** Các câu trong một đoạn tiếng Anh. */
+/**
+ * Các câu trong một đoạn tiếng Anh: cắt ở khoảng trắng ngay sau dấu . ! ?
+ * Không viết bằng lookbehind trong regex: Safari dưới 16.4 (iPhone/iPad đời cũ) không đọc được cả file mã game.
+ */
 export function sentencesOf(s: string): string[] {
-  return s
-    .split(/(?<=[.!?])\s+/)
-    .map((x) => x.trim())
-    .filter(Boolean);
+  const out: string[] = [];
+  const re = /[.!?]\s+/g;
+  let from = 0;
+  for (let m = re.exec(s); m; m = re.exec(s)) {
+    out.push(s.slice(from, m.index + 1));
+    from = m.index + m[0].length;
+  }
+  out.push(s.slice(from));
+  return out.map((x) => x.trim()).filter(Boolean);
 }
 
 export function wordCount(s: string): number {

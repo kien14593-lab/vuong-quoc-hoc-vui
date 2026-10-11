@@ -1004,6 +1004,13 @@ textarea {
   padding: 10px 14px;
 }
 
+/* Safari < 16.2 (iOS 15) chưa có color-mix(): lớp trắng trong suốt phủ lên --c cho đúng màu đó (các khối dưới cũng vậy). */
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+  .vis-group.boxed {
+    background: linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)), var(--c);
+  }
+}
+
 .vis-group .emo.crossed {
   position: relative;
   opacity: 0.35;
@@ -1133,6 +1140,12 @@ b.en {
   font-size: 44px;
 }
 
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+  .plate {
+    background: linear-gradient(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.65)), var(--c);
+  }
+}
+
 .cmp-item {
   display: flex;
   align-items: center;
@@ -1168,6 +1181,12 @@ b.en {
   background: color-mix(in srgb, var(--c) 30%, white);
 }
 
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+  .cmp-cards {
+    background: linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)), var(--c);
+  }
+}
+
 .pair-q {
   width: 90px;
   height: 90px;
@@ -1188,6 +1207,12 @@ b.en {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+  .place-col {
+    background: linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.75)), var(--c);
+  }
 }
 
 .place-head {
@@ -1222,6 +1247,12 @@ b.en {
   font-size: 44px;
   font-weight: 800;
   position: relative;
+}
+
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+  .seq-car {
+    background: linear-gradient(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.55)), var(--c);
+  }
 }
 
 .seq-car::before,

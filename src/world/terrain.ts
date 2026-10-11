@@ -53,6 +53,21 @@ function segDist2(px: number, pz: number, s: Seg): number {
   return x * x + z * z;
 }
 
+/** ctx.roundRect; Safari < 16 (iPhone/iPad iOS 15) chưa có hàm đó thì vẽ bằng arcTo, bo góc như hàm gốc. */
+function roundRect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
+  if (typeof c.roundRect === 'function') {
+    c.roundRect(x, y, w, h, r);
+    return;
+  }
+  r = Math.max(0, Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2));
+  c.moveTo(x + r, y);
+  c.arcTo(x + w, y, x + w, y + h, r);
+  c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r);
+  c.arcTo(x, y, x + w, y, r);
+  c.closePath();
+}
+
 /** Làm mượt một đường gấp khúc bằng Catmull-Rom, bước ~step mét. */
 export function smoothLine(pts: P2[], step = 1, closed = false): P2[] {
   if (pts.length < 3) {
@@ -332,7 +347,7 @@ export class Terrain {
     const rr = (o.radius ?? 0.4) * this.ppm;
     const draw = (ww: number, dd: number) => {
       c.beginPath();
-      c.roundRect((-ww / 2) * this.ppm, (-dd / 2) * this.ppm, ww * this.ppm, dd * this.ppm, rr);
+      roundRect(c, (-ww / 2) * this.ppm, (-dd / 2) * this.ppm, ww * this.ppm, dd * this.ppm, rr);
       c.fill();
     };
     if (o.edge !== undefined || true) {
