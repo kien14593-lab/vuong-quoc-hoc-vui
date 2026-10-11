@@ -21,7 +21,7 @@ function answerPlate(value: string, color = '#6cc4f0', fit = false): THREE.Mesh 
 class FishingGame extends MiniGame {
   private fish: FishTarget[] = [];
   private bobber = new THREE.Group();
-  private rodTip = new THREE.Vector3(-3.9, 1.45, 1.2);
+  private rodTip = new THREE.Vector3(-3.6, 1.45, 1.2);
   private bucket!: THREE.Group;
   private fisher!: THREE.Group;
   private reelBusy = false;
@@ -41,10 +41,11 @@ class FishingGame extends MiniGame {
     this.scene.add(rbox(2.7, 0.22, 1.25, 0.08, PAL.wood, { p: [-3.6, 0.14, 1.0], base: true }));
     for (let i = 0; i < 5; i++) this.scene.add(box(0.12, 0.08, 1.34, tint(PAL.wood, i % 2 ? -0.08 : 0.04), { p: [-4.7 + i * 0.52, 0.32, 1.0] }));
     for (const x of [-4.75, -2.55]) for (const z of [0.35, 1.65]) this.scene.add(cyl(0.07, 0.09, 0.6, PAL.woodDark, { p: [x, 0.3, z], seg: 8 }));
-    this.fisher = this.model('player', undefined, [-4.0, 0.35, 0.9], -0.55, 0.72);
+    // Bạn câu cá đứng lùi vào giữa cầu gỗ để không bị mép trái màn hình cắt mất.
+    this.fisher = this.model('player', undefined, [-3.7, 0.35, 0.9], -0.55, 0.72);
     const st = this.anim(this.fisher);
     if (st) st.ride = true;
-    this.scene.add(tube([[-3.75, 1.1, 1.08], [-3.05, 1.7, 0.35], [-2.2, 1.35, -0.1]], 0.018, '#8a5a3b', { radial: 6 }));
+    this.scene.add(tube([[-3.45, 1.1, 1.08], [-2.8, 1.7, 0.35], [-2.05, 1.35, -0.1]], 0.018, '#8a5a3b', { radial: 6 }));
     this.bobber.add(ball(0.08, '#ff6b6b', { seg: 10 }), ball(0.045, '#ffffff', { p: [0, 0.045, 0], seg: 8 }));
     this.bobber.visible = false;
     this.scene.add(this.bobber);
