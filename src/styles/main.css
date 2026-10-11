@@ -868,7 +868,7 @@ textarea {
 
 .q-helper {
   position: absolute;
-  right: -20px;
+  right: 0;
   top: -20px;
   transform: translateY(-100%) scale(0.8);
   width: 620px;
