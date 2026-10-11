@@ -467,6 +467,16 @@
   pointer-events: none;
 }
 
+/* Đang trả lời câu hỏi trên màn cảm ứng: nền mờ của bảng đã chặn mọi lần chạm, nên ẩn cần điều khiển, nút nhảy,
+   xoay camera và cột menu — để chúng không ló ra quanh mép bảng, sát đáp án và nút 🔊 (iPad, điện thoại nằm ngang). */
+#ui-root:has(.layer-panel > .q-backdrop) .hud.touch .hud-stick,
+#ui-root:has(.layer-panel > .q-backdrop) .hud.touch .hud-jump,
+#ui-root:has(.layer-panel > .q-backdrop) .hud.touch .hud-cams,
+#ui-root:has(.layer-panel > .q-backdrop) .hud.touch .hud-menu {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* Có thẻ đề bài ở trên: nhường chỗ, ẩn băng rôn tên khu vực. */
 #ui-root:has(.layer-panel > .prompt-card:not(.off-zone):not(.away)) .hud-banner.show {
   opacity: 0;
