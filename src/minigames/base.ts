@@ -17,10 +17,10 @@ import { makeQ } from '../math/util';
 import type { EnTopic, Grade, MathTopic, Question, Subject, Topic, WordTheme } from '../math/types';
 import { buildModel, collectTicks } from '../models/registry';
 import { animateRig, rigOf, type AnimState, type Rig } from '../models/rig';
-import { uiCompact, uiInsets, uiSize } from '../ui/root';
+import { uiInsets, uiSize } from '../ui/root';
 import { miniCard, type MiniCard, type MiniText } from './registry';
 import { dropSky, keepSky } from './sky-cache';
-import { MiniUI } from './ui';
+import { coverLifts, MiniUI } from './ui';
 
 /** Tỉ lệ màn các trò chơi nhỏ được dựng cho (16:9) – màn hẹp hơn: xem MiniGame.fit. */
 const FIT_ASPECT = 16 / 9;
@@ -127,11 +127,11 @@ export abstract class MiniGame implements Stage {
   };
   /**
    * Dải dọc của khung 16:9 (0 = mép trên, 1 = mép dưới) chứa nhãn đáp án và những gì bé cần nhìn để trả lời. Điện thoại
-   * (giao diện phóng to): thẻ đề bài che phần trên màn nhiều hơn → hạ khung nhìn cho dải này nằm dưới thẻ (xem `lift`).
-   * `need`: dải không vừa ở cỡ LIFT_K thì ưu tiên giữ phần từ đây trở xuống (các nhãn đáp án). null: không hạ.
+   * (giao diện phóng to), iPad (màn hẹp hơn 16:9): thẻ đề bài có thể che dải này → hạ khung nhìn cho dải nằm dưới thẻ
+   * (xem `lift`). `need`: dải không vừa ở cỡ LIFT_K thì ưu tiên giữ phần từ đây trở xuống (các nhãn đáp án). null: không hạ.
    */
   protected keep: { top: number; bottom: number; need?: number } | null = { top: 0.235, bottom: 1 };
-  /** Phần trên màn (0–1, theo chiều cao cửa sổ) bị thanh trên / thẻ đề bài che – chỉ tính khi giao diện phóng to. */
+  /** Phần trên màn (0–1, theo chiều cao cửa sổ) bị thanh trên / thẻ đề bài che – chỉ tính khi `coverLifts()`. */
   private coverF = 0;
 
   constructor(
@@ -183,8 +183,8 @@ export abstract class MiniGame implements Stage {
     void this.prepare();
     this.ui.setRound(0, this.info.rounds);
     this.ui.setScore(0);
-    // Điện thoại: hạ khung nhìn ngay từ đầu theo cỡ thẻ đề bài thường gặp – đề đầu tiên hiện ra không làm camera giật.
-    if (uiCompact()) this.setCover(this.ui.cover({ sample: true }), true);
+    // Điện thoại, iPad: hạ khung nhìn ngay từ đầu theo cỡ thẻ đề bài thường gặp – đề đầu tiên hiện ra không làm camera giật.
+    if (coverLifts()) this.setCover(this.ui.cover({ sample: true }), true);
     await this.ui.intro();
     if (this.disposed) return;
     // Cú chạm "Bắt đầu" chỉ tắt thẻ hướng dẫn; vòng 1 (câu hỏi, vật thể, chữ) dựng ở việc kế tiếp để máy chậm không dồn
@@ -286,15 +286,16 @@ export abstract class MiniGame implements Stage {
 
   /**
    * Thẻ đề bài và thanh trên che `coverF` phần trên màn; trên điện thoại phần này lớn hơn nhiều so với máy tính (chữ phóng to)
-   * và có thể đè lên nhãn đáp án. Tính phép hạ khung nhìn y' = a + k·y (y: vị trí dọc 0–1 khi chưa hạ, y': trên màn; ngang
-   * co theo k quanh giữa màn) để dải `keep` nằm giữa mép dưới thẻ đề và mép dưới vùng an toàn: dịch xuống, thu nhỏ khi
-   * dải không vừa. Camera không đổi chỗ, không xoay. null: không cần hạ (máy tính, iPad nằm ngang...). Thẻ càng cao thì
-   * cảnh chỉ càng xuống thấp / nhỏ đi (không nhảy ngược), nên trong một lượt chơi chỉ cần hạ thêm (setCover).
+   * và có thể đè lên nhãn đáp án; trên iPad (màn hẹp hơn 16:9) thẻ cao (đề có hình) có thể che đỉnh vật thể. Tính phép hạ
+   * khung nhìn y' = a + k·y (y: vị trí dọc 0–1 khi chưa hạ, y': trên màn; ngang co theo k quanh giữa màn) để dải `keep`
+   * nằm giữa mép dưới thẻ đề và mép dưới vùng an toàn: dịch xuống, thu nhỏ khi dải không vừa. Camera không đổi chỗ, không
+   * xoay. null: không cần hạ (máy tính 16:9...). Thẻ càng cao thì cảnh chỉ càng xuống thấp / nhỏ đi (không nhảy ngược),
+   * nên trong một lượt chơi chỉ cần hạ thêm (setCover).
    */
   private lift(aspect: number): { a: number; k: number } | null {
     const keep = this.keep;
     const c = this.coverF;
-    if (!keep || c <= 0 || !uiCompact()) return null;
+    if (!keep || c <= 0 || !coverLifts()) return null;
     // Màn hẹp hơn 16:9: khung 16:9 nằm giữa màn (xem fit) → dải co lại quanh giữa.
     const sq = aspect < FIT_ASPECT * 0.995 ? aspect / FIT_ASPECT : 1;
     const y = (f: number) => 0.5 + (f - 0.5) * sq;
@@ -315,7 +316,7 @@ export abstract class MiniGame implements Stage {
 
   /** MiniUI báo thanh trên / thẻ đề bài che `f` phần trên màn. Trong một lượt chỉ hạ thêm; `reset` (đổi cỡ màn): tính lại. */
   private setCover(f: number, reset: boolean): void {
-    const v = uiCompact() ? (reset ? f : Math.max(this.coverF, f)) : 0;
+    const v = coverLifts() ? (reset ? f : Math.max(this.coverF, f)) : 0;
     if (!reset && v <= this.coverF + 1e-4) return;
     this.coverF = v;
     this.fit();

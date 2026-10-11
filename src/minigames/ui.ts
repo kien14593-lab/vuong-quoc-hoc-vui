@@ -34,6 +34,15 @@ function mgVars(color: string): Record<string, string> {
 }
 
 /**
+ * Thẻ đề bài có thể che phần cảnh bé cần nhìn → trò chơi hạ khung nhìn theo thẻ (MiniGame.lift): giao diện phóng to
+ * (điện thoại, iPad dựng đứng) hoặc màn hẹp hơn 16:9 (iPad nằm ngang...: khung 16:9 nằm giữa, còn chỗ trống trên/dưới
+ * nên thường chỉ cần dịch xuống). Máy tính 16:9 trở lên: không.
+ */
+export function coverLifts(): boolean {
+  return uiCompact() || window.innerWidth < window.innerHeight * (16 / 9) * 0.995;
+}
+
+/**
  * Giao diện chung của trò chơi nhỏ: thanh trên (tên, vòng, điểm, nút thoát), thẻ đề bài,
  * bong bóng phản hồi, hàng nút đáp án, màn hướng dẫn và bảng kết quả.
  * `free` là lớp trống để từng trò tự thêm phần tử HTML riêng (nhãn trên vật thể, đồng hồ đếm...).
@@ -66,8 +75,8 @@ export class MiniUI {
     private o: {
       onQuit: () => void;
       /**
-       * Thanh trên / thẻ đề bài che `f` phần trên màn (0–1, theo chiều cao cửa sổ) – chỉ báo khi giao diện phóng to (điện
-       * thoại...): lúc thẻ đề vừa gắn (trước khi hiện) và khi đổi cỡ màn (`reset`, f = 0 nếu hết phóng to).
+       * Thanh trên / thẻ đề bài che `f` phần trên màn (0–1, theo chiều cao cửa sổ) – chỉ báo khi `coverLifts()` (điện
+       * thoại, iPad...): lúc thẻ đề vừa gắn (trước khi hiện) và khi đổi cỡ màn (`reset`, f = 0 nếu không còn cần hạ).
        */
       onCover?: (f: number, reset: boolean) => void;
     },
@@ -96,7 +105,7 @@ export class MiniUI {
     layer('hud').appendChild(this.root);
     this.offResize = onUIResize(() => {
       this.layout();
-      this.o.onCover?.(uiCompact() ? this.cover({ sample: true }) : 0, true);
+      this.o.onCover?.(coverLifts() ? this.cover({ sample: true }) : 0, true);
     });
     this.layout();
   }
@@ -182,8 +191,8 @@ export class MiniUI {
         this.promptEl.classList.remove('hidden');
         this.promptEl.classList.remove('pop');
         void this.promptEl.offsetWidth;
-        // Điện thoại: thẻ đề cao hơn mẫu (đề dài, có hình) → trò chơi hạ khung nhìn thêm trước khi thẻ hiện.
-        if (uiCompact()) this.o.onCover?.(this.cover(), false);
+        // Điện thoại, iPad: thẻ đề cao hơn mẫu (đề dài, có hình) → trò chơi hạ khung nhìn thêm trước khi thẻ hiện.
+        if (coverLifts()) this.o.onCover?.(this.cover(), false);
         this.promptEl.classList.add('pop');
       }),
     );
