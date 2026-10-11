@@ -56,6 +56,8 @@ function foodEmoji(q: Question): string | undefined {
 }
 
 class MonkeyGame extends MiniGame {
+  /** Dải cần thấy dưới thẻ đề bài (MiniGame.keep): chú khỉ và các đáp án; thẻ đề quá cao thì giữ phần đáp án. */
+  protected keep = { top: 0.29, bottom: 0.86, need: 0.72 };
   private monkey: THREE.Group | null = null;
   private targets: THREE.Group[] = [];
   private targetValue = new Map<THREE.Group, string>();

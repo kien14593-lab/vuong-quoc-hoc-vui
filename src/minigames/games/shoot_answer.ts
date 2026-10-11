@@ -17,6 +17,8 @@ function answerPlate(value: string, color: string, fit = false): THREE.Mesh {
 }
 
 class ShootAnswerGame extends MiniGame {
+  /** Dải cần thấy dưới thẻ đề bài (MiniGame.keep): các bia đáp án và bé ném bóng. */
+  protected keep = { top: 0.353, bottom: 0.8 };
   private targets: Target[] = [];
   private ball = new THREE.Group();
   private thrower!: THREE.Group;

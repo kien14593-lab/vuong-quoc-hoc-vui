@@ -12,6 +12,8 @@ import { defineMini } from '../registry';
 const CARD_COLORS = ['#ffd166', '#6cb8ff', '#ff9ec7', '#4ecdc4'];
 
 class ClockGame extends MiniGame {
+  /** Dải cần thấy dưới thẻ đề bài (MiniGame.keep): mặt đồng hồ và các nhãn đáp án. */
+  protected keep = { top: 0.244, bottom: 0.87 };
   private face = new THREE.Group();
   private hourHand = new THREE.Group();
   private minuteHand = new THREE.Group();

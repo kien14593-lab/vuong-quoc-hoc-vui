@@ -142,6 +142,8 @@ function answerSign(label: string): THREE.Group {
 }
 
 class MarketGame extends MiniGame {
+  /** Dải cần thấy dưới thẻ đề bài (MiniGame.keep): hàng trên quầy và các đáp án; thẻ đề quá cao thì giữ phần đáp án. */
+  protected keep = { top: 0.333, bottom: 0.93, need: 0.65 };
   private cashier: THREE.Group | null = null;
   private targets: THREE.Group[] = [];
   private targetValue = new Map<THREE.Group, string>();

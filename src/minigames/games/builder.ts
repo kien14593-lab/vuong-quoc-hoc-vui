@@ -53,6 +53,8 @@ function vi(n: number): string {
 }
 
 class BuilderGame extends MiniGame {
+  /** Dải cần thấy dưới thẻ đề bài (MiniGame.keep): các khối đáp án. */
+  protected keep = { top: 0.617, bottom: 0.92 };
   private site = new THREE.Group();
   private targets: ChoiceBlock[] = [];
   private houseParts: THREE.Object3D[] = [];

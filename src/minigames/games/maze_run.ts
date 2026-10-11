@@ -18,6 +18,8 @@ function shuffle<T>(a: T[]): T[] {
 }
 
 class MazeRunGame extends MiniGame {
+  /** Dải cần thấy dưới thẻ đề bài (MiniGame.keep): các cổng đáp án và bé. */
+  protected keep = { top: 0.64, bottom: 0.915 };
   private player!: THREE.Group;
   private chest!: THREE.Group;
   private choices: GateChoice[] = [];

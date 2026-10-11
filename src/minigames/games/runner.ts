@@ -16,6 +16,8 @@ function answerBoard(value: string, color: string, fit = false): THREE.Mesh {
 }
 
 class RunnerGame extends MiniGame {
+  /** Dải cần thấy dưới thẻ đề bài (MiniGame.keep): các cổng đáp án (từ lúc hiện ra ở xa) và bé. */
+  protected keep = { top: 0.3, bottom: 0.89 };
   private lanes = [-2.8, 0, 2.8];
   private lane = 1;
   private runner!: THREE.Group;

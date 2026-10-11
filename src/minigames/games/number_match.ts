@@ -112,6 +112,11 @@ function unitCube(): THREE.Group {
 }
 
 class NumberMatchGame extends MiniGame {
+  /**
+   * Dải cần thấy dưới thẻ đề bài (MiniGame.keep): đồ vật cần đếm, tranh (Tiếng Anh), dãy đá và các bảng đáp án.
+   * Thẻ đề cao (có hình) thì chỉ cần giữ các bảng đáp án (`need`): khi đó hình đã nằm trong thẻ.
+   */
+  protected keep = { top: 0.245, bottom: 0.78, need: 0.6 };
   private targets: THREE.Group[] = [];
   private targetValue = new Map<THREE.Group, string>();
   private roundObjs: THREE.Object3D[] = [];

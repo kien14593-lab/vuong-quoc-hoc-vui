@@ -975,21 +975,39 @@ html.ui-compact.ui-short .mg-q {
   font-size: 46px;
 }
 
+/* Màn thấp: nút 🔊 đứng bên phải suốt chiều cao thẻ, dòng ngữ cảnh và câu hỏi xếp chồng bên trái → thẻ đề thấp hơn,
+   đỡ che cảnh 3D (trò chơi còn hạ khung nhìn cho nhãn đáp án nằm dưới thẻ: MiniGame.lift). Hình minh họa: hàng dưới. */
 html.ui-compact.ui-short .mg-prompt {
   padding: 10px 30px;
-}
-
-/* Thẻ đề có hình, ô chữ hoặc nút nghe (Tiếng Anh): màn thấp thì hình nhỏ lại, nằm bên trái chữ,
-   để thẻ không che toa tàu, bóng bay… phía dưới. */
-html.ui-compact.ui-short .mg-prompt:has(> .vis-picture, > .vis-letters, > .vis-listen) {
   display: grid;
-  grid-template-columns: auto minmax(0, auto);
+  grid-template-columns: minmax(0, auto) auto;
   grid-template-rows: 1fr auto auto 1fr;
   grid-template-areas:
-    'vis .'
-    'vis ctx'
-    'vis q'
-    'vis .';
+    '. say'
+    'ctx say'
+    'q say'
+    '. say';
+  justify-content: center;
+  align-items: center;
+  column-gap: 20px;
+}
+
+html.ui-compact.ui-short .mg-prompt > .visual {
+  grid-column: 1 / -1;
+  grid-row: 5;
+}
+
+/* Thẻ đề có hình, ô chữ, nút nghe hoặc đồ vật cần đếm: màn thấp thì hình nhỏ lại, nằm bên trái chữ,
+   để thẻ không che toa tàu, bóng bay… phía dưới. */
+html.ui-compact.ui-short .mg-prompt:has(> .vis-picture, > .vis-letters, > .vis-listen, > .vis-objects) {
+  display: grid;
+  grid-template-columns: auto minmax(0, auto) auto;
+  grid-template-rows: 1fr auto auto 1fr;
+  grid-template-areas:
+    'vis . say'
+    'vis ctx say'
+    'vis q say'
+    'vis . say';
   justify-content: center;
   align-items: center;
   column-gap: 26px;
@@ -1000,10 +1018,18 @@ html.ui-compact.ui-short .mg-prompt > .mg-context {
 }
 
 html.ui-compact.ui-short .mg-prompt > .mg-q {
+  display: contents;
+}
+
+html.ui-compact.ui-short .mg-prompt .mg-qtext {
   grid-area: q;
 }
 
-html.ui-compact.ui-short .mg-prompt > :is(.vis-picture, .vis-letters, .vis-listen) {
+html.ui-compact.ui-short .mg-prompt .mg-speak {
+  grid-area: say;
+}
+
+html.ui-compact.ui-short .mg-prompt > :is(.vis-picture, .vis-letters, .vis-listen, .vis-objects) {
   grid-area: vis;
   margin-top: 0;
   gap: 14px;

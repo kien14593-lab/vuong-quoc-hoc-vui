@@ -79,6 +79,7 @@ let scale = 1;
 let lw = BASE_W;
 let lh = BASE_H;
 let sa: Insets = NO_INSETS;
+let compact = false;
 let resyncTimer = 0;
 const resizeFns = new Set<() => void>();
 
@@ -102,6 +103,11 @@ export function uiSize(): { w: number; h: number; s: number } {
 /** Lề an toàn hiện tại (px logic): mép trên-trái vùng giao diện cách mép cửa sổ (sa.l, sa.t). */
 export function uiInsets(): Insets {
   return sa;
+}
+
+/** Giao diện đang phóng to cho màn hình nhỏ (lớp `ui-compact`: điện thoại, iPad dựng đứng). */
+export function uiCompact(): boolean {
+  return compact;
 }
 
 /** Đăng ký hàm chạy khi cửa sổ đổi kích thước. Trả về hàm hủy. */
@@ -148,6 +154,7 @@ export function sync(): void {
   lw = fit.w;
   lh = fit.h;
   sa = fit.sa;
+  compact = fit.compact;
   root.style.width = `${fit.rootW}px`;
   root.style.height = `${fit.rootH}px`;
   root.style.transform = `scale(${scale})`;

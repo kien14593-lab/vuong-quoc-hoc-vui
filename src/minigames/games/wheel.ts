@@ -26,6 +26,8 @@ function pieSegment(i: number, n: number, r: number, color: string): THREE.Mesh 
 }
 
 class WheelGame extends MiniGame {
+  /** Dải cần thấy dưới thẻ đề bài (MiniGame.keep): kim chỉ, vòng quay và các đáp án; thẻ đề quá cao thì giữ phần đáp án. */
+  protected keep = { top: 0.16, bottom: 0.8, need: 0.59 };
   private wheel = new THREE.Group();
   private pointer = new THREE.Group();
   private answerRoot = new THREE.Group();

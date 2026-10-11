@@ -19,6 +19,8 @@ function answerPlate(value: string, color = '#6cc4f0', fit = false): THREE.Mesh 
 }
 
 class FishingGame extends MiniGame {
+  /** Dải cần thấy dưới thẻ đề bài (MiniGame.keep): đàn cá mang đáp án (cả khi bơi qua lại) và bé câu cá. */
+  protected keep = this.isEn ? { top: 0.41, bottom: 0.85 } : { top: 0.22, bottom: 0.78 };
   private fish: FishTarget[] = [];
   private bobber = new THREE.Group();
   private rodTip = new THREE.Vector3(-3.6, 1.45, 1.2);

@@ -60,6 +60,8 @@ function uniqueChoiceValues(values: string[], answer: string): string[] {
 }
 
 class PizzaGame extends MiniGame {
+  /** Dải cần thấy dưới thẻ đề bài (MiniGame.keep): chiếc bánh và các nhãn đáp án. */
+  protected keep = { top: 0.374, bottom: 0.94 };
   private pizzaRoot = new THREE.Group();
   private targets: THREE.Object3D[] = [];
   private choiceTargets: THREE.Object3D[] = [];

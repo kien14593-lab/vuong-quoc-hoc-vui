@@ -5,6 +5,8 @@ import { MiniGame } from './base';
  * Bảo đảm mọi mục trong sảnh đều chơi được.
  */
 export class QuizStub extends MiniGame {
+  /** Đáp án là các nút ở cuối màn: không hạ khung nhìn (MiniGame.keep). */
+  protected keep = null;
   private host3d = this.model('npc_rabbit', undefined, [0, 0, 0], 0, 1.6);
 
   protected build(): void {

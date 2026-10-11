@@ -17,7 +17,7 @@ import { makeQ } from '../math/util';
 import type { EnTopic, Grade, MathTopic, Question, Subject, Topic, WordTheme } from '../math/types';
 import { buildModel, collectTicks } from '../models/registry';
 import { animateRig, rigOf, type AnimState, type Rig } from '../models/rig';
-import { uiInsets } from '../ui/root';
+import { uiCompact, uiInsets, uiSize } from '../ui/root';
 import { miniCard, type MiniCard, type MiniText } from './registry';
 import { dropSky, keepSky } from './sky-cache';
 import { MiniUI } from './ui';
@@ -26,6 +26,8 @@ import { MiniUI } from './ui';
 const FIT_ASPECT = 16 / 9;
 /** Góc nhìn dọc lớn nhất (độ) khi mở rộng cho màn hẹp; hẹp hơn nữa thì lùi camera. */
 const FIT_MAX_FOV = 100;
+/** Cỡ nhỏ nhất (so với khi chưa hạ) mà phép hạ khung nhìn thu cả dải `keep` về; nhỏ hơn thì nhãn đáp án khó chạm. */
+const LIFT_K = 0.8;
 const _look = new THREE.Vector3();
 
 /**
@@ -123,6 +125,14 @@ export abstract class MiniGame implements Stage {
     look: [0, 0, 0],
     fov: 40,
   };
+  /**
+   * Dải dọc của khung 16:9 (0 = mép trên, 1 = mép dưới) chứa nhãn đáp án và những gì bé cần nhìn để trả lời. Điện thoại
+   * (giao diện phóng to): thẻ đề bài che phần trên màn nhiều hơn → hạ khung nhìn cho dải này nằm dưới thẻ (xem `lift`).
+   * `need`: dải không vừa ở cỡ LIFT_K thì ưu tiên giữ phần từ đây trở xuống (các nhãn đáp án). null: không hạ.
+   */
+  protected keep: { top: number; bottom: number; need?: number } | null = { top: 0.235, bottom: 1 };
+  /** Phần trên màn (0–1, theo chiều cao cửa sổ) bị thanh trên / thẻ đề bài che – chỉ tính khi giao diện phóng to. */
+  private coverF = 0;
 
   constructor(
     readonly info: MiniInfo,
@@ -136,7 +146,7 @@ export abstract class MiniGame implements Stage {
     this.lights = setupLights(this.scene, engine.quality, 22);
     this.lights.follow(new THREE.Vector3(0, 0, 0));
     this.fx = new Fx(this.scene);
-    this.ui = new MiniUI(info, this.card, { onQuit: () => this.quit() });
+    this.ui = new MiniUI(info, this.card, { onQuit: () => this.quit(), onCover: (f, reset) => this.setCover(f, reset) });
     this.camera.position.set(0, 9, 14);
     this.camera.lookAt(0, 0, 0);
   }
@@ -173,6 +183,8 @@ export abstract class MiniGame implements Stage {
     void this.prepare();
     this.ui.setRound(0, this.info.rounds);
     this.ui.setScore(0);
+    // Điện thoại: hạ khung nhìn ngay từ đầu theo cỡ thẻ đề bài thường gặp – đề đầu tiên hiện ra không làm camera giật.
+    if (uiCompact()) this.setCover(this.ui.cover({ sample: true }), true);
     await this.ui.intro();
     if (this.disposed) return;
     // Cú chạm "Bắt đầu" chỉ tắt thẻ hướng dẫn; vòng 1 (câu hỏi, vật thể, chữ) dựng ở việc kế tiếp để máy chậm không dồn
@@ -264,7 +276,49 @@ export abstract class MiniGame implements Stage {
       if (wide > cap) c.position.sub(_look.set(...look)).multiplyScalar(wide / cap).add(_look);
     }
     c.lookAt(...look);
-    c.updateProjectionMatrix();
+    // Hạ khung nhìn (`lift`): vẽ phần (x, y, rộng, cao) của một ảnh toàn phần cùng tỉ lệ. Cả hai lệnh đều cập nhật phép chiếu
+    // (nhãn chữ, chạm chọn dùng chung phép chiếu này); không hạ thì y như trước.
+    const A = c.aspect;
+    const l = this.lift(A);
+    if (l) c.setViewOffset(A, 1, A * (0.5 - 0.5 / l.k), -l.a / l.k, A / l.k, 1 / l.k);
+    else c.clearViewOffset();
+  }
+
+  /**
+   * Thẻ đề bài và thanh trên che `coverF` phần trên màn; trên điện thoại phần này lớn hơn nhiều so với máy tính (chữ phóng to)
+   * và có thể đè lên nhãn đáp án. Tính phép hạ khung nhìn y' = a + k·y (y: vị trí dọc 0–1 khi chưa hạ, y': trên màn; ngang
+   * co theo k quanh giữa màn) để dải `keep` nằm giữa mép dưới thẻ đề và mép dưới vùng an toàn: dịch xuống, thu nhỏ khi
+   * dải không vừa. Camera không đổi chỗ, không xoay. null: không cần hạ (máy tính, iPad nằm ngang...). Thẻ càng cao thì
+   * cảnh chỉ càng xuống thấp / nhỏ đi (không nhảy ngược), nên trong một lượt chơi chỉ cần hạ thêm (setCover).
+   */
+  private lift(aspect: number): { a: number; k: number } | null {
+    const keep = this.keep;
+    const c = this.coverF;
+    if (!keep || c <= 0 || !uiCompact()) return null;
+    // Màn hẹp hơn 16:9: khung 16:9 nằm giữa màn (xem fit) → dải co lại quanh giữa.
+    const sq = aspect < FIT_ASPECT * 0.995 ? aspect / FIT_ASPECT : 1;
+    const y = (f: number) => 0.5 + (f - 0.5) * sq;
+    const sa = uiInsets();
+    const full = uiSize().h + sa.t + sa.b;
+    const L = 1 - (sa.b + 8) / full;
+    const bottom = y(keep.bottom);
+    const top = y(keep.top);
+    if (c <= top) return null;
+    const k = Math.min(1, (L - c) / (bottom - top));
+    if (k >= LIFT_K) return { a: c - k * top, k };
+    // Cả dải không vừa ở cỡ LIFT_K: giữ cỡ đó, đáy dải sát mép dưới (đầu dải – hình minh họa – có thể khuất dưới thẻ);
+    // nếu cả phần từ `need` (các nhãn đáp án) cũng không lọt thì thu nhỏ thêm, tối đa còn một nửa.
+    const need = keep.need === undefined ? top : Math.max(top, y(keep.need));
+    const kn = Math.max(0.5, Math.min(LIFT_K, (L - c) / (bottom - need)));
+    return { a: L - kn * bottom, k: kn };
+  }
+
+  /** MiniUI báo thanh trên / thẻ đề bài che `f` phần trên màn. Trong một lượt chỉ hạ thêm; `reset` (đổi cỡ màn): tính lại. */
+  private setCover(f: number, reset: boolean): void {
+    const v = uiCompact() ? (reset ? f : Math.max(this.coverF, f)) : 0;
+    if (!reset && v <= this.coverF + 1e-4) return;
+    this.coverF = v;
+    this.fit();
   }
 
   /** Đổi cỡ màn (xoay máy, đổi cỡ cửa sổ) – engine gọi sau khi đặt tỉ lệ camera. */

@@ -20,6 +20,8 @@ function shuffled<T>(a: T[]): T[] {
 }
 
 class TrainGame extends MiniGame {
+  /** Dải cần thấy dưới thẻ đề bài (MiniGame.keep): đoàn tàu và các thùng đáp án. */
+  protected keep = { top: 0.416, bottom: 0.91 };
   private train = new THREE.Group();
   private scenery = new THREE.Group();
   private crates: Crate[] = [];

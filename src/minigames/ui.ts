@@ -5,7 +5,7 @@ import type { Visual } from '../math/types';
 import { h } from '../ui/dom';
 import { coinIcon } from '../ui/icons';
 import { rich } from '../ui/rich';
-import { layer, onUIResize, uiSize } from '../ui/root';
+import { layer, onUIResize, uiCompact, uiInsets, uiSize } from '../ui/root';
 import { renderVisual } from '../ui/visuals';
 import type { MiniInfo, MiniResult } from './base';
 import type { MiniCard } from './registry';
@@ -45,6 +45,7 @@ export class MiniUI {
   private top: HTMLElement;
   private dots: HTMLElement;
   private scoreEl: HTMLElement;
+  private headEl: HTMLElement;
   private promptEl: HTMLElement;
   private feedbackEl: HTMLElement;
   private choicesEl: HTMLElement;
@@ -62,7 +63,14 @@ export class MiniUI {
     readonly info: MiniInfo,
     /** Tên, biểu tượng, kĩ năng, cách chơi của lượt này (theo môn). */
     readonly card: MiniCard,
-    private o: { onQuit: () => void },
+    private o: {
+      onQuit: () => void;
+      /**
+       * Thanh trên / thẻ đề bài che `f` phần trên màn (0–1, theo chiều cao cửa sổ) – chỉ báo khi giao diện phóng to (điện
+       * thoại...): lúc thẻ đề vừa gắn (trước khi hiện) và khi đổi cỡ màn (`reset`, f = 0 nếu hết phóng to).
+       */
+      onCover?: (f: number, reset: boolean) => void;
+    },
   ) {
     this.root = h('div.mg-root', { style: mgVars(info.color) as unknown as Partial<CSSStyleDeclaration> });
     this.free = h('div.mg-free');
@@ -83,9 +91,13 @@ export class MiniUI {
     this.feedbackEl = h('div.mg-feedback.hidden');
     this.choicesEl = h('div.mg-choices');
     this.flashEl = h('div.mg-flash');
-    this.root.append(this.free, this.top, h('div.mg-head', this.promptEl, this.feedbackEl), this.choicesEl, this.flashEl);
+    this.headEl = h('div.mg-head', this.promptEl, this.feedbackEl);
+    this.root.append(this.free, this.top, this.headEl, this.choicesEl, this.flashEl);
     layer('hud').appendChild(this.root);
-    this.offResize = onUIResize(() => this.layout());
+    this.offResize = onUIResize(() => {
+      this.layout();
+      this.o.onCover?.(uiCompact() ? this.cover({ sample: true }) : 0, true);
+    });
     this.layout();
   }
 
@@ -93,6 +105,30 @@ export class MiniUI {
   size(): { w: number; h: number } {
     const { w, h: hh } = uiSize();
     return { w, h: hh };
+  }
+
+  /**
+   * Phần trên màn (0–1, theo chiều cao cửa sổ, tính cả lề an toàn) bị thanh trên và thẻ đề bài che, cộng một khoảng đệm.
+   * `sample`: tính cả một thẻ đề mẫu (một dòng ngữ cảnh + một dòng câu hỏi) – dùng trước khi có đề thật.
+   * Số đo offset* không tính transform (tỉ lệ giao diện, hiệu ứng bật thẻ) nên đã là px logic.
+   */
+  cover(opt: { sample?: boolean } = {}): number {
+    const head = this.headEl.offsetTop;
+    let bottom = this.top.offsetTop + this.top.offsetHeight;
+    if (this.promptEl.childElementCount) bottom = Math.max(bottom, head + this.promptEl.offsetTop + this.promptEl.offsetHeight);
+    if (opt.sample) {
+      const dummy = h(
+        'div.mg-prompt.hidden',
+        { style: { position: 'absolute', visibility: 'hidden' } },
+        h('div.mg-context', 'Ag'),
+        h('div.mg-q', h('span.mg-qtext', 'Ag'), h('button.mg-speak', '🔊')),
+      );
+      this.headEl.appendChild(dummy);
+      bottom = Math.max(bottom, head + dummy.offsetHeight);
+      dummy.remove();
+    }
+    const sa = uiInsets();
+    return (sa.t + bottom + 10) / (uiSize().h + sa.t + sa.b);
   }
 
   private layout(): void {
@@ -146,6 +182,8 @@ export class MiniUI {
         this.promptEl.classList.remove('hidden');
         this.promptEl.classList.remove('pop');
         void this.promptEl.offsetWidth;
+        // Điện thoại: thẻ đề cao hơn mẫu (đề dài, có hình) → trò chơi hạ khung nhìn thêm trước khi thẻ hiện.
+        if (uiCompact()) this.o.onCover?.(this.cover(), false);
         this.promptEl.classList.add('pop');
       }),
     );
