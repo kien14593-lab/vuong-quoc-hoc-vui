@@ -8,7 +8,7 @@ import { checkBadges, on, reward } from '../../game/story';
 import { englishQ, kingPlan, labelQ, mathQ, mixedQ, pickEnTopic } from '../../game/subject';
 import { GRADE_TOPICS } from '../../math/curriculum';
 import type { MathTopic, Question, WordTheme } from '../../math/types';
-import { say } from '../../ui/dialog';
+import { say, type Speaker } from '../../ui/dialog';
 import { toast } from '../../ui/toast';
 import { Zone, type Npc, type PickSpot, type Spawn } from '../zone';
 
@@ -239,6 +239,8 @@ export class CastleZone extends Zone {
   }
 
   private buildSideContent(): void {
+    // Hộp thoại và thẻ câu đố dùng đúng người nói của NPC (mô hình + artOpts – chân dung đã vẽ sẵn, xem Zone.talkers),
+    // thêm giọng của dân làng cùng biến thể.
     const guard = villager(1);
     this.npc('npc_villager', 13.2, -5.0, {
       name: 'Lính gác Piko',
@@ -246,8 +248,8 @@ export class CastleZone extends Zone {
       opts: { v: guard.artOpts?.v ?? 1 },
       rot: -60,
       wander: 1.4,
-      talk: async () => {
-        await say({ name: 'Lính gác Piko', color: '#8fd3ff', voice: 'v1' }, ['Mẹo nhỏ nhé!', 'Nếu thấy đá đáp án, hãy đi tới và chọn bằng nút tròn. Sai cũng không sao, lâu đài sẽ gợi ý cho bạn.']);
+      talk: async (npc) => {
+        await say({ ...npc.speaker, voice: 'v1' }, ['Mẹo nhỏ nhé!', 'Nếu thấy đá đáp án, hãy đi tới và chọn bằng nút tròn. Sai cũng không sao, lâu đài sẽ gợi ý cho bạn.']);
       },
     });
     this.npc('npc_villager', -10.3, -5.0, {
@@ -257,9 +259,10 @@ export class CastleZone extends Zone {
       rot: 40,
       wander: 1.0,
       talk: async (npc) => {
-        await say({ name: 'Thị vệ Mây', color: '#ffb38a', voice: 'v3' }, 'Mình có một câu đố trong sân lâu đài!');
-        await this.quiz(mixedQ({ math: GRADE_TOPICS[profile().grade] }), { src: 'castle:riddle', speaker: { name: 'Thị vệ Mây', color: '#ffb38a' }, title: 'Câu đố trong sân', icon: '🧩' }, npc.actor, 10);
-        await say({ name: 'Thị vệ Mây', color: '#ffb38a', voice: 'v3' }, 'Hay quá! Bạn suy luận như một hiệp sĩ thông thái.');
+        const may: Speaker = { ...npc.speaker, voice: 'v3' };
+        await say(may, 'Mình có một câu đố trong sân lâu đài!');
+        await this.quiz(mixedQ({ math: GRADE_TOPICS[profile().grade] }), { src: 'castle:riddle', speaker: may, title: 'Câu đố trong sân', icon: '🧩' }, npc.actor, 10);
+        await say(may, 'Hay quá! Bạn suy luận như một hiệp sĩ thông thái.');
       },
     });
     this.npc('npc_villager', 6.8, 7.6, {
@@ -267,8 +270,8 @@ export class CastleZone extends Zone {
       color: '#c7b3ff',
       opts: { v: 4 },
       rot: 180,
-      talk: async () => {
-        await say({ name: 'Quan thư ký', color: '#c7b3ff', voice: 'v4' }, ['Ba phòng có thể làm theo bất kỳ thứ tự nào.', 'Làm xong cả ba, cửa đại sảnh sẽ mở để gặp Nhà Vua.']);
+      talk: async (npc) => {
+        await say({ ...npc.speaker, voice: 'v4' }, ['Ba phòng có thể làm theo bất kỳ thứ tự nào.', 'Làm xong cả ba, cửa đại sảnh sẽ mở để gặp Nhà Vua.']);
       },
     });
   }
